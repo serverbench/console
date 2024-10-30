@@ -16,6 +16,9 @@
 </script>
 
 <div class="flex flex-col gap-2">
+    <p class="lowercase text-sm opacity-80 font-extralight">
+        {name}
+    </p>
     {#if !loading && used > 0 && list}
         <List>
             <div class="border-b px-3 py-2">

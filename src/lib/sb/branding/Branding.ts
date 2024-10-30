@@ -1,32 +1,44 @@
 import Community from "../Community"
 import User from "../User"
 
-interface HSL {
+export interface HSL {
     h: number
     s: number
     l: number
 }
+
+export type BrandingImg = 'iso' | 'logo' | 'banner' | 'background'
+
 export default class Branding {
 
     primary: HSL | null
     secondary: HSL | null
     iso: string | null
+    logo: string | null
+    banner: string | null
+    background: string | null
 
     private static cache: Branding | null = null
 
     public static onBranding: (branding: Branding | null) => void = (b) => { }
 
-    constructor(primary: HSL | null, secondary: HSL | null, iso: string | null) {
+    constructor(primary: HSL | null, secondary: HSL | null, iso: string | null, logo: string | null, banner: string | null, background: string | null) {
         this.primary = primary
         this.secondary = secondary
         this.iso = iso
+        this.logo = logo
+        this.banner = banner
+        this.background = background
     }
 
     static fromObj(obj: any) {
         return new Branding(
             obj.primary,
             obj.secondary,
-            obj.iso
+            obj.iso,
+            obj.logo,
+            obj.banner,
+            obj.background
         )
     }
 
@@ -66,10 +78,19 @@ export default class Branding {
         return this
     }
 
-    public static async updateIso(iso: File) {
+    public static async updateImg(part: BrandingImg, iso: File) {
         const community = await Community.get()
         const user = await User.get()
-        const branding = Branding.fromObj(await user!.post(`/community/${community!.id}/branding/iso`, iso))
+        const branding = Branding.fromObj(await user!.post(`/community/${community!.id}/branding/img/${part}`, iso))
+        Branding.cache = branding
+        Branding.onBranding(branding)
+        return this
+    }
+
+    public static async removeImg(part: BrandingImg) {
+        const community = await Community.get()
+        const user = await User.get()
+        const branding = Branding.fromObj(await user!.delete(`/community/${community!.id}/branding/img/${part}`))
         Branding.cache = branding
         Branding.onBranding(branding)
         return this

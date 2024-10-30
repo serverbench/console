@@ -82,7 +82,7 @@
                 );
                 document.documentElement.style.setProperty(
                     "--primary-dark",
-                    "var(--primary-dark-fallack)",
+                    "var(--primary-dark-fallback)",
                 );
             }
         };
