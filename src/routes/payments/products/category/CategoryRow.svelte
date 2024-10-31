@@ -6,6 +6,7 @@
     import { createEventDispatcher } from "svelte";
     import CategorySetPicker from "./CategorySetPicker.svelte";
     import type StoreCategorySet from "$lib/sb/store/StoreCategorySet";
+    import ProductBox from "./ProductBox.svelte";
 
     const dispatch = createEventDispatcher();
 
@@ -29,5 +30,11 @@
             <Trash2 />
             Delete
         </DropdownItem>
+    </div>
+    <div slot="extra" class="grid grid-cols-4 gap-3">
+        {#each category.skus as sku}
+            <ProductBox bind:category bind:sku />
+        {/each}
+        <ProductBox bind:category />
     </div>
 </Item>
