@@ -1,8 +1,6 @@
 import Community from "../Community";
 import User from "../User";
 import Sku from "./sku/Sku";
-import StoreBundle from "./sku/StoreBundle";
-import StoreItem from "./sku/item/StoreItem";
 import StoreCategorySet from "./StoreCategorySet";
 
 export default class StoreCategory {
@@ -11,7 +9,7 @@ export default class StoreCategory {
     id: string
     name: string
     sets: StoreCategorySet[] = []
-    skus: (StoreItem | StoreBundle)[] = []
+    skus: Sku[] = []
 
     constructor(community: Community, id: string, name: string, sets: StoreCategorySet[] = [], skus: Sku[] = []) {
         this.community = community
@@ -28,11 +26,7 @@ export default class StoreCategory {
             obj.name,
             obj.sets.map((s: any) => StoreCategorySet.fromObj(community, s)),
         )
-        category.skus = obj.skus.map((s: any) => {
-            if (s.type == 'item') return StoreItem.fromObj(category, s)
-            if (s.type == 'bundle') return StoreBundle.fromObj(category, s)
-            throw new Error('Invalid sku type')
-        })
+        category.skus = obj.skus.map((s: any) => Sku.fromObj(category, s))
         return category
     }
 

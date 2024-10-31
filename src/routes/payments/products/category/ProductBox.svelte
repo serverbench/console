@@ -1,8 +1,6 @@
 <script lang="ts">
     import Badge from "$lib/components/ui/badge/badge.svelte";
     import * as Card from "$lib/components/ui/card/index.js";
-    import type StoreBundle from "$lib/sb/store/sku/StoreBundle";
-    import StoreItem from "$lib/sb/store/sku/item/StoreItem";
     import * as Dialog from "$lib/components/ui/dialog";
     import { Plus, ChevronDown, Check } from "lucide-svelte";
     import Button from "$lib/components/ui/button/button.svelte";
@@ -10,12 +8,9 @@
     import * as DropdownMenu from "$lib/components/ui/dropdown-menu";
     import type StoreCategory from "$lib/sb/store/StoreCategory";
     import { createEventDispatcher } from "svelte";
-    export let sku: StoreItem | StoreBundle | null = null;
+    import Sku from "$lib/sb/store/sku/Sku";
+    export let sku: Sku | null = null;
     export let category: StoreCategory;
-    let item: StoreItem | null =
-        sku?.type == "item" ? (sku as StoreItem) : null;
-    let bundle: StoreBundle | null =
-        sku?.type == "bundle" ? (sku as StoreBundle) : null;
 
     let creating = false;
     let loading = false;
@@ -42,10 +37,11 @@
     async function createSku() {
         loading = true;
         try {
-            let result: StoreItem | StoreBundle;
+            let result: Sku;
             if (type == "item") {
-                result = await StoreItem.create(
+                result = await Sku.create(
                     category,
+                    type,
                     name,
                     price!,
                     frequency as "month" | "year" | null,

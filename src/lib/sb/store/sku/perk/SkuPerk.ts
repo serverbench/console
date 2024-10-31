@@ -1,6 +1,6 @@
 import type Community from "$lib/sb/Community";
 
-export default class ItemPerk {
+export default class SkuPerk {
 
     community: Community
     name: string
@@ -11,7 +11,7 @@ export default class ItemPerk {
     }
 
     public static fromObj(community: Community, obj: any) {
-        return new ItemPerk(
+        return new SkuPerk(
             community,
             obj.name
         )

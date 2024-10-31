@@ -1,22 +1,59 @@
+import User from "$lib/sb/User"
 import type StoreCategory from "../StoreCategory"
-import type SkuPrice from "./SkuPrice"
+import SkuPerk from "./perk/SkuPerk"
+import SkuPerkUsage from "./perk/SkuPerkUsage"
+import SkuPrice from "./SkuPrice"
 
-export default abstract class Sku {
+export type SkuType = 'item' | 'bundle'
+
+export default class Sku {
 
     id: string
     category: StoreCategory
     name: string
-    type: 'item' | 'bundle'
+    type: SkuType
     prices: SkuPrice[]
     img: string | null
+    perks: SkuPerkUsage[]
 
-    constructor(id: string, category: StoreCategory, name: string, type: 'item' | 'bundle', img: string | null, prices: SkuPrice[] = []) {
+    constructor(id: string, category: StoreCategory, name: string, type: SkuType, img: string | null, prices: SkuPrice[] = [], perks: SkuPerkUsage[] = []) {
         this.id = id
         this.category = category
         this.name = name
         this.type = type
         this.prices = prices
         this.img = img
+        this.perks = perks
+    }
+
+    public static fromObj(category: StoreCategory, obj: any) {
+        const item = new Sku(
+            obj.id,
+            category,
+            obj.name,
+            obj.type,
+            obj.img
+        )
+        item.prices = obj.prices.map((p: any) => SkuPrice.fromObj(item, p))
+        item.perks = obj.perks.map((p: any) => SkuPerkUsage.fromObj(SkuPerk.fromObj(category.community, p.perk), item, p))
+        return item
+    }
+
+    public static async create(category: StoreCategory, type: SkuType, name: string, amount: number, frequency: 'month' | 'year' | null) {
+        const user = await User.get()
+        const item = Sku.fromObj(category, await user!.post(`/community/${category.community.id}/store/category/${category.id}/sku`, {
+            name,
+            type,
+            amount: String(amount),
+            frequency
+        }))
+        category.skus.push(item)
+        return item
+    }
+
+    public async remove() {
+        const user = await User.get()
+        return user!.delete(`/community/${this.category.community.id}/store/category/${this.category.id}/sku/${this.id}`)
     }
 
 }
