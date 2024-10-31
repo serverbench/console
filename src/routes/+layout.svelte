@@ -44,14 +44,14 @@
         toggleDark(dark);
 
         User.onLogin = async () => {
-            console.log('logged in')
+            console.log("logged in");
             loggedIn = true;
             if (afterLogin && afterLogin != "/login") {
                 goto(afterLogin);
             } else if ($page.url.pathname == "/login") {
                 goto("/");
             }
-            await Community.get();
+            await Community.get()
         };
         User.onLogout = () => {
             console.log("logged out");
@@ -64,7 +64,7 @@
             loading = false;
         };
         Branding.onBranding = (br) => {
-            console.log('new branding', br)
+            console.log("new branding", br);
             branding = br;
             if (branding && branding.primary) {
                 document.documentElement.style.setProperty(
@@ -90,13 +90,14 @@
             selectedCommunity,
             existingCommunities,
         ) => {
-            console.log('community selected')
+            console.log("community selected");
             Branding.clearCache();
             loading = false;
             community = selectedCommunity;
             communities = existingCommunities;
             if (!community) {
                 goto("/onboarding");
+                return;
             }
             Branding.get().then(() => {});
         };

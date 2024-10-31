@@ -49,12 +49,10 @@ export default class Community {
 
 
     public static unselect() {
-        if (Community.selected) {
-            Community.selected = null
-            localStorage.removeItem('community')
-            Community.onSelected(null, Community.listed)
-            Branding.clearCache()
-        }
+        Community.selected = null
+        localStorage.removeItem('community')
+        Community.onSelected(null, Community.listed)
+        Branding.clearCache()
     }
 
     public select() {
