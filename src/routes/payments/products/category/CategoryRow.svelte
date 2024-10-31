@@ -7,10 +7,13 @@
     import CategorySetPicker from "./CategorySetPicker.svelte";
     import type StoreCategorySet from "$lib/sb/store/StoreCategorySet";
     import ProductBox from "./ProductBox.svelte";
+    import type CountryCurrency from "$lib/sb/store/CountryCurrency";
 
     const dispatch = createEventDispatcher();
 
-    export let category: StoreCategory, sets: StoreCategorySet[];
+    export let category: StoreCategory,
+        sets: StoreCategorySet[],
+        currencies: CountryCurrency[];
 
     async function remove() {
         try {
@@ -31,10 +34,10 @@
             Delete
         </DropdownItem>
     </div>
-    <div slot="extra" class="grid grid-cols-4 gap-3">
+    <div slot="extra" class="grid grid-cols-5 gap-3">
         {#each category.skus as sku}
-            <ProductBox bind:category bind:sku />
+            <ProductBox bind:category bind:sku {currencies} />
         {/each}
-        <ProductBox bind:category />
+        <ProductBox bind:category {currencies} />
     </div>
 </Item>

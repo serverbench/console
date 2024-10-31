@@ -6,10 +6,12 @@
     import { onMount } from "svelte";
     import CategoryRow from "./CategoryRow.svelte";
     import StoreCategorySet from "$lib/sb/store/StoreCategorySet";
+    import CountryCurrency from "$lib/sb/store/CountryCurrency";
 
     let loading = false;
-    let creating = false
+    let creating = false;
     let categories: StoreCategory[] = [];
+    let currencies: CountryCurrency[] = [];
     export let sets: StoreCategorySet[] = [];
 
     let categoryName = "";
@@ -19,6 +21,7 @@
         try {
             categories = await StoreCategory.list();
             sets = await StoreCategorySet.list();
+            currencies = await CountryCurrency.list();
         } catch (error) {}
         loading = false;
     });
@@ -49,6 +52,7 @@
     </div>
     {#each categories as category}
         <CategoryRow
+            bind:currencies
             bind:sets
             bind:category
             on:remove={() =>

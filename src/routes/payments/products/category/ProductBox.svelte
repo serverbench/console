@@ -9,8 +9,12 @@
     import type StoreCategory from "$lib/sb/store/StoreCategory";
     import { createEventDispatcher } from "svelte";
     import Sku from "$lib/sb/store/sku/Sku";
+    import type CountryCurrency from "$lib/sb/store/CountryCurrency";
+    import Price from "./Price.svelte";
+    import FrequencyPicker from "$lib/components/sb/picker/FrequencyPicker.svelte";
     export let sku: Sku | null = null;
     export let category: StoreCategory;
+    export let currencies: CountryCurrency[];
 
     let creating = false;
     let loading = false;
@@ -19,20 +23,8 @@
     let name: string;
     let price: number | null = null;
     let frequency: string | null = null;
-    const frequencyReadable: Record<string, string> = {
-        "": "one-time",
-        month: "monthly",
-        year: "yearly",
-    };
 
     const dispatch = createEventDispatcher();
-
-    function handleClick() {
-        if (sku == null) {
-            creating = true;
-        } else {
-        }
-    }
 
     async function createSku() {
         loading = true;
@@ -43,7 +35,7 @@
                     category,
                     type,
                     name,
-                    price!,
+                    price! * 10 ** currencies.find((c) => !c.country)!.digits,
                     frequency as "month" | "year" | null,
                 );
                 category = result.category;
@@ -97,24 +89,7 @@
                     min={0}
                     type="number"
                 />
-                <DropdownMenu.Root>
-                    <DropdownMenu.Trigger>
-                        <Button class="text-left grow" variant="outline">
-                            <ChevronDown />
-                            <span class="grow capitalize">
-                                {frequencyReadable[frequency ?? ""]}
-                            </span>
-                        </Button>
-                    </DropdownMenu.Trigger>
-                    <DropdownMenu.Content>
-                        {#each [null, "month", "year"] as f}
-                            <DropdownMenu.Item on:click={() => (frequency = f)}>
-                                <Check class={type != f ? "opacity-0" : ""} />
-                                {frequencyReadable[f ?? ""]}
-                            </DropdownMenu.Item>
-                        {/each}
-                    </DropdownMenu.Content>
-                </DropdownMenu.Root>
+                <FrequencyPicker bind:value={frequency} />
             </div>
         </div>
         <Dialog.Footer>
@@ -128,7 +103,10 @@
     </Dialog.Content>
 </Dialog.Root>
 
-<button on:click={() => handleClick()}>
+<a
+    href={sku != null ? `/payments/products/${sku.id}` : "#"}
+    on:click={() => (sku == null ? (creating = true) : {})}
+>
     <Card.Root class="p-3 h-36">
         {#if !sku}
             <div
@@ -137,30 +115,18 @@
                 <Plus />
             </div>
         {:else}
-            <div class="flex flex-col gap-2 justify-between">
-                <p class="text-lg">
+            <div class="flex flex-col w-full h-full justify-between">
+                <p class="text-lg text-left">
                     {sku.name}
                 </p>
-                <div>
+                <div class="flex flex-row gap-2">
                     {#each sku.prices as price}
                         <Badge class="flex flex-row gap-2 items-center">
-                            <span>
-                                {price.amount}
-                                {#if price.frequency}
-                                    /{price.frequency.substring(0, 1)}
-                                {/if}
-                            </span>
-                            {#if price.country}
-                                <img
-                                    class="h-4"
-                                    src={`https://flagcdn.com/${price.country.toLowerCase()}.svg`}
-                                    alt={`${price.country} flag`}
-                                />
-                            {/if}
+                            <Price {price} {currencies} />
                         </Badge>
                     {/each}
                 </div>
             </div>
         {/if}
     </Card.Root>
-</button>
+</a>

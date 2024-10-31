@@ -2,7 +2,7 @@ import User from "$lib/sb/User"
 import type StoreCategory from "../StoreCategory"
 import SkuPerk from "./perk/SkuPerk"
 import SkuPerkUsage from "./perk/SkuPerkUsage"
-import SkuPrice from "./SkuPrice"
+import SkuPrice, { type Frequency } from "./SkuPrice"
 
 export type SkuType = 'item' | 'bundle'
 
@@ -37,6 +37,23 @@ export default class Sku {
         item.prices = obj.prices.map((p: any) => SkuPrice.fromObj(item, p))
         item.perks = obj.perks.map((p: any) => SkuPerkUsage.fromObj(SkuPerk.fromObj(category.community, p.perk), item, p))
         return item
+    }
+
+    public async addPricing(amount: number, frequency: Frequency | null, country: string | null) {
+        const user = await User.get()
+        const obj = await user!.post(`/community/${this.category.community.id}/store/category/${this.category.id}/sku/${this.id}/price`, {
+            amount: String(amount),
+            country,
+            frequency
+        })
+        const price = SkuPrice.fromObj(this, obj)
+        this.prices.push(price)
+        return price
+    }
+
+    public static async fromId(category: StoreCategory, id: string) {
+        const user = await User.get()
+        return Sku.fromObj(category, await user!.get(`/community/${category.community.id}/store/category/${category.id}/sku/${id}`))
     }
 
     public static async create(category: StoreCategory, type: SkuType, name: string, amount: number, frequency: 'month' | 'year' | null) {
