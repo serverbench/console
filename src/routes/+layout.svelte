@@ -112,7 +112,7 @@
 <main>
     {#if loggedIn && $page.url.pathname != "/onboarding"}
         <div class="flex flex-row h-full absolute w-full">
-            <div class="h-full w-full max-w-xs border flex flex-col">
+            <div class="h-full w-full max-w-72 border-r flex flex-col">
                 <CommunityNav {branding} {community} {communities} />
                 <div class="px-3 pt-2 pb-7">
                     <Logo center />

@@ -16,7 +16,6 @@
                 <Button
                     variant="outline"
                     builders={[builder]}
-                    class="rounded-full"
                 >
                     <Plus />
                     Create
