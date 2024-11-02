@@ -26,13 +26,13 @@
 
     let country: string | null = null;
     let frequency: string | null = null;
-    let amount: number | null = null;
+    let amount: string | null = null;
 
     async function addPrice() {
         try {
             product = (
                 await product!.addPricing(
-                    amount! * 10 ** currency!.digits,
+                    Math.round(Number(amount!) * 10 ** currency!.digits),
                     frequency as Frequency | null,
                     country,
                 )

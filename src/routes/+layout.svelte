@@ -3,16 +3,23 @@
     import "../app.css";
     import User from "$lib/sb/User";
     import { goto } from "$app/navigation";
-    import { onMount } from "svelte";
+    import { onMount, onDestroy } from "svelte";
     import { Loader2 } from "lucide-svelte";
     import Logo from "$lib/components/sb/logo.svelte";
     import { page } from "$app/stores";
     import Community from "$lib/sb/Community";
     import CommunityNav from "$lib/components/sb/nav/communityNav.svelte";
     import * as Avatar from "$lib/components/ui/avatar";
-    import { PersonStanding, Sun, Moon, DoorOpen } from "lucide-svelte/icons";
+    import {
+        PersonStanding,
+        Sun,
+        Moon,
+        DoorOpen,
+        Menu,
+    } from "lucide-svelte/icons";
     import * as DropdownMenu from "$lib/components/ui/dropdown-menu";
     import Branding from "$lib/sb/branding/Branding";
+    import Button from "$lib/components/ui/button/button.svelte";
     let loggedIn = false;
     let loading = true;
 
@@ -51,7 +58,7 @@
             } else if ($page.url.pathname == "/login") {
                 goto("/");
             }
-            await Community.get()
+            await Community.get();
         };
         User.onLogout = () => {
             console.log("logged out");
@@ -91,6 +98,7 @@
             existingCommunities,
         ) => {
             console.log("community selected");
+            activeSidebar = false;
             Branding.clearCache();
             loading = false;
             community = selectedCommunity;
@@ -107,19 +115,46 @@
             await Community.get();
         }
     });
+
+    $: if ($page.url.pathname) {
+        activeSidebar = false;
+    }
+
+    let activeSidebar = false;
 </script>
 
 <main>
     {#if loggedIn && $page.url.pathname != "/onboarding"}
         <div class="flex flex-row h-full absolute w-full">
-            <div class="h-full w-full max-w-72 border-r flex flex-col">
-                <CommunityNav {branding} {community} {communities} />
-                <div class="px-3 pt-2 pb-7">
-                    <Logo center />
+            <div
+                class:hidden={!activeSidebar}
+                class="h-full w-3/4 md:w-full md:max-w-72 border-r fixed md:relative md:block z-50 bg-white dark:bg-black"
+            >
+                <div class="h-full w-full flex flex-col">
+                    <CommunityNav {branding} {community} {communities} />
+                    <div class="px-3 pt-2 pb-7 hidden md:block">
+                        <Logo center />
+                    </div>
                 </div>
             </div>
+            <button
+                on:click={() => (activeSidebar = false)}
+                class:hidden={!activeSidebar}
+                class="md:hidden fixed w-full h-full bg-black z-40 backdrop-blur-sm bg-opacity-50"
+            />
             <div class="grow h-screen overflow-y-scroll flex flex-col gap-5">
-                <div class="border-b p-2 px-3 flex flex-row gap-5">
+                <div class="border-b p-2 px-3 flex flex-row gap-5 items-center">
+                    <Button
+                        size="icon"
+                        on:click={() => (activeSidebar = !activeSidebar)}
+                        class=" aspect-square rounded-full"
+                        variant="ghost"
+                    >
+                        <Menu />
+                    </Button>
+                    <div class="md:hidden">
+                        <Logo />
+                    </div>
                     <DropdownMenu.Root>
                         <DropdownMenu.Trigger class="ml-auto">
                             <Avatar.Root>
@@ -171,7 +206,7 @@
                 <Gradient />
             {/if}
             <div
-                class="w-full h-full absolute flex flex-col items-center justify-center"
+                class="w-full h-full absolute flex flex-col items-center justify-center px-5"
             >
                 <div class="w-full max-w-md flex flex-col gap-5">
                     {#if !loading}

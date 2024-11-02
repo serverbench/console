@@ -1,37 +1,40 @@
 <script lang="ts">
     // @ts-ignore
-    import Gradient from "@bedard/gradient";
     import { onMount } from "svelte";
-    let canvasDark: HTMLCanvasElement;
-    let canvasLight: HTMLCanvasElement;
+    let canvasDark: HTMLDivElement;
+    let canvasLight: HTMLDivElement;
     let mounted = false;
 
     onMount(() => {
-        new Gradient(canvasDark, {
-            colors: ["#000000", "#242424"],
-            seed: 7,
+        const vanta = (window as any).VANTA;
+        vanta.DOTS({
+            el: canvasDark,
+            color: 0xffffff,
+            color2: 0xffffff,
+            backgroundColor: 0x0,
+            showLines: false,
         });
-        new Gradient(canvasLight, {
-            colors: ["#ffffff", "#e3e3e3"],
-            seed: 7,
+        vanta.DOTS({
+            el: canvasLight,
+            color: 0x0,
+            color2: 0xffffff,
+            backgroundColor: 0xffffff,
+            showLines: false,
         });
         mounted = true;
     });
 </script>
 
-<canvas
+<div
     bind:this={canvasDark}
     class:opacity-0={!mounted}
-    class:opacity-50={mounted}
+    class:opacity-30={mounted}
     class="w-full h-full absolute top-0 transition-opacity duration-1000 invisible dark:visible"
->
-</canvas>
+></div>
 
-
-<canvas
+<div
     bind:this={canvasLight}
     class:opacity-0={!mounted}
-    class:opacity-50={mounted}
+    class:opacity-30={mounted}
     class="w-full h-full absolute top-0 transition-opacity duration-1000 dark:invisible"
->
-</canvas>
+></div>

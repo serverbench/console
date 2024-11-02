@@ -37,6 +37,5 @@
                 <span>{policy ?? "standard"}</span>
             </DropdownMenu.Item>
         {/each}
-        <DropdownMenu.Separator />
     </DropdownMenu.Content>
 </DropdownMenu.Root>

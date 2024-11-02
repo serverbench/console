@@ -12,6 +12,10 @@
     import type CountryCurrency from "$lib/sb/store/CountryCurrency";
     import Price from "./Price.svelte";
     import FrequencyPicker from "$lib/components/sb/picker/FrequencyPicker.svelte";
+    import * as Tooltip from "$lib/components/ui/tooltip/index.js";
+    import List from "$lib/components/sb/section/list/list.svelte";
+    import Item from "$lib/components/sb/section/list/Item.svelte";
+
     export let sku: Sku | null = null;
     export let category: StoreCategory;
     export let currencies: CountryCurrency[];
@@ -126,9 +130,23 @@
                         </Badge>
                     {/each}
                     {#if sku.prices.filter((p) => p.country).length > 0}
-                        <Badge variant="outline">
-                            +{sku.prices.filter((p) => p.country).length}
-                        </Badge>
+                        <Tooltip.Root>
+                            <Tooltip.Trigger>
+                                <Badge variant="outline">
+                                    +{sku.prices.filter((p) => p.country)
+                                        .length}
+                                </Badge>
+                            </Tooltip.Trigger>
+                            <Tooltip.Content class="p-0 border-none">
+                                <List>
+                                    {#each sku.prices.filter((p) => p.country) as price}
+                                        <Item>
+                                            <Price {price} {currencies} />
+                                        </Item>
+                                    {/each}
+                                </List>
+                            </Tooltip.Content>
+                        </Tooltip.Root>
                     {/if}
                 </div>
             </div>

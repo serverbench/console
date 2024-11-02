@@ -143,6 +143,9 @@
             <NavLink href="/payments/gateways">
                 Gateways
             </NavLink>
+            <NavLink href="/payments/currencies">
+                Currencies
+            </NavLink>
             <NavLink href="/payments/transactions">
                 Transactions
             </NavLink>

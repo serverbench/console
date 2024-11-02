@@ -1,4 +1,5 @@
 <script lang="ts">
+    import Country from "$lib/components/sb/country.svelte";
     import type CountryCurrency from "$lib/sb/store/CountryCurrency";
     import type SkuPrice from "$lib/sb/store/sku/SkuPrice";
     import { Loader2 } from "lucide-svelte";
@@ -34,16 +35,5 @@
     {/if}
 {/if}
 {#if showImage && price.country}
-    <div class="flex flex-row gap-1 items-center">
-        <div class="py-[0.15rem]">
-            <img
-                class="h-3"
-                src={`https://flagcdn.com/${price.country.toLowerCase()}.svg`}
-                alt={`${price.country} flag`}
-            />
-        </div>
-        <span>
-            {price.country}
-        </span>
-    </div>
+    <Country country={price.country} />
 {/if}
