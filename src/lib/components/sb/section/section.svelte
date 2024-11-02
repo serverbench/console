@@ -12,13 +12,17 @@
         loading = false,
         list = false,
         action = !!SLOTS.add,
+        hideName = false,
+        small = false,
         name: string;
 </script>
 
 <div class="flex flex-col gap-2">
-    <p class="lowercase text-sm opacity-80 font-extralight">
-        {name}
-    </p>
+    {#if !hideName}
+        <p class="lowercase text-sm opacity-80 font-extralight">
+            {name}
+        </p>
+    {/if}
     {#if !loading && used != null && used > 0 && list}
         <List>
             <div class="border-b px-3 py-2">
@@ -48,8 +52,8 @@
                     <slot />
                 </div>
             {:else}
-                <div class="p-5 py-16">
-                    <Empty type={name} {action}>
+                <div class="p-5" class:py-16={!small}>
+                    <Empty type={name} {action} {small}>
                         <slot name="add" />
                     </Empty>
                 </div>

@@ -3,11 +3,11 @@
     import Button from "$lib/components/ui/button/button.svelte";
     import * as DropdownMenu from "$lib/components/ui/dropdown-menu/index.js";
     import { EllipsisVertical, Loader2 } from "lucide-svelte";
-    import * as Card from "$lib/components/ui/card/index.js";
     import { createEventDispatcher } from "svelte";
     export let name: string | null = null,
         loading: boolean = false,
-        slim = false;
+        slim = false,
+        hideDropdown = false;
     const SLOTS = $$props.$$slots;
 
     const dispatch = createEventDispatcher();
@@ -23,14 +23,14 @@
         on:click={() => dispatch("click")}
     >
         <slot />
-        {#if SLOTS.dropdown}
+        {#if !hideDropdown && SLOTS.dropdown}
             <DropdownMenu.Root>
                 <DropdownMenu.Trigger asChild let:builder>
                     <Button
                         builders={[builder]}
                         size="icon"
                         variant="secondary"
-                        class="rounded-full"
+                        class="rounded-full aspect-square"
                         disabled={loading}
                     >
                         {#if loading}

@@ -19,7 +19,9 @@
     {:else}
         <span class="flex flex-row">
             <span>
-                {(price.amount / 10 ** currency.digits).toFixed(currency.digits)}
+                {(price.amount / 10 ** currency.digits).toFixed(
+                    currency.digits,
+                )}
                 {currency.currency}
             </span>
             {#if price.frequency}
@@ -32,9 +34,16 @@
     {/if}
 {/if}
 {#if showImage && price.country}
-    <img
-        class="h-4"
-        src={`https://flagcdn.com/${price.country.toLowerCase()}.svg`}
-        alt={`${price.country} flag`}
-    />
+    <div class="flex flex-row gap-1 items-center">
+        <div class="py-[0.15rem]">
+            <img
+                class="h-3"
+                src={`https://flagcdn.com/${price.country.toLowerCase()}.svg`}
+                alt={`${price.country} flag`}
+            />
+        </div>
+        <span>
+            {price.country}
+        </span>
+    </div>
 {/if}

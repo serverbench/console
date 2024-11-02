@@ -9,14 +9,14 @@ export type SkuType = 'item' | 'bundle'
 export default class Sku {
 
     id: string
-    category: StoreCategory
+    category: StoreCategory | null
     name: string
     type: SkuType
     prices: SkuPrice[]
     img: string | null
     perks: SkuPerkUsage[]
 
-    constructor(id: string, category: StoreCategory, name: string, type: SkuType, img: string | null, prices: SkuPrice[] = [], perks: SkuPerkUsage[] = []) {
+    constructor(id: string, category: StoreCategory | null, name: string, type: SkuType, img: string | null, prices: SkuPrice[] = [], perks: SkuPerkUsage[] = []) {
         this.id = id
         this.category = category
         this.name = name
@@ -26,7 +26,7 @@ export default class Sku {
         this.perks = perks
     }
 
-    public static fromObj(category: StoreCategory, obj: any) {
+    public static fromObj(category: StoreCategory | null, obj: any) {
         const item = new Sku(
             obj.id,
             category,
@@ -35,13 +35,15 @@ export default class Sku {
             obj.img
         )
         item.prices = obj.prices.map((p: any) => SkuPrice.fromObj(item, p))
-        item.perks = obj.perks.map((p: any) => SkuPerkUsage.fromObj(SkuPerk.fromObj(category.community, p.perk), item, p))
+        if (category) {
+            item.perks = obj.perks.map((p: any) => SkuPerkUsage.fromObj(SkuPerk.fromObj(category?.community ?? null, p.perk), item, p))
+        }
         return item
     }
 
     public async addPricing(amount: number, frequency: Frequency | null, country: string | null) {
         const user = await User.get()
-        const obj = await user!.post(`/community/${this.category.community.id}/store/category/${this.category.id}/sku/${this.id}/price`, {
+        const obj = await user!.post(`/community/${this.category!.community.id}/store/category/${this.category!.id}/sku/${this.id}/price`, {
             amount: String(amount),
             country,
             frequency
@@ -70,7 +72,30 @@ export default class Sku {
 
     public async remove() {
         const user = await User.get()
-        return user!.delete(`/community/${this.category.community.id}/store/category/${this.category.id}/sku/${this.id}`)
+        return user!.delete(`/community/${this.category!.community.id}/store/category/${this.category!.id}/sku/${this.id}`)
+    }
+
+    public async createPerk(name: string, amount: number | null = null) {
+        const user = await User.get()
+        const obj = await user!.post(`/community/${this.category!.community.id}/store/category/${this.category!.id}/sku/${this.id}/perk`, {
+            name,
+            amount: amount ? String(amount) : null
+        })
+        const perk = SkuPerk.fromObj(this.category!.community, obj.perk)
+        const perkUsage = SkuPerkUsage.fromObj(perk, this, obj)
+        this.perks = [perkUsage, ...this.perks]
+        return perkUsage
+    }
+
+    public async addPerk(perk: SkuPerk, amount: number | null = null) {
+        console.log(perk)
+        const user = await User.get()
+        const obj = await user!.post(`/community/${this.category!.community.id}/store/category/${this.category!.id}/sku/${this.id}/perk/${perk.id}`, {
+            amount: amount ? String(amount) : null
+        })
+        const perkUsage = SkuPerkUsage.fromObj(perk, this, obj)
+        this.perks = [perkUsage, ...this.perks]
+        return perkUsage
     }
 
 }

@@ -8,6 +8,7 @@
     import type StoreCategorySet from "$lib/sb/store/StoreCategorySet";
     import ProductBox from "./ProductBox.svelte";
     import type CountryCurrency from "$lib/sb/store/CountryCurrency";
+    import CategoryPolicyPicker from "./CategoryPolicyPicker.svelte";
 
     const dispatch = createEventDispatcher();
 
@@ -27,6 +28,7 @@
     <span class="grow">
         {category.name}
     </span>
+    <CategoryPolicyPicker bind:category />
     <CategorySetPicker bind:category bind:sets />
     <div slot="dropdown">
         <DropdownItem on:click={() => remove()} destructive>
@@ -34,7 +36,10 @@
             Delete
         </DropdownItem>
     </div>
-    <div slot="extra" class="grid grid-cols-5 gap-3">
+    <div
+        slot="extra"
+        class="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-3"
+    >
         {#each category.skus as sku}
             <ProductBox bind:category bind:sku {currencies} />
         {/each}

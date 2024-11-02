@@ -31,12 +31,12 @@ export default class SkuPrice {
 
     async delete() {
         const user = await User.get()
-        await user!.delete(`/community/${this.sku.category.community.id}/store/category/${this.sku.category.id}/sku/${this.sku.id}/price/${this.id}`)
+        await user!.delete(`/community/${this.sku.category!.community.id}/store/category/${this.sku.category!.id}/sku/${this.sku.id}/price/${this.id}`)
     }
 
     async update(amount: number, frequency: Frequency | null, country: string | null) {
         const user = await User.get()
-        const obj = await user!.patch(`/community/${this.sku.category.community.id}/store/category/${this.sku.category.id}/sku/${this.sku.id}/price/${this.id}`, {
+        const obj = await user!.patch(`/community/${this.sku.category!.community.id}/store/category/${this.sku.category!.id}/sku/${this.sku.id}/price/${this.id}`, {
             amount: String(amount),
             frequency,
             country

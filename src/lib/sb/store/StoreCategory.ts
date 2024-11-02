@@ -3,6 +3,8 @@ import User from "../User";
 import Sku from "./sku/Sku";
 import StoreCategorySet from "./StoreCategorySet";
 
+export type StoreCategoryPolicy = 'tiered' | 'exclusive'
+
 export default class StoreCategory {
 
     community: Community
@@ -10,13 +12,19 @@ export default class StoreCategory {
     name: string
     sets: StoreCategorySet[] = []
     skus: Sku[] = []
+    policy: StoreCategoryPolicy | null
+    visible:boolean
+    paused:boolean
 
-    constructor(community: Community, id: string, name: string, sets: StoreCategorySet[] = [], skus: Sku[] = []) {
+    constructor(community: Community, id: string, name: string, policy: StoreCategoryPolicy | null, visible:boolean, paused:boolean, sets: StoreCategorySet[] = [], skus: Sku[] = []) {
         this.community = community
         this.id = id
         this.name = name
         this.sets = sets
         this.skus = skus
+        this.policy = policy
+        this.visible = visible
+        this.paused = paused
     }
 
     public static fromObj(community: Community, obj: any) {
@@ -24,6 +32,9 @@ export default class StoreCategory {
             community,
             obj.id,
             obj.name,
+            obj.policy,
+            obj.visible,
+            obj.paused,
             obj.sets.map((s: any) => StoreCategorySet.fromObj(community, s)),
         )
         category.skus = obj.skus.map((s: any) => Sku.fromObj(category, s))
@@ -45,10 +56,13 @@ export default class StoreCategory {
         }))
     }
 
-    public async update(name: string) {
+    public async update(name: string, policy: StoreCategoryPolicy | null, visible:boolean, paused:boolean) {
         const user = await User.get()
         return StoreCategory.fromObj(this.community, await user!.patch(`/community/${this.community.id}/store/category/${this.id}`, {
-            name
+            name,
+            policy,
+            visible: visible ? 'true' : 'false',
+            paused: paused ? 'true' : 'false',
         }))
     }
 

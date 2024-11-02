@@ -1,7 +1,7 @@
 <script lang="ts">
     import Button from "$lib/components/ui/button/button.svelte";
     import StoreCategory from "$lib/sb/store/StoreCategory";
-    import { Check, Plus } from "lucide-svelte";
+    import { Check, Plus, Tag } from "lucide-svelte";
     import * as DropdownMenu from "$lib/components/ui/dropdown-menu/index.js";
     import StoreCategorySet from "$lib/sb/store/StoreCategorySet";
     import * as Dialog from "$lib/components/ui/dialog/index.js";
@@ -29,12 +29,12 @@
 
     async function toggleSet(set: StoreCategorySet) {
         loading = true;
-        const added = category.sets.find((s) => s.id == set.id)
+        const added = category.sets.find((s) => s.id == set.id);
         try {
             if (added) {
-                category = await set.unuseSet(category)
+                category = await set.unuseSet(category);
             } else {
-                category = await set.useSet(category)
+                category = await set.useSet(category);
             }
             category = category;
             sets = await StoreCategorySet.list();
@@ -68,6 +68,7 @@
 <DropdownMenu.Root>
     <DropdownMenu.Trigger asChild let:builder>
         <Button class="rounded-full" builders={[builder]} variant="outline">
+            <Tag />
             {category.sets.length} set{category.sets.length == 1 ? "" : "s"}
         </Button>
     </DropdownMenu.Trigger>

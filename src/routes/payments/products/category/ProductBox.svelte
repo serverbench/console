@@ -38,7 +38,7 @@
                     price! * 10 ** currencies.find((c) => !c.country)!.digits,
                     frequency as "month" | "year" | null,
                 );
-                category = result.category;
+                category = result.category!;
             } else if (type == "bundle") {
                 throw new Error("not implemented");
             } else {
@@ -120,11 +120,16 @@
                     {sku.name}
                 </p>
                 <div class="flex flex-row gap-2">
-                    {#each sku.prices as price}
+                    {#each sku.prices.filter((p) => !p.country) as price}
                         <Badge class="flex flex-row gap-2 items-center">
                             <Price {price} {currencies} />
                         </Badge>
                     {/each}
+                    {#if sku.prices.filter((p) => p.country).length > 0}
+                        <Badge variant="outline">
+                            +{sku.prices.filter((p) => p.country).length}
+                        </Badge>
+                    {/if}
                 </div>
             </div>
         {/if}

@@ -120,6 +120,9 @@
             </NavLink>
         </NavSection>
         <NavSection icon={Gavel} name="moderation">
+            <NavLink href="/moderation/staff">
+                Staff
+            </NavLink>
             <NavLink href="/moderation/chat">
                 Chat
             </NavLink>
@@ -131,9 +134,6 @@
             </NavLink>
             <NavLink href="/moderation/appeals">
                 Appeals
-            </NavLink>
-            <NavLink href="/moderation/staff">
-                Staff
             </NavLink>
         </NavSection>
         <NavSection icon={Landmark} name="payments">

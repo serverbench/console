@@ -8,7 +8,7 @@
 
     const dispatch = createEventDispatcher();
 
-    let roles: Role[] = [];
+    export let roles: Role[] = [];
     let loading = true;
     let creating = false;
     let roleName: string | null = null;
@@ -31,7 +31,7 @@
     }
 </script>
 
-<Section list {loading} used={roles.length} name="role" limit={3}>
+<Section list {loading} used={roles.length} name="roles" limit={3}>
     <div class="flex flex-row gap-3 items-center" slot="add">
         <div class="flex flex-col gap-1 grow">
             <Input

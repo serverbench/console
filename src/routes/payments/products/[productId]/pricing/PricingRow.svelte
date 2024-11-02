@@ -1,23 +1,25 @@
 <script lang="ts">
     import Item from "$lib/components/sb/section/list/Item.svelte";
-    import Price from "../category/Price.svelte";
     import CountryCurrency from "$lib/sb/store/CountryCurrency";
     import Badge from "$lib/components/ui/badge/badge.svelte";
     import DropdownItem from "$lib/components/sb/section/list/DropdownItem.svelte";
     import { Repeat1, Repeat, Trash2, Pencil } from "lucide-svelte/icons";
     import type SkuPrice from "$lib/sb/store/sku/SkuPrice";
-    import { createEventDispatcher } from "svelte";
+    import { createEventDispatcher, onMount } from "svelte";
     import * as Dialog from "$lib/components/ui/dialog/index.js";
     import Button from "$lib/components/ui/button/button.svelte";
     import Input from "$lib/components/ui/input/input.svelte";
     import FrequencyPicker from "$lib/components/sb/picker/FrequencyPicker.svelte";
     import CountryPicker from "$lib/components/sb/picker/CountryPicker.svelte";
     import type { Frequency } from "$lib/sb/store/sku/SkuPrice";
+    import Price from "../../category/Price.svelte";
 
     const dispatch = createEventDispatcher();
 
     export let price: SkuPrice;
-    export let currencies: CountryCurrency[];
+    export let currencies: CountryCurrency[] ;
+
+
     $: currency =
         currencies.find((c) => c.country == price.country) ??
         currencies.find((c) => !c.country);
@@ -67,7 +69,7 @@
             >
         </Dialog.Header>
         <div class="grid gap-4 py-4">
-            <CountryPicker disabled={loading} bind:value={country} />
+            <CountryPicker optional disabled={loading} bind:value={country} />
             <FrequencyPicker disabled={loading} bind:value={frequency} />
             <Input
                 disabled={loading}
@@ -90,7 +92,7 @@
     <div class="grow">
         <Price showImage={false} {price} {currencies} />
     </div>
-    <div class="w-1/4 grid grid-cols-2 text-center">
+    <div class="w-1/2 lg:w-1/3 xl:w-1/4 grid grid-cols-2 text-center">
         <div>
             <Badge>
                 <div class="flex flex-row gap-2">
@@ -105,7 +107,7 @@
             </Badge>
         </div>
         <div>
-            <Badge>
+            <Badge variant="outline">
                 {#if price.country}
                     <Price
                         showImage={true}
