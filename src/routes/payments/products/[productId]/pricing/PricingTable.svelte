@@ -9,6 +9,7 @@
     import Input from "$lib/components/ui/input/input.svelte";
     import type { Frequency } from "$lib/sb/store/sku/SkuPrice";
     import { onMount } from "svelte";
+    import VirtualPricingRow from "./VirtualPricingRow.svelte";
 
     export let product: Sku | null = null;
     let currencies: CountryCurrency[] = [];
@@ -52,7 +53,11 @@
     {loading}
 >
     <div class="flex flex-col gap-2" slot="add">
-        <CountryPicker optional={true} disabled={loading} bind:value={country} />
+        <CountryPicker
+            optional={true}
+            disabled={loading}
+            bind:value={country}
+        />
         <FrequencyPicker disabled={loading} bind:value={frequency} />
         <Input disabled={loading} bind:value={amount} type="number" min={0} />
         <Button on:click={() => addPrice()} disabled={loading}>
@@ -69,4 +74,17 @@
             {price}
         />
     {/each}
+    {#if product && product.prices.length > 0}
+        {#each currencies as currency}
+            {#each product.prices.filter((p) => !p.country) as fallbackPrice}
+                {#if currency.country && !product.prices.find((p) => p.country == currency.country && p.frequency == fallbackPrice.frequency)}
+                    <VirtualPricingRow
+                        origin={fallbackPrice}
+                        country={currency.country}
+                        {currencies}
+                    />
+                {/if}
+            {/each}
+        {/each}
+    {/if}
 </Section>

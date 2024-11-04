@@ -29,6 +29,15 @@ export default class SkuPrice {
         )
     }
 
+    public async checkoutPreview() {
+        const user = await User.get()
+        const obj = await user!.post(`/community/${this.sku.category!.community.id}/store/checkout`, {
+            prices: [this.id],
+            country: this.country
+        })
+        return obj
+    }
+
     async delete() {
         const user = await User.get()
         await user!.delete(`/community/${this.sku.category!.community.id}/store/category/${this.sku.category!.id}/sku/${this.sku.id}/price/${this.id}`)

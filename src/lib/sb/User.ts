@@ -11,6 +11,10 @@ export default class User {
     public static onLogin?: () => Promise<void>
     public static onLogout?: () => void
 
+    public getAccessToken() {
+        return this.accessToken
+    }
+
     private constructor(accessToken: string, refreshToken: string) {
         this.accessToken = accessToken
         this.refreshToken = refreshToken

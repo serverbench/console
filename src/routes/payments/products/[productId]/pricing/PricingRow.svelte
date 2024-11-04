@@ -3,7 +3,13 @@
     import CountryCurrency from "$lib/sb/store/CountryCurrency";
     import Badge from "$lib/components/ui/badge/badge.svelte";
     import DropdownItem from "$lib/components/sb/section/list/DropdownItem.svelte";
-    import { Repeat1, Repeat, Trash2, Pencil } from "lucide-svelte/icons";
+    import {
+        Repeat1,
+        Repeat,
+        Trash2,
+        Pencil,
+        ShoppingCart,
+    } from "lucide-svelte/icons";
     import type SkuPrice from "$lib/sb/store/sku/SkuPrice";
     import { createEventDispatcher, onMount } from "svelte";
     import * as Dialog from "$lib/components/ui/dialog/index.js";
@@ -13,12 +19,14 @@
     import CountryPicker from "$lib/components/sb/picker/CountryPicker.svelte";
     import type { Frequency } from "$lib/sb/store/sku/SkuPrice";
     import Price from "../../category/Price.svelte";
+    import * as AlertDialog from "$lib/components/ui/alert-dialog";
+    import CheckoutPreview from "./CheckoutPreview.svelte";
 
     const dispatch = createEventDispatcher();
 
+    export let virtual = false;
     export let price: SkuPrice;
-    export let currencies: CountryCurrency[] ;
-
+    export let currencies: CountryCurrency[];
 
     $: currency =
         currencies.find((c) => c.country == price.country) ??
@@ -43,11 +51,20 @@
     async function updatePricing() {
         loading = true;
         try {
-            price = await price.update(
-                amount! * 10 ** currency!.digits,
-                frequency as Frequency | null,
-                country,
-            );
+            if (virtual) {
+                price = await price.sku.addPricing(
+                    amount! * 10 ** currency!.digits,
+                    frequency as Frequency | null,
+                    country,
+                );
+                virtual = false;
+            } else {
+                price = await price.update(
+                    amount! * 10 ** currency!.digits,
+                    frequency as Frequency | null,
+                    country,
+                );
+            }
             editing = false;
         } catch (error) {}
         loading = false;
@@ -59,7 +76,28 @@
         country = price.country;
         frequency = price.frequency;
     }
+
+    let virtualHeadsup = false;
+    let checkingOut = false;
 </script>
+
+<AlertDialog.Root bind:open={virtualHeadsup}>
+    <AlertDialog.Content>
+        <AlertDialog.Header>
+            <AlertDialog.Title>
+                This pricing cannot be deleted
+            </AlertDialog.Title>
+            <AlertDialog.Description>
+                This pricing cannot be deleted, because it represents the global
+                pricing in an specific country. You can edit it instead, or you
+                can delete the country currency from the currency settings
+            </AlertDialog.Description>
+        </AlertDialog.Header>
+        <AlertDialog.Footer>
+            <AlertDialog.Action>Continue</AlertDialog.Action>
+        </AlertDialog.Footer>
+    </AlertDialog.Content>
+</AlertDialog.Root>
 
 <Dialog.Root bind:open={editing}>
     <Dialog.Content class="sm:max-w-[425px]">
@@ -88,6 +126,7 @@
     </Dialog.Content>
 </Dialog.Root>
 
+<CheckoutPreview {price} bind:open={checkingOut} />
 <Item>
     <div class="grow">
         <Price showImage={false} {price} {currencies} />
@@ -122,11 +161,19 @@
         </div>
     </div>
     <div slot="dropdown">
+        <DropdownItem on:click={() => (checkingOut = true)}>
+            <ShoppingCart />
+            Checkout
+        </DropdownItem>
         <DropdownItem on:click={() => openEdit()}>
             <Pencil />
             Edit
         </DropdownItem>
-        <DropdownItem on:click={() => deletePricing()} destructive>
+        <DropdownItem
+            on:click={() =>
+                virtual ? (virtualHeadsup = true) : deletePricing()}
+            destructive
+        >
             <Trash2 />
             Delete
         </DropdownItem>

@@ -2,7 +2,8 @@
     import * as Card from "$lib/components/ui/card";
     import Skeleton from "$lib/components/ui/skeleton/skeleton.svelte";
     import { Loader2 } from "lucide-svelte";
-    export let amount: number | null = null;
+    export let amount: number | null = null,
+        currency: string | null = null;
 </script>
 
 <Card.Root class="p-5 relative">
@@ -12,6 +13,12 @@
     <div class="w-full py-5">
         {#if amount == null}
             <Skeleton class="w-full h-24" />
+        {:else}
+            <div class="h-24 flex flex-col justify-center text-5xl">
+                <span>
+                    {amount} {currency}
+                </span>
+            </div>
         {/if}
     </div>
     <slot name="note" class="absolute bottom-0 p-5" />

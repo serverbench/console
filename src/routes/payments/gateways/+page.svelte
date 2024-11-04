@@ -1,4 +1,4 @@
-<script>
+<script lang="ts">
     import MollieDarkLogo from "./logo/mollie/dark.svg";
     import MollieLightLogo from "./logo/mollie/light.svg";
     import PayPalDarkLogo from "./logo/paypal/dark.png";
@@ -17,6 +17,8 @@
     import Button from "$lib/components/ui/button/button.svelte";
     import Section from "$lib/components/sb/section/section.svelte";
     import SimplePicker from "$lib/components/sb/picker/SimplePicker.svelte";
+    import { onMount } from "svelte";
+    import Wallet from "$lib/sb/Wallet";
 
     const gateways = [
         {
@@ -38,18 +40,38 @@
     ];
 
     let loading = false;
+    let wallets: Wallet[] = [];
+    let selectedWallet: Wallet | null = null;
 
     const gatewayNames = gateways.map((g) => g.name);
+
+    onMount(async () => {
+        loading = true;
+        wallets = await Wallet.list();
+        if (wallets.length <= 0) {
+            wallets = [await Wallet.create("EUR")];
+        }
+        selectedWallet = wallets[0];
+        loading = false;
+    });
 </script>
 
+{#key wallets}
+    <SimplePicker
+        disabled={loading}
+        bind:value={selectedWallet}
+        name="Currency"
+        items={wallets.map((w) => [w, w.currency])}
+    />
+{/key}
 <div class="grid grid-cols-1 lg:grid-cols-3 gap-5">
-    <AmountBox>
+    <AmountBox amount={selectedWallet?.withdrawable} currency={selectedWallet?.currency}>
         Withdrawable
         <div slot="note" class="text-xs leading-6">
             Withdrawable using the gateways below
         </div>
     </AmountBox>
-    <AmountBox>
+    <AmountBox amount={selectedWallet?.settling} currency={selectedWallet?.currency}>
         Settling Balance
         <div slot="note">
             <Tooltip.Root>
@@ -68,7 +90,7 @@
             </Tooltip.Root>
         </div>
     </AmountBox>
-    <AmountBox>
+    <AmountBox amount={selectedWallet?.credit} currency={selectedWallet?.currency}>
         Internal Credit
         <span slot="note" class="text-xs">
             <Badge class="scale-90" variant="secondary">1% APR</Badge> on your withdrawable
