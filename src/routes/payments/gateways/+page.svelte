@@ -61,17 +61,17 @@
         disabled={loading}
         bind:value={selectedWallet}
         name="Currency"
-        items={wallets.map((w) => [w, w.currency])}
+        items={wallets.map((w) => [w, w.currency.code])}
     />
 {/key}
 <div class="grid grid-cols-1 lg:grid-cols-3 gap-5">
-    <AmountBox amount={selectedWallet?.withdrawable} currency={selectedWallet?.currency}>
+    <AmountBox amount={selectedWallet?.withdrawable} wallet={selectedWallet}>
         Withdrawable
         <div slot="note" class="text-xs leading-6">
             Withdrawable using the gateways below
         </div>
     </AmountBox>
-    <AmountBox amount={selectedWallet?.settling} currency={selectedWallet?.currency}>
+    <AmountBox amount={selectedWallet?.settling} wallet={selectedWallet}>
         Settling Balance
         <div slot="note">
             <Tooltip.Root>
@@ -90,7 +90,7 @@
             </Tooltip.Root>
         </div>
     </AmountBox>
-    <AmountBox amount={selectedWallet?.credit} currency={selectedWallet?.currency}>
+    <AmountBox amount={selectedWallet?.credit} wallet={selectedWallet}>
         Internal Credit
         <span slot="note" class="text-xs">
             <Badge class="scale-90" variant="secondary">1% APR</Badge> on your withdrawable

@@ -147,7 +147,7 @@
                     <Button
                         size="icon"
                         on:click={() => (activeSidebar = !activeSidebar)}
-                        class=" aspect-square rounded-full"
+                        class="aspect-square rounded-full md:hidden block"
                         variant="ghost"
                     >
                         <Menu />

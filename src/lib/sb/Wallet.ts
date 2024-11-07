@@ -1,14 +1,15 @@
+import type { Currency } from "lucide-svelte"
 import User from "./User"
 
 export default class Wallet {
 
     public readonly id: string
-    public readonly currency: string
+    public readonly currency: Currency
     public readonly withdrawable: number
     public readonly settling: number
     public readonly credit: number
 
-    constructor(id: string, currency: string, withdrawable: number, settling: number, credit: number) {
+    constructor(id: string, currency: Currency, withdrawable: number, settling: number, credit: number) {
         this.id = id
         this.currency = currency
         this.withdrawable = withdrawable
@@ -27,7 +28,7 @@ export default class Wallet {
 
     public static async create(currency: string) {
         const user = await User.get()!
-        return Wallet.fromObject(await user!.post(`/user/wallet/${currency}`))
+        return Wallet.fromObject(await user!.get(`/user/wallet/${currency}`))
     }
 
 }

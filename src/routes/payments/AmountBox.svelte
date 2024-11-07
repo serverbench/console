@@ -1,9 +1,9 @@
 <script lang="ts">
     import * as Card from "$lib/components/ui/card";
     import Skeleton from "$lib/components/ui/skeleton/skeleton.svelte";
-    import { Loader2 } from "lucide-svelte";
-    export let amount: number | null = null,
-        currency: string | null = null;
+    import type Wallet from "$lib/sb/Wallet";
+    export let amount: number | null = null;
+    export let wallet: Wallet | null = null;
 </script>
 
 <Card.Root class="p-5 relative">
@@ -16,7 +16,8 @@
         {:else}
             <div class="h-24 flex flex-col justify-center text-5xl">
                 <span>
-                    {amount} {currency}
+                    {amount / 10 ** (wallet?.currency.digits ?? 0)}
+                    {wallet?.currency.code}
                 </span>
             </div>
         {/if}
