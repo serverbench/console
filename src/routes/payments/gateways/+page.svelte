@@ -8,17 +8,18 @@
     import List from "$lib/components/sb/section/list/list.svelte";
     import Logo from "$lib/components/sb/logo.svelte";
     import Badge from "$lib/components/ui/badge/badge.svelte";
-    import AmountBox from "../AmountBox.svelte";
+    import AmountBox from "./AmountBox.svelte";
     import FxemojiBanknoteeuro from "~icons/fxemoji/banknoteeuro";
     import FxemojiLightningmood from "~icons/fxemoji/lightningmood";
     import * as Accordion from "$lib/components/ui/accordion";
     import * as ToggleGroup from "$lib/components/ui/toggle-group";
-    import { Coins, Loader2, Pause, Zap } from "lucide-svelte";
+    import { Coins, Loader2, Pause, Zap, RefreshCw } from "lucide-svelte";
     import Button from "$lib/components/ui/button/button.svelte";
     import Section from "$lib/components/sb/section/section.svelte";
     import SimplePicker from "$lib/components/sb/picker/SimplePicker.svelte";
     import { onMount } from "svelte";
-    import Wallet from "$lib/sb/Wallet";
+    import Wallet from "$lib/sb/wallet/Wallet";
+    import type WalletTransaction from "$lib/sb/wallet/WalletTransaction";
 
     const gateways = [
         {
@@ -42,28 +43,51 @@
     let loading = false;
     let wallets: Wallet[] = [];
     let selectedWallet: Wallet | null = null;
+    let loadingTransactions = false;
+    let transactions: WalletTransaction[] = [];
 
-    const gatewayNames = gateways.map((g) => g.name);
-
-    onMount(async () => {
+    async function reloadSelected() {
         loading = true;
+        transactions = [];
         wallets = await Wallet.list();
         if (wallets.length <= 0) {
             wallets = [await Wallet.create("EUR")];
         }
         selectedWallet = wallets[0];
+        loadingTransactions = true;
+        transactions = await selectedWallet!.getTransactions(0);
+        loadingTransactions = false;
         loading = false;
+    }
+
+    const gatewayNames = gateways.map((g) => g.name);
+
+    onMount(async () => {
+        reloadSelected();
     });
 </script>
 
-{#key wallets}
-    <SimplePicker
+<div class="flex flex-row gap-2">
+    {#key wallets}
+        <SimplePicker
+            disabled={loading}
+            bind:value={selectedWallet}
+            name="Currency"
+            items={wallets.map((w) => [w, w.currency.code])}
+        />
+    {/key}
+    <Button
+        variant="outline"
+        on:click={() => reloadSelected()}
         disabled={loading}
-        bind:value={selectedWallet}
-        name="Currency"
-        items={wallets.map((w) => [w, w.currency.code])}
-    />
-{/key}
+    >
+        {#if loading}
+            <RefreshCw class="animate-spin" />
+        {:else}
+            <RefreshCw />
+        {/if}
+    </Button>
+</div>
 <div class="grid grid-cols-1 lg:grid-cols-3 gap-5">
     <AmountBox amount={selectedWallet?.withdrawable} wallet={selectedWallet}>
         Withdrawable
@@ -196,6 +220,19 @@
         <Button>Withdraw</Button>
     </div>
     ...
+</Section>
+<Section list {loading} name="transactions" used={1}>
+    {#each transactions as transaction}
+        <Item hideDropdown>
+            {selectedWallet?.currency.code}
+            {transaction.net / 10 ** selectedWallet?.currency.digits}
+            <div class="ml-auto">
+                <Badge variant="outline">
+                    {transaction.created}
+                </Badge>
+            </div>
+        </Item>
+    {/each}
 </Section>
 
 <div class="opacity-50 hover:opacity-100 transition-opacity text-xs leading-6">

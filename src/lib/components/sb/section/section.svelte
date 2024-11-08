@@ -25,11 +25,13 @@
     {/if}
     {#if !loading && used != null && used > 0 && list}
         <List>
-            <div class="border-b px-3 py-2">
-                <ActionBar {used} {limit} {action}>
-                    <slot name="add" />
-                </ActionBar>
-            </div>
+            {#if action || limit}
+                <div class="border-b px-3 py-2">
+                    <ActionBar {used} {limit} {action}>
+                        <slot name="add" />
+                    </ActionBar>
+                </div>
+            {/if}
             <slot />
         </List>
     {:else}

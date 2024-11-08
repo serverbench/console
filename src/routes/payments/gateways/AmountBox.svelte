@@ -1,7 +1,7 @@
 <script lang="ts">
     import * as Card from "$lib/components/ui/card";
     import Skeleton from "$lib/components/ui/skeleton/skeleton.svelte";
-    import type Wallet from "$lib/sb/Wallet";
+    import type Wallet from "$lib/sb/wallet/Wallet";
     export let amount: number | null = null;
     export let wallet: Wallet | null = null;
 </script>

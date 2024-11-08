@@ -1,5 +1,6 @@
 import type { Currency } from "lucide-svelte"
-import User from "./User"
+import User from "../User"
+import WalletTransaction from "./WalletTransaction"
 
 export default class Wallet {
 
@@ -29,6 +30,13 @@ export default class Wallet {
     public static async create(currency: string) {
         const user = await User.get()!
         return Wallet.fromObject(await user!.get(`/user/wallet/${currency}`))
+    }
+
+    public async getTransactions(page: number) {
+        const user = await User.get()!
+        return (await user!.post(`/user/wallet/${this.currency.code}/transaction`, {
+            page: page
+        })).map((t: any) => WalletTransaction.fromObject(this, t))
     }
 
 }
