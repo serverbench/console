@@ -21,7 +21,7 @@
                     Create
                 </Button>
             </Popover.Trigger>
-            <Popover.Content class="w-80">
+            <Popover.Content class="w-96">
                 <slot />
             </Popover.Content>
         </Popover.Root>

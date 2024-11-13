@@ -7,13 +7,14 @@
     export let name: string | null = null,
         loading: boolean = false,
         slim = false,
-        hideDropdown = false;
+        hideDropdown = false,
+        hideBottom = false;
     const SLOTS = $$props.$$slots;
 
     const dispatch = createEventDispatcher();
 </script>
 
-<Table.Row class="flex flex-col gap-4">
+<Table.Row class="flex flex-col gap-4 {hideBottom ? 'border-b-0' : ''}">
     <button
         class:p-3={slim}
         class:px-5={!slim}
