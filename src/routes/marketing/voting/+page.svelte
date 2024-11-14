@@ -10,10 +10,14 @@
     import Item from "$lib/components/sb/section/list/Item.svelte";
     import Badge from "$lib/components/ui/badge/badge.svelte";
     import { ExternalLink } from "lucide-svelte";
+    import MoveableDivider from "./MoveableDivider.svelte";
 
     let siteSetups: SiteSetup[] = [];
     let votingSites: VotingSite[] = [];
     let loading = false;
+
+    let fallback = 6;
+    let secondary = 8;
 
     onMount(async () => {
         loading = true;
@@ -77,7 +81,7 @@
     }
 </script>
 
-<Section list name="Voting Sites" used={siteSetups.length}>
+<Section {loading} list name="Voting Sites" used={siteSetups.length}>
     <div slot="add" class="flex flex-col gap-3">
         {#key votingSites}
             <SimplePicker
@@ -107,37 +111,40 @@
         {/if}
     </div>
     {#each siteSetups as setup, i}
-        <Item hideBottom={i == 5 || i == 7}>
+        <Item hideBottom={i + 1 == secondary || i + 1 == fallback}>
             <Badge variant="secondary"
                 >{Math.trunc((1 / siteSetups.length) * 10000) / 100}%</Badge
             >
             <p class="grow">
                 {setup.site.domain}
             </p>
-            <Button target="_blank" href={setup.url} size="icon" variant="outline" class="aspect-square rounded-full">
+            <Button
+                target="_blank"
+                href={setup.url}
+                size="icon"
+                variant="outline"
+                class="aspect-square rounded-full"
+            >
                 <ExternalLink />
             </Button>
             <div slot="dropdown"></div>
         </Item>
-        {#if i + 1 == 6}
-            <div class="flex flex-row gap-3 items-center">
-                <hr class="border-primary w-1/12" />
-                <span class="text-xs font-light text-primary whitespace-nowrap">
-                    fallback sites
-                </span>
-                <hr class="border-primary w-full" />
-            </div>
+        {#if i + 1 == fallback}
+            <MoveableDivider
+                bind:position={fallback}
+                max={secondary}
+            >
+                fallback sites
+            </MoveableDivider>
         {/if}
-        {#if i + 1 == 8}
-            <div class="flex flex-row gap-3 items-center">
-                <hr class="border-primary w-1/12" />
-                <span
-                    class="text-xs font-light text-primary block whitespace-nowrap"
-                >
-                    secondary sites
-                </span>
-                <hr class="border-primary w-full" />
-            </div>
+        {#if i + 1 == secondary}
+            <MoveableDivider
+                bind:position={secondary}
+                min={fallback}
+                max={siteSetups.length}
+            >
+                secondary sites
+            </MoveableDivider>
         {/if}
     {/each}
 </Section>
