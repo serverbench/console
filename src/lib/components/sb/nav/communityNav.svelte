@@ -101,8 +101,8 @@
             </NavLink>
         </NavSection>
         <NavSection icon={Megaphone} name="marketing">
-            <NavLink href="/marketing/voting">
-                Voting
+            <NavLink href="/marketing/listings">
+                Listings
             </NavLink>
             <NavLink href="/marketing/creators">
                 Creators

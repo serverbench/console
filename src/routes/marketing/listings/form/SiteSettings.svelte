@@ -23,7 +23,7 @@
     <Input bind:value={domain} placeholder="Voting Site Domain" />
 {/if}
 <List>
-    {#each ["Votifier", "NuVotifier"] as protocol}
+    {#each ["NuVotifier"] as protocol}
         <Item>
             <div class="w-full flex flex-row gap-3 items-center">
                 <Checkbox disabled checked={checkmarks[protocol]} />

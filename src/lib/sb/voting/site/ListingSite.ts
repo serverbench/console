@@ -1,12 +1,12 @@
-import Community from "../Community"
-import User from "../User"
-import SiteSetup from "./SiteSetup"
-import SiteTimings from "./SiteTimings"
+import Community from "../../Community"
+import User from "../../User"
+import ListingSiteSetup from "./ListingSiteSetup"
+import ListingSiteTimings from "./ListingSiteTimings"
 
-export type VotingProtocol = 'NuVotifier' | 'Votifier'
+export type VotingProtocol = 'NuVotifier'
 
 
-export default class VotingSite extends SiteTimings {
+export default class ListingSite extends ListingSiteTimings {
 
     id: string
     domain: string
@@ -23,8 +23,8 @@ export default class VotingSite extends SiteTimings {
         this.verified = verified
     }
 
-    public static fromObject(user: User | null, obj: any): VotingSite {
-        return new VotingSite(
+    public static fromObject(user: User | null, obj: any): ListingSite {
+        return new ListingSite(
             obj.id,
             obj.cooldown,
             obj.reset,
@@ -38,7 +38,7 @@ export default class VotingSite extends SiteTimings {
 
     public static async create(domain: string, protocols: Record<VotingProtocol, string | null>, tz: string | null = null, reset: number | null = null, cooldown: number | null = null) {
         const user = await User.get()
-        return VotingSite.fromObject(user!, await user!.post(`/user/voting/site`, {
+        return ListingSite.fromObject(user!, await user!.post(`/user/listing/site`, {
             domain,
             tz,
             reset,
@@ -54,7 +54,7 @@ export default class VotingSite extends SiteTimings {
     }
 
     public async update(domain: string, protocols: Record<VotingProtocol, string | null>, tz: string | null = null, reset: number | null = null, cooldown: number | null = null) {
-        const updated = VotingSite.fromObject(this.owner, await this.owner.patch(`/user/voting/site/${this.id}`, {
+        const updated = ListingSite.fromObject(this.owner, await this.owner.patch(`/user/listing/site/${this.id}`, {
             domain,
             tz,
             reset,
@@ -69,18 +69,18 @@ export default class VotingSite extends SiteTimings {
 
     public static async listOwned() {
         const user = await User.get();
-        return (await user!.get('/user/voting/site')).map((s: any) => VotingSite.fromObject(user!, s))
+        return (await user!.get('/user/listing/site')).map((s: any) => ListingSite.fromObject(user!, s))
     }
 
     public static async listVerified() {
         const user = await User.get();
-        return (await user!.get('/public/voting/site')).map((s: any) => VotingSite.fromObject(null, s))
+        return (await user!.get('/public/listing/site')).map((s: any) => ListingSite.fromObject(null, s))
     }
 
     public async use(url: string, cooldown: number | null, reset: number | null, tz: string | null) {
         const user = await User.get()
         const community = await Community.get()
-        return SiteSetup.fromObject(community!, await user!.post(`/community/${community!.id}/voting/site/${this.id}`, {
+        return ListingSiteSetup.fromObject(community!, await user!.post(`/community/${community!.id}/listing/site/${this.id}`, {
             url,
             cooldown,
             reset,
@@ -89,7 +89,7 @@ export default class VotingSite extends SiteTimings {
     }
 
     public async delete() {
-        await this.owner.delete(`/user/voting/site/${this.id}`)
+        await this.owner.delete(`/user/listing/site/${this.id}`)
     }
 
 }

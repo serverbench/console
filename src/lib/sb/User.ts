@@ -127,7 +127,7 @@ export default class User {
         })
         if (req.status == 204) return
         if (req.status == 200) return req.json()
-        throw new Error()
+        throw new Error(req.status.toString())
     }
 
     public get(path: string) {

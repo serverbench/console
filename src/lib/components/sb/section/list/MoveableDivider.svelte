@@ -4,7 +4,7 @@
 
     export let position: number,
         max: number,
-        min: number = 1;
+        min: number = 0;
 </script>
 
 <div class="flex flex-row items-center">
@@ -18,7 +18,7 @@
             disabled={position == min}
             size="icon"
             class="w-6 h-6 rounded-l"
-            on:click={() => position--}
+            on:click={() => (position = position - 1)}
         >
             <ChevronUp />
         </Button>
@@ -26,7 +26,7 @@
             size="icon"
             class="w-6 h-6 rounded-r"
             disabled={position == max}
-            on:click={() => position++}
+            on:click={() => (position = position + 1)}
         >
             <ChevronDown />
         </Button>

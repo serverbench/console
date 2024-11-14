@@ -1,16 +1,16 @@
-import Community from "../Community";
-import User from "../User";
-import SiteTimings from "./SiteTimings";
-import type VotingSite from "./VotingSite";
+import Community from "../../Community";
+import User from "../../User";
+import type ListingSite from "./ListingSite";
+import ListingSiteTimings from "./ListingSiteTimings";
 
-export default class SiteSetup extends SiteTimings {
+export default class ListingSiteSetup extends ListingSiteTimings {
 
     community: Community
-    site: VotingSite
+    site: ListingSite
     url: string
     featured: boolean | null
 
-    constructor(cooldown: number | null, reset: number | null, tz: string | null, community: Community, site: VotingSite, url: string, featured: boolean | null) {
+    constructor(cooldown: number | null, reset: number | null, tz: string | null, community: Community, site: ListingSite, url: string, featured: boolean | null) {
         super(cooldown, reset, tz)
         this.community = community
         this.site = site
@@ -19,7 +19,7 @@ export default class SiteSetup extends SiteTimings {
     }
 
     public static fromObject(community: Community, obj: any) {
-        return new SiteSetup(
+        return new ListingSiteSetup(
             obj.cooldown,
             obj.reset,
             obj.tz,
@@ -33,12 +33,12 @@ export default class SiteSetup extends SiteTimings {
     public static async list() {
         const user = await User.get()
         const community = await Community.get();
-        return (await user!.get(`/community/${community!.id}/voting/site`)).map((s: any) => SiteSetup.fromObject(community!, s))
+        return (await user!.get(`/community/${community!.id}/listing/site`)).map((s: any) => ListingSiteSetup.fromObject(community!, s))
     }
 
     async update(url: string, cooldown: number | null, reset: number | null, tz: string | null = null) {
         const user = await User.get()
-        const updated = SiteSetup.fromObject(this.community, await user!.patch(`/community/${this.community.id}/voting/site/${this.site.id}`, {
+        const updated = ListingSiteSetup.fromObject(this.community, await user!.patch(`/community/${this.community.id}/listing/site/${this.site.id}`, {
             url,
             cooldown,
             reset,
@@ -53,7 +53,7 @@ export default class SiteSetup extends SiteTimings {
 
     async delete() {
         const user = await User.get()
-        await user!.delete(`/community/${this.community.id}/voting/site/${this.site.id}`)
+        await user!.delete(`/community/${this.community.id}/listing/site/${this.site.id}`)
     }
 
 }

@@ -1,4 +1,4 @@
-export default abstract class SiteTimings {
+export default abstract class ListingSiteTimings {
 
     cooldown: number | null
     reset: number | null
