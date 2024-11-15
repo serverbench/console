@@ -9,7 +9,7 @@
     import PerkRow from "./PerkRow.svelte";
     import { X } from "lucide-svelte";
 
-    export let product: Sku;
+    export let product: Sku | null;
 
     let perks: SkuPerk[] = [];
 
@@ -32,10 +32,10 @@
         loadingCreating = true;
         try {
             if (perk == null) {
-                const { perk } = await product.createPerk(name!, amount);
+                const { perk } = await product!.createPerk(name!, amount);
                 perks = [perk, ...perks];
             } else {
-                await product.addPerk(perk, amount);
+                await product!.addPerk(perk, amount);
             }
             name = null;
             amount = null;
@@ -50,7 +50,12 @@
     }
 </script>
 
-<Section {loading} name="perks" hideName list used={product.perks.length}>
+<Section
+    loading={loading || !product}
+    name="perks and commands"
+    list
+    used={product?.perks.length ?? 0}
+>
     <div class="flex flex-col gap-2" slot="add">
         {#if perks.length > 0}
             <SimplePicker
@@ -91,7 +96,9 @@
             >Add Perk</Button
         >
     </div>
-    {#each product.perks as perk}
-        <PerkRow bind:product bind:perks bind:perk />
-    {/each}
+    {#if product}
+        {#each product.perks as perk}
+            <PerkRow bind:product bind:perks bind:perk />
+        {/each}
+    {/if}
 </Section>

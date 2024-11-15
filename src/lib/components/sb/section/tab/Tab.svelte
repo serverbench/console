@@ -1,11 +1,11 @@
 <script lang="ts">
     import * as Tabs from "$lib/components/ui/tabs/index.js";
     export let name: string,
-        selected: string | null = null;
+        tab: string | null = null;
 </script>
 
-{#if selected == name}
-    <Tabs.Content class="flex flex-col gap-3 p-3 mt-0" value={name}>
+{#if tab == null || tab == name}
+    <Tabs.Content class="flex flex-col mt-0 gap-3 p-3" value={name}>
         <slot />
     </Tabs.Content>
 {/if}

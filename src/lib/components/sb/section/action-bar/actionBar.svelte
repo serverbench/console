@@ -13,10 +13,7 @@
     {#if action}
         <Popover.Root portal={document.body}>
             <Popover.Trigger asChild let:builder>
-                <Button
-                    variant="outline"
-                    builders={[builder]}
-                >
+                <Button variant="outline" builders={[builder]}>
                     <Plus />
                     Create
                 </Button>

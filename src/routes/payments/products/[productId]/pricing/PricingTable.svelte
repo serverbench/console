@@ -46,9 +46,8 @@
 </script>
 
 <Section
-    hideName
     used={product?.prices.length ?? 0}
-    name="Prices"
+    name="prices"
     list
     {loading}
 >

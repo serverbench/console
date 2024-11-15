@@ -8,7 +8,17 @@
     import Section from "$lib/components/sb/section/section.svelte";
     import Input from "$lib/components/ui/input/input.svelte";
     import * as Breadcrumb from "$lib/components/ui/breadcrumb/index.js";
-    import { Loader2, Image, Info } from "lucide-svelte";
+    import {
+        Loader2,
+        Image,
+        Info,
+        InfinityIcon,
+        RouteOff,
+        EyeOff,
+        Gift,
+        Flag,
+        ArchiveRestore,
+    } from "lucide-svelte";
     import * as Tabs from "$lib/components/ui/tabs/index.js";
     import { Textarea } from "$lib/components/ui/textarea/index.js";
     import PricingTable from "./pricing/PricingTable.svelte";
@@ -16,6 +26,7 @@
     import Logo from "$lib/components/sb/logo.svelte";
     import PerkTable from "./perks/PerkTable.svelte";
     import * as AlertDialog from "$lib/components/ui/alert-dialog/index.js";
+    import Tab from "$lib/components/sb/section/tab/Tab.svelte";
 
     let categories: StoreCategory[] = [];
     let product: Sku | null = null;
@@ -45,6 +56,8 @@
             goto("/payments/products");
         } catch (error) {}
     }
+
+    let tab: string = "limits";
 </script>
 
 <Breadcrumb.Root>
@@ -80,7 +93,7 @@
     Unknown Sku
     <Button href="/payments/products">Go Back</Button>
 {:else if loading || product}
-    <Section {loading} name="Details">
+    <Section hideName {loading} name="Details">
         <div class="flex flex-row gap-3">
             <div class="flex flex-col gap-3 w-full">
                 <Input value={product?.name} disabled={loading} />
@@ -126,58 +139,24 @@
             <Button class="ml-auto">Save Changes</Button>
         </div>
     </Section>
-    <Tabs.Root value="pricing">
-        <Tabs.List class="flex flex-row w-full gap-2 justify-start">
-            <Tabs.Trigger value="pricing">Pricing</Tabs.Trigger>
-            <Tabs.Trigger value="perks">
-                Perks
-
-                <Tooltip.Root>
-                    <Tooltip.Trigger asChild let:builder>
-                        <Button
-                            class="p-0 h-4 w-4 text-white"
-                            size="icon"
-                            builders={[builder]}
-                            variant="link"
-                        >
-                            <Info />
-                        </Button>
-                    </Tooltip.Trigger>
-                    <Tooltip.Content
-                        class="flex flex-col gap-2 text-justify w-96"
-                    >
-                        <p class="underline">
-                            Commands and variables can also be found here.
-                        </p>
-                        <p>
-                            <Logo inline />
-                            uses a perk listing system, in which every individual
-                            perk can have multiple commands. This allows you to reuse
-                            item features across multiple items, and it also helps
-                            creating comparision tables between products.
-                        </p>
-                    </Tooltip.Content>
-                </Tooltip.Root>
-            </Tabs.Trigger>
-            <Tabs.Trigger value="limits">Limits</Tabs.Trigger>
-            <Tabs.Trigger value="restrictions">Restrictions</Tabs.Trigger>
-            <Tabs.Trigger value="visibility">Visibility</Tabs.Trigger>
-            <Tabs.Trigger value="gifting">Gifting</Tabs.Trigger>
-            <Tabs.Trigger value="goals">Goals</Tabs.Trigger>
-            <Tabs.Trigger value="upselling">Upselling</Tabs.Trigger>
-        </Tabs.List>
-
-        {#if !loading && product}
-            <Tabs.Content value="pricing">
-                <PricingTable bind:product />
-            </Tabs.Content>
-            <Tabs.Content value="perks">
-                <PerkTable bind:product />
-            </Tabs.Content>
-        {:else}
-            <Tabs.Content value="pricing">
-                <Section name="" hideName list loading>...</Section>
-            </Tabs.Content>
-        {/if}
-    </Tabs.Root>
+    <PricingTable bind:product />
+    <PerkTable bind:product />
+    <Section
+        name="other"
+        hideName
+        list
+        tabs={{
+            limits: InfinityIcon,
+            restrictions: RouteOff,
+            visibility: EyeOff,
+            gifting: Gift,
+            goals: Flag,
+            upselling: ArchiveRestore,
+        }}
+        bind:tab
+    >
+        <Section name={tab} hideName used={0}>
+            <Tab {tab} name="limits"></Tab>
+        </Section>
+    </Section>
 {/if}
