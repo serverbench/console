@@ -51,16 +51,17 @@
     async function updatePricing() {
         loading = true;
         try {
+            const amountInMinorUnits = Math.round(amount! * 10 ** currency!.digits);
             if (virtual) {
                 price = await price.sku.addPricing(
-                    amount! * 10 ** currency!.digits,
+                    amountInMinorUnits,
                     frequency as Frequency | null,
                     country,
                 );
                 virtual = false;
             } else {
                 price = await price.update(
-                    amount! * 10 ** currency!.digits,
+                    amountInMinorUnits,
                     frequency as Frequency | null,
                     country,
                 );

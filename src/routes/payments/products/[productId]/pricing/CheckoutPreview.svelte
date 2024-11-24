@@ -5,8 +5,11 @@
     import User from "$lib/sb/User";
     import { Loader2 } from "lucide-svelte";
     import { onMount } from "svelte";
+    import MemberPicker from "../../../../community/members/MemberPicker.svelte";
+    import type Member from "$lib/sb/member/Member";
 
     let user: User | null = null;
+    let member: Member | null = null;
     onMount(async () => {
         user = await User.get();
     });
@@ -14,38 +17,55 @@
         open = false;
 
     let src: string | null = null;
+    let loading = false;
+
+    async function load() {
+        loading = true;
+        try {
+            const checkout = await price.checkoutPreview(member!);
+            src =
+                `https://safe.serverbench.io/checkout?token=${checkout.checkout.token}` +
+                (localStorage.getItem("dark") ? "&dark" : "");
+        } catch (error) {}
+        loading = false;
+    }
 
     $: open,
-        (async () => {
-            if (!src) {
-                const checkout = await price.checkoutPreview();
-                src =
-                    `https://safe.serverbench.io/checkout?token=${checkout.checkout.token}` +
-                    (localStorage.getItem("dark") ? "&dark" : "");
-            }
+        (() => {
+            src = null;
         })();
 </script>
 
 <Dialog.Root bind:open>
     <Dialog.Content class="overflow-hidden max-w-screen-sm">
         <div
-            class="overflow-y-auto h-96 flex flex-col items-center justify-center"
+            class:h-96={src}
+            class="overflow-y-auto flex flex-col items-center justify-center"
         >
-            {#if price.sku.category && open && user && src}
+            {#if loading}
+                <Loader2 class="animate-spin" />
+            {:else if !src}
+                <MemberPicker bind:member />
+            {:else}
                 <iframe
                     class="block h-full w-full"
                     title="checkout preview"
                     {src}
                 />
-            {:else}
-                <Loader2 class="animate-spin" />
             {/if}
         </div>
         <Dialog.Footer>
             {#if src}
-                <Button variant="secondary" href={`${src}&popup&background`} target="_blank">Open</Button>
+                <Button
+                    variant="secondary"
+                    href={`${src}&popup&background`}
+                    target="_blank">Open</Button
+                >
             {/if}
             <Button type="submit" on:click={() => (open = false)}>Done</Button>
+            {#if !src}
+                <Button on:click={() => load()} disabled={loading}>Next</Button>
+            {/if}
         </Dialog.Footer>
     </Dialog.Content>
 </Dialog.Root>

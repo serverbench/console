@@ -77,7 +77,10 @@
                     category,
                     type,
                     name,
-                    price! * 10 ** currencies.find((c) => !c.country)!.digits,
+                    Math.round(
+                        price! *
+                            10 ** currencies.find((c) => !c.country)!.digits,
+                    ),
                     frequency as "month" | "year" | null,
                 );
                 category = result.category!;

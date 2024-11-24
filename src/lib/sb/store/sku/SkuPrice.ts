@@ -1,3 +1,4 @@
+import type Member from "$lib/sb/member/Member"
 import User from "$lib/sb/User"
 import type Sku from "./Sku"
 
@@ -29,10 +30,12 @@ export default class SkuPrice {
         )
     }
 
-    public async checkoutPreview() {
+    public async checkoutPreview(member: Member) {
         const user = await User.get()
         const obj = await user!.post(`/community/${this.sku.category!.community.id}/store/checkout`, {
             prices: [this.id],
+            discounts: ['gZYo79Phn_7rCCLaYNzNH'],
+            member: member.id,
             country: this.country
         })
         return obj
