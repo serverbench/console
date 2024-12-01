@@ -115,7 +115,7 @@ export default class User {
         if (body) {
             if (body instanceof File) {
                 const formData = new FormData();
-                formData.append('image', body)
+                formData.append('file', body)
                 finalBody = formData
             } else {
                 headers.set('content-type', 'application/json')
