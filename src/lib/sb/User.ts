@@ -7,6 +7,7 @@ export default class User {
 
     private accessToken: string
     private refreshToken: string
+    private test: boolean
     private static instance: User | null = null
     public static onLogin?: () => Promise<void>
     public static onLogout?: () => void
@@ -15,9 +16,10 @@ export default class User {
         return this.accessToken
     }
 
-    private constructor(accessToken: string, refreshToken: string) {
+    private constructor(accessToken: string, refreshToken: string, test: boolean) {
         this.accessToken = accessToken
         this.refreshToken = refreshToken
+        this.test = test
     }
 
     public static async login(service: string, state: string = (Math.random() + 1).toString(36).substring(7)): Promise<User> {
@@ -72,7 +74,7 @@ export default class User {
             })
         })
         const data = await res.json()
-        return new User(data.access_token, data.refresh_token)
+        return new User(data.access_token, data.refresh_token, !window.location.origin.includes('serverbench.io'))
     }
 
     public static async get(): Promise<User | null> {
@@ -86,7 +88,7 @@ export default class User {
             User.logout()
             return null
         }
-        User.instance = new User(accessToken, refreshToken)
+        User.instance = new User(accessToken, refreshToken, !window.location.origin.includes('serverbench.io'))
         console.log(this.onLogin)
         if (this.onLogin) await this.onLogin()
         return User.instance.renewIfDue()
@@ -120,7 +122,7 @@ export default class User {
                 finalBody = JSON.stringify(body)
             }
         }
-        const req = await fetch(`https://api.beta.serverbench.io${path}`, {
+        const req = await fetch(`https://${this.test ? 'dev.serverbench.io' : 'api.beta.serverbench.io'}${path}`, {
             headers,
             body: finalBody,
             method: method
