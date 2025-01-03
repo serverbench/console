@@ -4,7 +4,8 @@
 
     export let position: number,
         max: number,
-        min: number = 0;
+        min: number = 0,
+        loading: boolean = false;
 </script>
 
 <div class="flex flex-row items-center">
@@ -15,7 +16,7 @@
     <hr class="border-primary w-full" />
     <div class="rounded flex flex-row">
         <Button
-            disabled={position == min}
+            disabled={position == min || loading}
             size="icon"
             class="w-6 h-6 rounded-l"
             on:click={() => (position = position - 1)}
@@ -25,7 +26,7 @@
         <Button
             size="icon"
             class="w-6 h-6 rounded-r"
-            disabled={position == max}
+            disabled={position == max || loading}
             on:click={() => (position = position + 1)}
         >
             <ChevronDown />

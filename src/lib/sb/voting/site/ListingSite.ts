@@ -77,14 +77,15 @@ export default class ListingSite extends ListingSiteTimings {
         return (await user!.get('/public/listing/site')).map((s: any) => ListingSite.fromObject(null, s))
     }
 
-    public async use(url: string, cooldown: number | null, reset: number | null, tz: string | null) {
+    public async use(url: string, cooldown: number | null, reset: number | null, tz: string | null, discriminator: string | null) {
         const user = await User.get()
         const community = await Community.get()
         return ListingSiteSetup.fromObject(community!, await user!.post(`/community/${community!.id}/listing/site/${this.id}`, {
             url,
             cooldown,
             reset,
-            tz
+            tz,
+            discriminator
         }))
     }
 

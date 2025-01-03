@@ -25,9 +25,49 @@
     let secondaryEnd =
         secondaryFallbackStart + (settings?.primary?.fallback ?? 0);
 
+    $: primaryFallbackStart, scheduleDividerUpdate();
+    $: secondaryStart, scheduleDividerUpdate();
+    $: secondaryFallbackStart, scheduleDividerUpdate();
+    $: secondaryEnd, scheduleDividerUpdate();
+
     let siteSetups: ListingSiteSetup[] = [];
     let listingSites: ListingSite[] = [];
     let loading = false;
+    let updatingLimits = false;
+
+    let scheduledDividerUpdate: number | null = null;
+
+    function scheduleDividerUpdate() {
+        if (scheduledDividerUpdate != null) {
+            clearTimeout(scheduledDividerUpdate);
+        }
+        scheduledDividerUpdate = setTimeout(async () => {
+            scheduledDividerUpdate = null;
+            await updateDivider();
+        }, 1500);
+    }
+
+    async function updateDivider() {
+        if (!settings) return;
+        if (!settings.primary) return;
+        if (!settings.secondary) return;
+        updatingLimits = true;
+        try {
+            await Promise.all([
+                settings.primary.update(
+                    primaryFallbackStart,
+                    secondaryStart - primaryFallbackStart,
+                ),
+                settings.secondary.update(
+                    secondaryFallbackStart - secondaryStart,
+                    secondaryEnd - secondaryFallbackStart,
+                ),
+            ]);
+        } catch (error) {
+            console.log(error);
+        }
+        updatingLimits = false;
+    }
 
     onMount(async () => {
         loading = true;
@@ -57,6 +97,7 @@
             }
         })();
 
+    let discriminator: string | null = null;
     let url: string | null = null;
     let selectedListingSite: ListingSite | null = null;
     let resetScheme: "cooldown" | "fixed" = "cooldown";
@@ -78,7 +119,15 @@
                 resetScheme == "cooldown" ? cooldown : null,
             );
             listingSites = [...listingSites, listingSite];
-            const setup = await listingSite.use(url!, null, null, null);
+            const setup = await listingSite.use(
+                url!,
+                null,
+                null,
+                null,
+                discriminator && discriminator.length > 0
+                    ? discriminator
+                    : null,
+            );
             siteSetups = [...siteSetups, setup];
             domain = null;
             url = null;
@@ -107,6 +156,10 @@
             />
         {/key}
         <Input placeholder="Listing URL" bind:value={url} />
+        <Input
+            placeholder="Discriminator ([discriminator].example.com)"
+            bind:value={discriminator}
+        />
         {#if !selectedListingSite}
             <SiteSettings
                 hideDomain
@@ -156,6 +209,7 @@
                 <MoveableDivider
                     bind:position={primaryFallbackStart}
                     max={secondaryStart}
+                    loading={updatingLimits}
                 >
                     fallback primary sites
                 </MoveableDivider>
@@ -165,6 +219,7 @@
                     bind:position={secondaryStart}
                     min={primaryFallbackStart}
                     max={secondaryFallbackStart}
+                    loading={updatingLimits}
                 >
                     secondary sites
                 </MoveableDivider>
@@ -174,6 +229,7 @@
                     bind:position={secondaryFallbackStart}
                     min={secondaryStart}
                     max={secondaryEnd}
+                    loading={updatingLimits}
                 >
                     fallback secondary sites
                 </MoveableDivider>
@@ -183,6 +239,7 @@
                     bind:position={secondaryEnd}
                     min={secondaryFallbackStart}
                     max={siteSetups.length - 1}
+                    loading={updatingLimits}
                 >
                     extra (hidden) sites
                 </MoveableDivider>

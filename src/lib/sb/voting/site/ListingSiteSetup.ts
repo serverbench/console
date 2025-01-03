@@ -9,13 +9,15 @@ export default class ListingSiteSetup extends ListingSiteTimings {
     site: ListingSite
     url: string
     featured: boolean | null
+    discriminator: string | null
 
-    constructor(cooldown: number | null, reset: number | null, tz: string | null, community: Community, site: ListingSite, url: string, featured: boolean | null) {
+    constructor(cooldown: number | null, reset: number | null, tz: string | null, community: Community, site: ListingSite, url: string, featured: boolean | null, discriminator: string | null) {
         super(cooldown, reset, tz)
         this.community = community
         this.site = site
         this.url = url
         this.featured = featured
+        this.discriminator = discriminator
     }
 
     public static fromObject(community: Community, obj: any) {
@@ -26,7 +28,8 @@ export default class ListingSiteSetup extends ListingSiteTimings {
             community,
             obj.site,
             obj.url,
-            obj.featured
+            obj.featured,
+            obj.discriminator
         )
     }
 

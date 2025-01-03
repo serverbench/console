@@ -4,6 +4,7 @@
     import Server from "$lib/sb/server/Server";
     import { onMount } from "svelte";
     import Section from "$lib/components/sb/section/section.svelte";
+    import Keys from "./keys/Keys.svelte";
 
     let servers: Server[] = [];
     let lastCreated: Server | null = null;
@@ -43,3 +44,4 @@
         />
     {/each}
 </Section>
+<Keys />

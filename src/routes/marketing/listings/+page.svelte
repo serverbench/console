@@ -1,11 +1,13 @@
 <script lang="ts">
-    import type ListingSettings from "$lib/sb/voting/settings/ListingSettings";
-    import ListingSettingsElement from "./ListingSettingsElement.svelte";
+    import ListingSettings from "$lib/sb/voting/settings/ListingSettings";
+    import { onMount } from "svelte";
     import SiteSetups from "./setups/SiteSetups.svelte";
     let settings: ListingSettings | null = null;
-</script>
 
-<ListingSettingsElement bind:settings />
+    onMount(async ()=>{
+        settings = await ListingSettings.get();
+    })
+</script>
 {#key settings}
     <SiteSetups {settings} />
 {/key}

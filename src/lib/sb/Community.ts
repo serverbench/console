@@ -95,4 +95,11 @@ export default class Community {
         Community.listed.push(community)
         return community
     }
+
+    public async getKeys(): Promise<{
+        pk: string,
+        sk: string
+    }> {
+        return(await User.get())!.get(`/community/${this.id}/keys`)
+    }
 }
