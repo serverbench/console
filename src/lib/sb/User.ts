@@ -89,7 +89,6 @@ export default class User {
             return null
         }
         User.instance = new User(accessToken, refreshToken, !window.location.origin.includes('serverbench.io'))
-        console.log(this.onLogin)
         if (this.onLogin) await this.onLogin()
         return User.instance.renewIfDue()
     }

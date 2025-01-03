@@ -51,8 +51,7 @@ export default class Branding {
         if (Branding.cache) return Branding.cache
         try {
             const community = await Community.get()
-            const user = await User.get()
-            const branding = Branding.fromObj(await user!.get(`/community/${community!.id}/branding`))
+            const branding = await Branding.preview(community!)
             Branding.onBranding(branding)
             Branding.cache = branding
             return branding
@@ -60,6 +59,12 @@ export default class Branding {
             Branding.clearCache()
             return null
         }
+    }
+
+    public static async preview(community: Community) {
+        const user = await User.get()
+        const branding = Branding.fromObj(await user!.get(`/community/${community!.id}/branding`))
+        return branding
     }
 
     public static async updateColors(primary: HSL | null, secondary: HSL | null) {

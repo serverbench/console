@@ -3,8 +3,8 @@
     import "../app.css";
     import User from "$lib/sb/User";
     import { goto } from "$app/navigation";
-    import { onMount, onDestroy } from "svelte";
-    import { Loader2 } from "lucide-svelte";
+    import { onMount } from "svelte";
+    import { Landmark, Link, Loader2 } from "lucide-svelte";
     import Logo from "$lib/components/sb/logo.svelte";
     import { page } from "$app/stores";
     import Community from "$lib/sb/Community";
@@ -18,16 +18,13 @@
         Menu,
     } from "lucide-svelte/icons";
     import * as DropdownMenu from "$lib/components/ui/dropdown-menu";
-    import Branding from "$lib/sb/branding/Branding";
     import Button from "$lib/components/ui/button/button.svelte";
+    import UserNav from "$lib/components/sb/nav/userNav.svelte";
+    import Skeleton from "$lib/components/ui/skeleton/skeleton.svelte";
     let loggedIn = false;
-    let loading = true;
 
     let afterLogin: string | null = null;
-    let community: Community | null = null;
-    let communities: Community[] = [];
     let dark = false;
-    let branding: Branding | null = null;
 
     function toggleDark(newDark: boolean) {
         if (newDark) {
@@ -56,7 +53,7 @@
             if (afterLogin && afterLogin != "/login") {
                 goto(afterLogin);
             } else if ($page.url.pathname == "/login") {
-                goto("/");
+                goto("/me");
             }
             await Community.get();
         };
@@ -68,52 +65,7 @@
                 afterLogin = "/";
             }
             goto("/login");
-            loading = false;
         };
-        Branding.onBranding = (br) => {
-            console.log("new branding", br);
-            branding = br;
-            if (branding && branding.primary) {
-                document.documentElement.style.setProperty(
-                    "--primary",
-                    `${branding.primary.h} ${branding.primary.s}% 40%`,
-                );
-                document.documentElement.style.setProperty(
-                    "--primary-dark",
-                    `${branding.primary.h} ${branding.primary.s}% 50%`,
-                );
-            } else {
-                document.documentElement.style.setProperty(
-                    "--primary",
-                    "var(--primary-fallback)",
-                );
-                document.documentElement.style.setProperty(
-                    "--primary-dark",
-                    "var(--primary-dark-fallback)",
-                );
-            }
-        };
-        Community.onSelected = async (
-            selectedCommunity,
-            existingCommunities,
-        ) => {
-            console.log("community selected");
-            activeSidebar = false;
-            Branding.clearCache();
-            loading = false;
-            community = selectedCommunity;
-            communities = existingCommunities;
-            if (!community) {
-                goto("/onboarding");
-                return;
-            }
-            Branding.get().then(() => {});
-        };
-        loading = true;
-        const user = await User.get();
-        if (user) {
-            await Community.get();
-        }
     });
 
     $: if ($page.url.pathname) {
@@ -121,17 +73,22 @@
     }
 
     let activeSidebar = false;
+    let community: Community | null = null;
 </script>
 
 <main>
-    {#if loggedIn && $page.url.pathname != "/onboarding"}
+    {#if !["/onboarding", "/login"].includes($page.url.pathname)}
         <div class="flex flex-row h-full absolute w-full">
             <div
                 class:hidden={!activeSidebar}
                 class="h-full w-3/4 md:w-full md:max-w-72 border-r fixed md:relative md:block z-50 bg-white dark:bg-black"
             >
                 <div class="h-full w-full flex flex-col">
-                    <CommunityNav {branding} {community} {communities} />
+                    {#if $page.url.pathname.startsWith("/me")}
+                        <UserNav />
+                    {:else}
+                        <CommunityNav bind:community />
+                    {/if}
                     <div class="px-3 pt-2 pb-7 hidden md:block">
                         <Logo center />
                     </div>
@@ -169,12 +126,15 @@
                                     >My Account</DropdownMenu.Label
                                 >
                                 <DropdownMenu.Separator />
-                                <DropdownMenu.Item
-                                    on:click={() => User.logout()}
-                                >
-                                    <DoorOpen />
-                                    Log Out
+                                <DropdownMenu.Item href="/me/referrals">
+                                    <Link />
+                                    Referrals
                                 </DropdownMenu.Item>
+                                <DropdownMenu.Item href="/me/wallet">
+                                    <Landmark />
+                                    Wallet
+                                </DropdownMenu.Item>
+                                <DropdownMenu.Separator />
                                 <DropdownMenu.Item
                                     on:click={() => toggleDark(!dark)}
                                 >
@@ -186,6 +146,14 @@
                                         Dark Mode
                                     {/if}
                                 </DropdownMenu.Item>
+                                <DropdownMenu.Separator />
+                                <DropdownMenu.Item
+                                    class="destructive"
+                                    on:click={() => User.logout()}
+                                >
+                                    <DoorOpen />
+                                    Log Out
+                                </DropdownMenu.Item>
                             </DropdownMenu.Group>
                         </DropdownMenu.Content>
                     </DropdownMenu.Root>
@@ -193,7 +161,13 @@
                 <div class="w-full mx-auto max-w-screen-2xl pb-10">
                     <div class="grow p-5 flex flex-col gap-5">
                         {#key community}
-                            <slot />
+                            {#if $page.url.pathname.startsWith("/me")}
+                                <slot />
+                            {:else if community}
+                                <slot />
+                            {:else}
+                                <Skeleton />
+                            {/if}
                         {/key}
                     </div>
                     <div class="w-1/5"></div>
@@ -202,19 +176,12 @@
         </div>
     {:else}
         <div>
-            {#if !loading}
-                <Gradient />
-            {/if}
+            <Gradient />
             <div
                 class="w-full h-full absolute flex flex-col items-center justify-center px-5"
             >
                 <div class="w-full max-w-md flex flex-col gap-5">
-                    {#if !loading}
-                        <slot />
-                    {:else}
-                        <Logo center big />
-                        <Loader2 class="animate-spin mx-auto" />
-                    {/if}
+                    <slot />
                 </div>
             </div>
         </div>

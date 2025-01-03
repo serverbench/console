@@ -5,21 +5,19 @@
     import PayPalLightLogo from "./logo/paypal/light.png";
     import Item from "$lib/components/sb/section/list/Item.svelte";
     import * as Tooltip from "$lib/components/ui/tooltip";
-    import List from "$lib/components/sb/section/list/list.svelte";
     import Logo from "$lib/components/sb/logo.svelte";
     import Badge from "$lib/components/ui/badge/badge.svelte";
-    import AmountBox from "./AmountBox.svelte";
     import FxemojiBanknoteeuro from "~icons/fxemoji/banknoteeuro";
-    import FxemojiLightningmood from "~icons/fxemoji/lightningmood";
     import * as Accordion from "$lib/components/ui/accordion";
-    import * as ToggleGroup from "$lib/components/ui/toggle-group";
-    import { Coins, Loader2, Pause, Zap, RefreshCw } from "lucide-svelte";
+    import { RefreshCw } from "lucide-svelte";
     import Button from "$lib/components/ui/button/button.svelte";
     import Section from "$lib/components/sb/section/section.svelte";
     import SimplePicker from "$lib/components/sb/picker/SimplePicker.svelte";
     import { onMount } from "svelte";
     import Wallet from "$lib/sb/wallet/Wallet";
     import type WalletTransaction from "$lib/sb/wallet/WalletTransaction";
+    import AmountBox from "./AmountBox.svelte";
+    import FluentEmojiEyes from "~icons/fluent-emoji/eyes";
 
     const gateways = [
         {
@@ -141,83 +139,28 @@
             credit cannot be withdrawn.
         </Accordion.Content>
     </Accordion.Item>
-    <Accordion.Item value="item-2">
-        <Accordion.Trigger>
-            <div>
-                <FxemojiLightningmood class="inline-block pb-1 pr-2" />
-                You can skip the withdrawal process by using 'direct'
-            </div>
-        </Accordion.Trigger>
-        <Accordion.Content>
-            We understand you might want your money as soon as possible. You can
-            skip the withdrawal process by using the 'direct' option, which will
-            bill the users using your linked account directly. If you use the
-            withdrawal system (credit) instead, you'll be able to get your money
-            after some days, and you'll get <Logo inline /> credit beneffits.
-        </Accordion.Content>
-    </Accordion.Item>
 </Accordion.Root>
 
-<List>
-    {#each gateways as gateway}
-        <Item>
-            <Tooltip.Root>
-                <Tooltip.Trigger>
-                    <div>
-                        <div
-                            class:w-26={gateway.chonky}
-                            class="w-20 h-10 bg-contain hidden dark:block bg-no-repeat bg-left"
-                            style={`background-image: url(${gateway.light})`}
-                        />
-                        <div
-                            class:w-26={gateway.chonky}
-                            class="w-20 h-10 bg-contain dark:hidden bg-no-repeat bg-left"
-                            style={`background-image: url(${gateway.dark})`}
-                        />
-                    </div>
-                </Tooltip.Trigger>
-                <Tooltip.Content>
-                    <span>{gateway.name}</span>
-                </Tooltip.Content>
-                <div class="ml-auto">
-                    <ToggleGroup.Root
-                        value="credit"
-                        type="single"
-                        variant="outline"
-                        disabled
-                    >
-                        <!--
-                        <ToggleGroup.Item value="disable">
-                            <Pause />
-                            disable
-                        </ToggleGroup.Item>
-                        <ToggleGroup.Item value="direct">
-                            <Zap />
-                            direct
-                        </ToggleGroup.Item>-->
-                        <ToggleGroup.Item value="credit">
-                            <Coins />
-                            credit
-                        </ToggleGroup.Item>
-                    </ToggleGroup.Root>
-                </div>
-                <Button disabled={loading}>
-                    {#if loading}
-                        <Loader2 class="animate-spin" />
-                    {:else}
-                        0
-                    {/if}
-                    accounts
-                </Button>
-            </Tooltip.Root>
-        </Item>
-    {/each}
-</List>
 <Section name="withdrawals" used={0}>
     <div slot="add" class="flex flex-col gap-2">
-        <SimplePicker name="Currency" items={[["eur", "EUR"]]} />
-        <SimplePicker name="Account" items={[["paypal", "PayPal"]]} />
-        <Button>Withdraw</Button>
+        <div
+            class="bg-yellow-500 bg-opacity-10 border-yellow-500 border p-3 text-yellow-500"
+        >
+            Payouts are being worked on. You can keep accumulating your balance
+            until we finish this feature.
+        </div>
+        <div class="relative">
+            <div class="flex flex-col gap-2 blur opacity-10">
+                <SimplePicker name="Currency" items={[["eur", "EUR"]]} />
+                <SimplePicker name="Account" items={[["paypal", "PayPal"]]} />
+                <Button>Withdraw</Button>
+            </div>
+            <div
+                class="absolute w-full h-full top-0 flex flex-col items-center justify-center"
+            >
+                <FluentEmojiEyes class="h-10 w-10" />
+            </div>
+        </div>
     </div>
     ...
 </Section>

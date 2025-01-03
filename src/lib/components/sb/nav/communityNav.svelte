@@ -13,16 +13,71 @@
         Megaphone,
         Server,
         Gavel,
-        Landmark
+        Landmark,
     } from "lucide-svelte/icons";
     import NavSection from "$lib/components/sb/nav/navSection.svelte";
     import NavLink from "$lib/components/sb/nav/navLink.svelte";
-    import type Community from "$lib/sb/Community";
-    import type Branding from "$lib/sb/branding/Branding";
+    import Community from "$lib/sb/Community";
+    import Branding from "$lib/sb/branding/Branding";
+    import { onMount } from "svelte";
+    import { goto } from "$app/navigation";
+    import User from "$lib/sb/User";
 
-    export let community: Community | null,
-        communities: Community[],
-        branding: Branding | null;
+    export let community: Community | null;
+
+    let communities: Community[], branding: Branding | null;
+
+    onMount(async () => {
+
+        Branding.onBranding = (br) => {
+            console.log("new branding", br);
+            branding = br;
+            if (branding && branding.primary) {
+                document.documentElement.style.setProperty(
+                    "--primary",
+                    `${branding.primary.h} ${branding.primary.s}% 40%`,
+                );
+                document.documentElement.style.setProperty(
+                    "--primary-dark",
+                    `${branding.primary.h} ${branding.primary.s}% 50%`,
+                );
+            } else {
+                document.documentElement.style.setProperty(
+                    "--primary",
+                    "var(--primary-fallback)",
+                );
+                document.documentElement.style.setProperty(
+                    "--primary-dark",
+                    "var(--primary-dark-fallback)",
+                );
+            }
+        };
+        Community.onSelected = async (
+            selectedCommunity,
+            existingCommunities,
+        ) => {
+            console.log("community selected", {
+                selectedCommunity,
+                existingCommunities
+            });
+            Branding.clearCache();
+            community = selectedCommunity;
+            communities = existingCommunities;
+            if (!community) {
+                if (communities.length <= 0) {
+                    goto("/onboarding");
+                } else {
+                    communities[0].select();
+                }
+            } else {
+                Branding.get().then(() => {});
+            }
+        };
+        const user = await User.get();
+        if (user) {
+            await Community.get();
+        }
+    });
 </script>
 
 <div class="p-3 pb-0">
@@ -87,77 +142,33 @@
 <ScrollArea class="grow p-6">
     <div class="flex flex-col gap-5">
         <NavSection icon={UsersRound} name="community">
-            <NavLink href="/community/members">
-                Members
-            </NavLink>
-            <NavLink href="/community/demographics">
-                Demographics
-            </NavLink>
-            <NavLink href="/community/playtime">
-                Playtime
-            </NavLink>
-            <NavLink href="/community/image">
-                Image
-            </NavLink>
+            <NavLink href="/community/members">Members</NavLink>
+            <NavLink href="/community/demographics">Demographics</NavLink>
+            <NavLink href="/community/playtime">Playtime</NavLink>
+            <NavLink href="/community/image">Image</NavLink>
         </NavSection>
         <NavSection icon={Megaphone} name="marketing">
-            <NavLink href="/marketing/listings">
-                Listings
-            </NavLink>
-            <NavLink href="/marketing/creators">
-                Creators
-            </NavLink>
-            <NavLink href="/marketing/media">
-                Media
-            </NavLink>
+            <NavLink href="/marketing/listings">Listings</NavLink>
+            <NavLink href="/marketing/referrals">Referrals</NavLink>
         </NavSection>
         <NavSection icon={Server} name="servers">
-            <NavLink href="/servers/manage">
-                List
-            </NavLink>
-            <NavLink href="/servers/incidents">
-                Incidents
-            </NavLink>
+            <NavLink href="/servers/manage">List</NavLink>
+            <NavLink href="/servers/incidents">Incidents</NavLink>
         </NavSection>
         <NavSection icon={Gavel} name="moderation">
-            <NavLink href="/moderation/staff">
-                Staff
-            </NavLink>
-            <NavLink href="/moderation/chat">
-                Chat
-            </NavLink>
-            <NavLink href="/moderation/reports">
-                Reports
-            </NavLink>
-            <NavLink href="/moderation/punishments">
-                Punishments
-            </NavLink>
-            <NavLink href="/moderation/appeals">
-                Appeals
-            </NavLink>
+            <NavLink href="/moderation/staff">Staff</NavLink>
+            <NavLink href="/moderation/chat">Chat</NavLink>
+            <NavLink href="/moderation/reports">Reports</NavLink>
+            <NavLink href="/moderation/punishments">Punishments</NavLink>
+            <NavLink href="/moderation/appeals">Appeals</NavLink>
         </NavSection>
         <NavSection icon={Landmark} name="payments">
-            <NavLink href="/payments/products">
-                Products
-            </NavLink>
-            <NavLink href="/payments/gateways">
-                Gateways
-            </NavLink>
-            <NavLink href="/payments/currencies">
-                Currencies
-            </NavLink>
-            <NavLink href="/payments/transactions">
-                Transactions
-            </NavLink>
-            <NavLink href="/payments/subscriptions">
-                Subscriptions
-            </NavLink>
-            <NavLink href="/payments/sales">
-                Sales
-            </NavLink>
-            <NavLink href="/payments/coupons">
-                Coupons
-            </NavLink>
+            <NavLink href="/payments/products">Products</NavLink>
+            <NavLink href="/payments/currencies">Currencies</NavLink>
+            <NavLink href="/payments/transactions">Transactions</NavLink>
+            <NavLink href="/payments/subscriptions">Subscriptions</NavLink>
+            <NavLink href="/payments/sales">Sales</NavLink>
+            <NavLink href="/payments/coupons">Coupons</NavLink>
         </NavSection>
     </div>
 </ScrollArea>

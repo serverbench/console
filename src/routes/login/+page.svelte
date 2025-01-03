@@ -5,6 +5,7 @@
     import User from "$lib/sb/User";
     import FileIconsMinecraft from "~icons/file-icons/minecraft";
     import SkillIconsDiscord from "~icons/skill-icons/discord";
+    import GgGoogle from '~icons/gg/google'
 
     let loading = false;
 
@@ -28,13 +29,22 @@
     to join us on Discord <SkillIconsDiscord class="inline" />
 </CardLines>
 
-<Button
-    disabled={loading}
-    on:click={() => login("minecraft")}
-    class="flex flex-row gap-3 items-center w-full"
->
-    <FileIconsMinecraft />Login With Minecraft
-</Button>
+<div class="flex flex-col gap-2">
+    <Button
+        disabled={loading}
+        on:click={() => login("minecraft")}
+        class="flex flex-row gap-3 items-center w-full"
+    >
+        <FileIconsMinecraft />Login With Minecraft
+    </Button>
+    <Button
+        disabled={loading}
+        on:click={() => login("google")}
+        class="flex flex-row gap-3 items-center w-full"
+    >
+        <GgGoogle />Login With Google
+    </Button>
+</div>
 
 <span class="text-center text-xs opacity-80">
     By logging in, you accept our <a href="https://nominal.es/legal"

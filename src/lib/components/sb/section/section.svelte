@@ -9,14 +9,13 @@
     const SLOTS = $$props.$$slots;
 
     import type { ComponentType } from "svelte";
-    import type { Icon } from "lucide-svelte";
     import Button from "$lib/components/ui/button/button.svelte";
 
     export let used: number | null = null,
         limit: number = 0,
         loading = false,
         list = false,
-        action = !!SLOTS.add,
+        action = !!(SLOTS && SLOTS.add),
         hideName = false,
         small = false,
         tabs: Record<string, ComponentType> | null = null,
