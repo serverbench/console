@@ -60,12 +60,14 @@
         User.onLogout = () => {
             console.log("logged out");
             loggedIn = false;
-            afterLogin = $page.url.pathname;
+            afterLogin = $page.url.href;
             if (!afterLogin || afterLogin == "/login") {
                 afterLogin = "/";
             }
             goto("/login");
         };
+
+        await User.get()
     });
 
     $: if ($page.url.pathname) {
