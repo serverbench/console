@@ -33,7 +33,11 @@ export default class User {
                 const session = await User.exchangeCode(response.code, redirect_uri)
                 session.store()
                 await User.get()
-                tab.close()
+                try {
+                    tab.close()
+                } catch (error) {
+                    window.focus()
+                }
                 success = true
                 resolve(session)
             }
@@ -78,7 +82,7 @@ export default class User {
     }
 
     public static async get(): Promise<User | null> {
-        if (User.instance) {
+        if (User.instance != null) {
             return User.instance.renewIfDue()
         }
         const accessToken = localStorage.getItem('accessToken')
@@ -102,6 +106,7 @@ export default class User {
         localStorage.removeItem('accessToken')
         localStorage.removeItem('refreshToken')
         Community.unselect()
+        User.instance = null
         if (this.onLogout) this.onLogout()
     }
 
