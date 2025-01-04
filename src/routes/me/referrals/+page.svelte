@@ -54,9 +54,7 @@
                     joining = true;
                     program = providedProgram;
                     try {
-                        logo =
-                            (await Branding.preview(program.community)).iso ??
-                            "https://cdn.serverbench.io/community/hn2qqSZ30ebQWWd_7uso9/branding/iso/x0KmPrEy.webp";
+                        logo = (await Branding.preview(program.community)).iso;
                     } catch (error) {}
                 }
             } catch (e) {
@@ -150,7 +148,9 @@
             <div class="flex flex-row gap-3">
                 <Input
                     class="text-center text-lg"
-                    value={`${code.code}.purevanilla.co`}
+                    value={code.program.community.name == "PureVanilla"
+                        ? `${code.code}.purevanilla.co`
+                        : code.code}
                     readonly
                 />
                 <Button
@@ -247,6 +247,7 @@
 {/if}
 <Section used={1} list name="Referred Members">
     <div class="p-5 text-center">
-        We will be launching a referred member list very soon. Your referred members are already being recorded. Go share your referral!
+        We will be launching a referred member list very soon. Your referred
+        members are already being recorded. Go share your referral!
     </div>
 </Section>
