@@ -16,11 +16,6 @@
         try {
             await User.login(service);
             console.log("fully logged in");
-            setTimeout(() => {
-                if ($page.url.pathname == "/login") {
-                    goto("/me");
-                }
-            }, 300);
         } catch (error) {
             loading = false;
         }

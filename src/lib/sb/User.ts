@@ -19,7 +19,7 @@ export default class User {
     private constructor(accessToken: string, refreshToken: string, test: boolean) {
         this.accessToken = accessToken
         this.refreshToken = refreshToken
-        this.test = test
+        this.test = false
     }
 
     public static async login(service: string, state: string = (Math.random() + 1).toString(36).substring(7)): Promise<User> {
