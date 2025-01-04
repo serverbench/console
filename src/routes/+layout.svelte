@@ -50,7 +50,7 @@
         User.onLogin = async () => {
             console.log("logged in");
             loggedIn = true;
-            if (afterLogin && afterLogin != "/login") {
+            if (afterLogin != null && afterLogin != "/login") {
                 goto(afterLogin);
             } else if ($page.url.pathname == "/login") {
                 goto("/me");
@@ -67,7 +67,7 @@
             goto("/login");
         };
 
-        await User.get()
+        await User.get();
     });
 
     $: if ($page.url.pathname) {

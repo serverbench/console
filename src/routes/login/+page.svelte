@@ -5,7 +5,9 @@
     import User from "$lib/sb/User";
     import FileIconsMinecraft from "~icons/file-icons/minecraft";
     import SkillIconsDiscord from "~icons/skill-icons/discord";
-    import GgGoogle from '~icons/gg/google'
+    import GgGoogle from "~icons/gg/google";
+    import { page } from "$app/stores";
+    import { goto } from "$app/navigation";
 
     let loading = false;
 
@@ -13,6 +15,12 @@
         loading = true;
         try {
             await User.login(service);
+            console.log("fully logged in");
+            setTimeout(() => {
+                if ($page.url.pathname == "/login") {
+                    goto("/me");
+                }
+            }, 300);
         } catch (error) {
             loading = false;
         }
