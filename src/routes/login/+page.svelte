@@ -6,6 +6,8 @@
     import FileIconsMinecraft from "~icons/file-icons/minecraft";
     import SkillIconsDiscord from "~icons/skill-icons/discord";
     import GgGoogle from "~icons/gg/google";
+    import MdiMicrosoft from '~icons/mdi/microsoft'
+    import MdiGithub from '~icons/mdi/github'
     import { page } from "$app/stores";
     import { goto } from "$app/navigation";
 
@@ -46,6 +48,20 @@
         class="flex flex-row gap-3 items-center w-full"
     >
         <GgGoogle />Login With Google
+    </Button>
+    <Button
+        disabled={loading}
+        on:click={() => login("microsoft")}
+        class="flex flex-row gap-3 items-center w-full"
+    >
+        <MdiMicrosoft />Login With Microsoft
+    </Button>
+    <Button
+        disabled={loading}
+        on:click={() => login("github")}
+        class="flex flex-row gap-3 items-center w-full"
+    >
+        <MdiGithub />Login With GitHub
     </Button>
 </div>
 
