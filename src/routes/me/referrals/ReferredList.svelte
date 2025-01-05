@@ -47,7 +47,7 @@
             <div class="grow">
                 {member.name}
             </div>
-            {#if (referralCode && member.firstConnection?.referral?.id == referralCode.id) || (referralProgram && member.firstConnection?.referral?.program.id == referralProgram.id)}
+            {#if member.firstConnection && member.firstConnection.referral && ((referralCode && member.firstConnection.referral.id == referralCode.id) || (referralProgram && member.firstConnection.referral.program.id == referralProgram.id))}
                 <Badge>New Member</Badge>
             {:else}
                 <Badge variant="outline">Existing Member</Badge>
