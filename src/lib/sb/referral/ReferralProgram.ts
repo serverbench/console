@@ -16,7 +16,7 @@ export default class ReferralProgram {
 
     public static fromObj(obj: any, community: Community | null = null) {
         return new ReferralProgram(
-            community ? community : Community.fromObj(obj.community),
+            community != null ? community : Community.fromObj(obj.community),
             obj.id,
             obj.cut
         )

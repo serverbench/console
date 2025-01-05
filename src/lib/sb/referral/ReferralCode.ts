@@ -1,3 +1,4 @@
+import type Community from "../Community"
 import Member from "../member/Member"
 import User from "../User"
 import ReferralProgram from "./ReferralProgram"
@@ -14,8 +15,8 @@ export default class ReferralCode {
         this.code = code
     }
 
-    public static fromObj(obj: any) {
-        return new ReferralCode(obj.id, ReferralProgram.fromObj(obj.program), obj.code)
+    public static fromObj(obj: any, community: Community | null = null) {
+        return new ReferralCode(obj.id, ReferralProgram.fromObj(obj.program, community), obj.code)
     }
 
     public static async joinProgram(community: string, programId: string): Promise<ReferralCode> {

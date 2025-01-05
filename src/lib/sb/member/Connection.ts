@@ -1,3 +1,4 @@
+import type Community from "../Community"
 import ReferralCode from "../referral/ReferralCode"
 import ListingSite from "../voting/site/ListingSite"
 import Member from "./Member"
@@ -46,8 +47,8 @@ export default class Connection {
             obj.country,
             obj.timezone,
             obj.entrypoint,
-            obj.referral ? ReferralCode.fromObj(obj.referral) : null,
-            obj.listingSite ? ListingSite.fromObject(obj.listingSite, null) : null
+            obj.referral ? ReferralCode.fromObj(obj.referral, member.community) : null,
+            obj.listingSite ? ListingSite.fromObject(null, obj.listingSite) : null
         )
     }
 
