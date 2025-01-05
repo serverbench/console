@@ -4,7 +4,8 @@
 
     export let type: string,
         action = true,
-        small = false;
+        small = false,
+        subtitle = true;
 </script>
 
 <div class="flex flex-col gap-5 items-center">
@@ -19,9 +20,11 @@
             <span class="text-neutral-700 dark:text-neutral-300">
                 This is empty... for now!
             </span>
+            {#if subtitle}
             <h1>
                 Let's create some {type}!
             </h1>
+            {/if}
         </div>
     </div>
     {#if action}

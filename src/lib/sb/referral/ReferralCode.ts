@@ -1,18 +1,21 @@
+import Member from "../member/Member"
 import User from "../User"
 import ReferralProgram from "./ReferralProgram"
 
 export default class ReferralCode {
 
-    program: ReferralProgram
-    code: string
+    public readonly id: string
+    public readonly program: ReferralProgram
+    public readonly code: string
 
-    constructor(program: ReferralProgram, code: string) {
+    constructor(id: string, program: ReferralProgram, code: string) {
+        this.id = id
         this.program = program
         this.code = code
     }
 
     public static fromObj(obj: any) {
-        return new ReferralCode(ReferralProgram.fromObj(obj.program), obj.code)
+        return new ReferralCode(obj.id, ReferralProgram.fromObj(obj.program), obj.code)
     }
 
     public static async joinProgram(community: string, programId: string): Promise<ReferralCode> {
@@ -25,6 +28,12 @@ export default class ReferralCode {
         const user = await User.get()
         const data = await user!.get(`/user/referral/code`)
         return data.map((d: any) => ReferralCode.fromObj(d))
+    }
+
+    public async getJoiningMembers(page: number) {
+        const user = await User.get()
+        const members = await user!.post(`/user/referral/code/${this.id}/joined`, { page })
+        return members.map((m: any) => Member.fromObj(this.program.community, m))
     }
 
 }

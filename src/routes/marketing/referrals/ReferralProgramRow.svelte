@@ -3,12 +3,23 @@
     import Item from "$lib/components/sb/section/list/Item.svelte";
     import Badge from "$lib/components/ui/badge/badge.svelte";
     import type ReferralProgram from "$lib/sb/referral/ReferralProgram";
-    import { Link, Trash2 } from "lucide-svelte";
+    import { CircleUser, Link, Trash2 } from "lucide-svelte";
+
+    import * as Dialog from "$lib/components/ui/dialog/index.js";
+    import ReferredList from "../../me/referrals/ReferredList.svelte";
 
     export let program: ReferralProgram, list: ReferralProgram[];
 
     let loading = false;
+
+    let checkingMembers = false;
 </script>
+
+<Dialog.Root bind:open={checkingMembers}>
+    <Dialog.Content>
+        <ReferredList referralProgram={program} />
+    </Dialog.Content>
+</Dialog.Root>
 
 <Item {loading}>
     <Badge>
@@ -31,6 +42,10 @@
         >
             <Trash2 />
             Delete
+        </DropdownItem>
+        <DropdownItem on:click={() => (checkingMembers = true)}>
+            <CircleUser />
+            Joining Members
         </DropdownItem>
         <DropdownItem
             on:click={() =>

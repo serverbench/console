@@ -21,6 +21,7 @@
     import LogosRedditIcon from "~icons/logos/reddit-icon";
     import FluentEmojiFlatMoneyWithWings from "~icons/fluent-emoji-flat/money-with-wings";
     import Section from "$lib/components/sb/section/section.svelte";
+    import ReferredList from "./ReferredList.svelte";
 
     let codes: ReferralCode[] = [];
     let code: ReferralCode | null = null;
@@ -239,15 +240,14 @@
             </div>
         </Card>
     {/if}
-{:else}
-    <Card class="p-5">
+{:else if !joining}
+    <Card class="p-5 text-center">
         Sorry, you don't have any referral programs available. Join one via a
         link shared by a friend.
     </Card>
 {/if}
-<Section used={1} list name="Referred Members">
-    <div class="p-5 text-center">
-        We will be launching a referred member list very soon. Your referred
-        members are already being recorded. Go share your referral!
-    </div>
-</Section>
+{#if code}
+    {#key code}
+        <ReferredList referralCode={code} />
+    {/key}
+{/if}

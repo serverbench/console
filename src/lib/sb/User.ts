@@ -5,21 +5,26 @@ const product = 'serverbench.io'
 
 export default class User {
 
-    private accessToken: string
-    private refreshToken: string
+    public readonly id: string | null
+    private accessToken: string | null
+    private refreshToken: string | null
     private test: boolean
     private static instance: User | null = null
     public static onLogin?: () => Promise<void>
     public static onLogout?: () => void
-
     public getAccessToken() {
         return this.accessToken
     }
 
-    private constructor(accessToken: string, refreshToken: string, test: boolean) {
+    private constructor(id: string, accessToken: string | null, refreshToken: string | null, test: boolean) {
+        this.id = id
         this.accessToken = accessToken
         this.refreshToken = refreshToken
-        this.test = false
+        this.test = test
+    }
+
+    public static fromObject(obj: any) {
+        return new User(obj.id, null, null, false)
     }
 
     public static async login(service: string, state: string = (Math.random() + 1).toString(36).substring(7)): Promise<User> {
@@ -78,7 +83,7 @@ export default class User {
             })
         })
         const data = await res.json()
-        return new User(data.access_token, data.refresh_token, !window.location.origin.includes('serverbench.io'))
+        return new User("", data.access_token, data.refresh_token, !window.location.origin.includes('serverbench.io'))
     }
 
     public static async get(): Promise<User | null> {
@@ -92,14 +97,14 @@ export default class User {
             User.logout()
             return null
         }
-        User.instance = new User(accessToken, refreshToken, !window.location.origin.includes('serverbench.io'))
+        User.instance = new User("", accessToken, refreshToken, !window.location.origin.includes('serverbench.io'))
         if (this.onLogin) await this.onLogin()
         return User.instance.renewIfDue()
     }
 
     private store() {
-        localStorage.setItem('accessToken', this.accessToken)
-        localStorage.setItem('refreshToken', this.refreshToken)
+        localStorage.setItem('accessToken', this.accessToken!)
+        localStorage.setItem('refreshToken', this.refreshToken!)
     }
 
     public static logout() {
@@ -154,8 +159,8 @@ export default class User {
 
     private async renewIfDue() {
         try {
-            const access = jwtDecode(this.accessToken)
-            const refresh = jwtDecode(this.refreshToken)
+            const access = jwtDecode(this.accessToken!)
+            const refresh = jwtDecode(this.refreshToken!)
             const now = Math.trunc(new Date().getTime() / 1000) + 60
             if (access.exp! < now) {
                 if (refresh.exp! < now) {

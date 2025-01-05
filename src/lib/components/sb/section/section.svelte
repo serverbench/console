@@ -19,6 +19,7 @@
         hideName = false,
         small = false,
         tabs: Record<string, ComponentType> | null = null,
+        emptySubtitle = true,
         name: string;
 
     export let tab: string = tabs ? Object.keys(tabs)[0] : "";
@@ -105,7 +106,12 @@
                     {/if}
                 {:else}
                     <div class="p-5" class:py-16={!small}>
-                        <Empty type={name} {action} {small}>
+                        <Empty
+                            type={name}
+                            {action}
+                            subtitle={emptySubtitle}
+                            {small}
+                        >
                             <slot name="add" />
                         </Empty>
                     </div>

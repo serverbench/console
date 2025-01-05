@@ -31,7 +31,7 @@ export default class ListingSite extends ListingSiteTimings {
             obj.tz,
             obj.domain,
             obj.protocols,
-            user ?? obj.owner,
+            user ?? User.fromObject(obj.owner),
             obj.verified
         )
     }

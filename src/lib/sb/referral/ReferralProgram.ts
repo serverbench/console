@@ -1,4 +1,5 @@
 import Community from "../Community";
+import Member from "../member/Member";
 import User from "../User";
 
 export default class ReferralProgram {
@@ -45,5 +46,13 @@ export default class ReferralProgram {
         const user = await User.get()
         const data = await user!.get(`/community/${community}/referral/program/${programId}`)
         return ReferralProgram.fromObj(data)
+    }
+
+    public async getJoiningMembers(page: number): Promise<Member[]> {
+        const user = await User.get()
+        const members = await user!.post(`/community/${this.community.id}/referral/program/${this.id}/joined`, {
+            page
+        })
+        return members.map((m: any) => Member.fromObj(this.community!, m))
     }
 }
