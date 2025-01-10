@@ -58,11 +58,11 @@
     $: exchangeRate, computeTotal();
 </script>
 
-<Card.Root class="p-5 relative">
+<Card.Root class="p-5 relative flex flex-col gap-5">
     <p class="font-semibold">
         <slot />
     </p>
-    <div class="w-full py-5">
+    <div class="w-full grow">
         {#if amount == null || wallet == null || total == null}
             <Skeleton class="w-full h-24" />
         {:else}
@@ -71,7 +71,7 @@
             </div>
         {/if}
     </div>
-    <div class="absolute bottom-0 p-5 text-xs leading-6">
+    <div class="text-xs leading-6">
         <slot name="note" />
         {#if usedExchange}
             <span>
