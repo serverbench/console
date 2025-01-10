@@ -105,7 +105,7 @@
         {wallets}
     >
         Withdrawable
-        <div slot="note" class="text-xs leading-6">
+        <div slot="note">
             Withdrawable using the gateways below
         </div>
     </AmountBox>
@@ -119,7 +119,7 @@
         <div slot="note">
             <Tooltip.Root>
                 <Tooltip.Trigger>
-                    <span class="text-xs text-left leading-6">
+                    <span class="text-left">
                         Once settled, this balance will become withdrawable.
                     </span>
                 </Tooltip.Trigger>
@@ -135,7 +135,7 @@
     </AmountBox>
     <AmountBox amount="credit" wallet={selectedWallet} {exchangeRate} {wallets}>
         Internal Credit
-        <span slot="note" class="text-xs">
+        <span slot="note">
             <Badge class="scale-90" variant="secondary">1% APR</Badge> on your withdrawable
             balance
         </span>

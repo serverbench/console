@@ -71,15 +71,20 @@
             </div>
         {/if}
     </div>
-    <slot name="note" class="absolute bottom-0 p-5" />
-    {#if usedExchange}
-        <p class="absolute bottom-0 p-5">
-            Exchange rate last updated at {exchangeRate?.created.toLocaleString()}.
-            Includes:
-            {#each wallets as w, i}
-                <Amount amount={getAmount(w, amount)} currency={w.currency} />
-                {i == wallets.length - 1 ? "" : ", "}
-            {/each}
-        </p>
-    {/if}
+    <div class="absolute bottom-0 p-5 text-xs leading-6">
+        <slot name="note" />
+        {#if usedExchange}
+            <span>
+                Exchange rate last updated at {exchangeRate?.created.toLocaleString()}.
+                Includes:
+                {#each wallets as w, i}
+                    <Amount
+                        amount={getAmount(w, amount)}
+                        currency={w.currency}
+                    />
+                    {i == wallets.length - 1 ? "" : ", "}
+                {/each}
+            </span>
+        {/if}
+    </div>
 </Card.Root>
