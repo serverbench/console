@@ -13,7 +13,7 @@
         formattedAmount = new Intl.NumberFormat("en-US", {
             style: "currency",
             currency: currency.code,
-        }).format(amount / 10 ** currency.digits);
+        }).format(amount / (10 ** currency.digits));
     }
 </script>
 

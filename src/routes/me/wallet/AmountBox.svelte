@@ -24,8 +24,10 @@
     }
 
     let total: number | null = null;
+    let usedExchange = false;
     computeTotal();
     function computeTotal() {
+        usedExchange = false;
         if (!wallet) {
             total = null;
         } else if (exchangeRate) {
@@ -35,12 +37,13 @@
                 if (exchangeRate.base == w.currency.code) {
                     realExchangeRate = 1;
                 } else {
+                    usedExchange = true;
                     // 1. origin to 'base'
                     realExchangeRate = exchangeRate.rates.get(w.currency.code)!;
                     // 2. base to 'target'
                     if (wallet.currency.code != exchangeRate.base) {
                         realExchangeRate *= exchangeRate.rates.get(
-                            w.currency.code,
+                            wallet.currency.code,
                         )!;
                     }
                 }
@@ -69,4 +72,14 @@
         {/if}
     </div>
     <slot name="note" class="absolute bottom-0 p-5" />
+    {#if usedExchange}
+        <p class="absolute bottom-0 p-5">
+            Exchange rate last updated at {exchangeRate?.created.toLocaleString()}.
+            Includes:
+            {#each wallets as w, i}
+                <Amount amount={getAmount(w, amount)} currency={w.currency} />
+                {i == wallets.length - 1 ? "" : ", "}
+            {/each}
+        </p>
+    {/if}
 </Card.Root>
