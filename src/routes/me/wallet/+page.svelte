@@ -1,6 +1,4 @@
 <script lang="ts">
-    import MollieDarkLogo from "./logo/mollie/dark.svg";
-    import MollieLightLogo from "./logo/mollie/light.svg";
     import PayPalDarkLogo from "./logo/paypal/dark.png";
     import PayPalLightLogo from "./logo/paypal/light.png";
     import Item from "$lib/components/sb/section/list/Item.svelte";
@@ -18,6 +16,8 @@
     import type WalletTransaction from "$lib/sb/wallet/WalletTransaction";
     import AmountBox from "./AmountBox.svelte";
     import FluentEmojiEyes from "~icons/fluent-emoji/eyes";
+    import Amount from "./Amount.svelte";
+    import ExchangeRate from "$lib/sb/wallet/ExchangeRate";
 
     const gateways = [
         {
@@ -31,11 +31,6 @@
             light: PayPalLightLogo,
             chonky: true,
         },
-        {
-            dark: MollieDarkLogo,
-            light: MollieLightLogo,
-            name: "mollie",
-        },
     ];
 
     let loading = false;
@@ -43,19 +38,35 @@
     let selectedWallet: Wallet | null = null;
     let loadingTransactions = false;
     let transactions: WalletTransaction[] = [];
+    let exchangeRate: ExchangeRate | null = null;
 
     async function reloadSelected() {
         loading = true;
-        transactions = [];
+        await Promise.all([
+            loadWallets(),
+            loadTransactions(),
+            loadExchangeRates(),
+        ]);
+        loading = false;
+    }
+
+    async function loadWallets() {
         wallets = await Wallet.list();
         if (wallets.length <= 0) {
             wallets = [await Wallet.create("EUR")];
         }
         selectedWallet = wallets[0];
+    }
+
+    async function loadTransactions() {
+        transactions = [];
         loadingTransactions = true;
-        transactions = await selectedWallet!.getTransactions(0);
+        transactions = await Wallet.getTransactions(0);
         loadingTransactions = false;
-        loading = false;
+    }
+
+    async function loadExchangeRates() {
+        exchangeRate = await ExchangeRate.get();
     }
 
     const gatewayNames = gateways.map((g) => g.name);
@@ -87,13 +98,23 @@
     </Button>
 </div>
 <div class="grid grid-cols-1 lg:grid-cols-3 gap-5">
-    <AmountBox amount={selectedWallet?.withdrawable} wallet={selectedWallet}>
+    <AmountBox
+        amount="withdrawable"
+        wallet={selectedWallet}
+        {exchangeRate}
+        {wallets}
+    >
         Withdrawable
         <div slot="note" class="text-xs leading-6">
             Withdrawable using the gateways below
         </div>
     </AmountBox>
-    <AmountBox amount={selectedWallet?.settling} wallet={selectedWallet}>
+    <AmountBox
+        amount="settling"
+        wallet={selectedWallet}
+        {exchangeRate}
+        {wallets}
+    >
         Settling Balance
         <div slot="note">
             <Tooltip.Root>
@@ -112,7 +133,7 @@
             </Tooltip.Root>
         </div>
     </AmountBox>
-    <AmountBox amount={selectedWallet?.credit} wallet={selectedWallet}>
+    <AmountBox amount="credit" wallet={selectedWallet} {exchangeRate} {wallets}>
         Internal Credit
         <span slot="note" class="text-xs">
             <Badge class="scale-90" variant="secondary">1% APR</Badge> on your withdrawable
@@ -167,8 +188,10 @@
 <Section list {loading} name="transactions" used={1}>
     {#each transactions as transaction}
         <Item hideDropdown>
-            {selectedWallet?.currency.code}
-            {transaction.net / 10 ** selectedWallet?.currency.digits}
+            <Amount
+                amount={transaction.net}
+                currency={transaction.wallet.currency}
+            />
             <div class="ml-auto">
                 <Badge variant="outline">
                     {transaction.created}
