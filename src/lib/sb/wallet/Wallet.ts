@@ -1,3 +1,4 @@
+import type { EChartsOption } from "echarts"
 import type Currency from "../store/Currency"
 import User from "../User"
 import WalletTransaction from "./WalletTransaction"
@@ -37,6 +38,14 @@ export default class Wallet {
         return (await user!.post(`/user/wallet/transaction`, {
             page: page
         })).map((t: any) => WalletTransaction.fromObject(Wallet.fromObject(t.wallet), t))
+    }
+
+    public static async getAnalytics(from: Date | null = null, to: Date | null = null) {
+        const options = (await (await User.get()!)?.post('/user/wallet/analytics', {
+            from: from ? from.getTime() : null,
+            to: to ? to.getTime() : null
+        })) as EChartsOption
+        return options
     }
 
 }
