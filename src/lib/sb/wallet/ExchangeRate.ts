@@ -15,7 +15,7 @@ export default class ExchangeRate {
     }
 
     public static fromObject(obj: any) {
-        return new ExchangeRate(obj.id, obj.base, obj.created, new Map(Object.entries(obj.rates)))
+        return new ExchangeRate(obj.id, obj.base, new Date(obj.created), new Map(Object.entries(obj.rates)))
     }
 
     public static async get() {

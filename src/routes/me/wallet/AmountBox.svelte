@@ -3,6 +3,7 @@
     import Skeleton from "$lib/components/ui/skeleton/skeleton.svelte";
     import type ExchangeRate from "$lib/sb/wallet/ExchangeRate";
     import type Wallet from "$lib/sb/wallet/Wallet";
+    import NumberFlow from "@number-flow/svelte";
     import Amount from "./Amount.svelte";
     export let amount: "withdrawable" | "settling" | "credit";
     export let wallet: Wallet | null;
@@ -67,15 +68,21 @@
             <Skeleton class="w-full h-24" />
         {:else}
             <div class="h-24 flex flex-col justify-center text-5xl">
-                <Amount amount={total} currency={wallet?.currency} />
+                <NumberFlow
+                    value={total / 10 ** wallet.currency.digits}
+                    format={{
+                        style: "currency",
+                        currency: wallet.currency.code,
+                    }}
+                />
             </div>
         {/if}
     </div>
     <div class="text-xs leading-6">
         <slot name="note" />
-        {#if usedExchange}
-            <span>
-                Exchange rate last updated at {exchangeRate?.created.toLocaleString()}.
+        {#if usedExchange && exchangeRate}
+            <div class="text-opacity-80 hover:text-opacity-100 transition">
+                Exchange rate last updated at {exchangeRate?.created.toLocaleTimeString()}.
                 Includes:
                 {#each wallets as w, i}
                     <Amount
@@ -84,7 +91,7 @@
                     />
                     {i == wallets.length - 1 ? "" : ", "}
                 {/each}
-            </span>
+            </div>
         {/if}
     </div>
 </Card.Root>

@@ -17,6 +17,6 @@
     }
 </script>
 
-<span>
+<span class="inline">
     {formattedAmount}
 </span>
