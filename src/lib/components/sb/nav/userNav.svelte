@@ -7,10 +7,10 @@
 
 <ScrollArea class="grow p-6">
     <div class="flex flex-col gap-5">
-        <NavSection icon={Landmark} name="community">
+        <NavSection icon={Landmark} name="balance">
             <NavLink href="/me/wallet">Wallet</NavLink>
         </NavSection>
-        <NavSection icon={Link} name="community">
+        <NavSection icon={Link} name="communities">
             <NavLink href="/me/referrals">Referrals</NavLink>
         </NavSection>
     </div>

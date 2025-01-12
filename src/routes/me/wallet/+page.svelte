@@ -35,8 +35,61 @@
         },
     ];
 
-    let walletAnalytics: EChartsOption | null = null;
-    let computedWalletAnalytics: EChartsOption | null = null;
+    async function analyticsProvider(
+        from: Date,
+        to: Date,
+    ): Promise<EChartsOption> {
+        if (selectedWallet) {
+            const analytics = await Wallet.getAnalytics(from, to);
+            if (exchangeRate == null) {
+                return analytics;
+            } else if (Array.isArray(analytics!.series)) {
+                for (const serie of analytics!.series) {
+                    if (serie.name != selectedWallet!.currency.code) {
+                        // we want to convert the serie to the selected wallet currency
+                        // the exchange rate base is found on exchangeRate.base
+                        // the target currency is selectedWallet.currency.code
+                        // the source currency is serie.name
+                        let rate = 1;
+                        const source = String(serie.name);
+                        const target = selectedWallet!.currency.code;
+
+                        // Check if the base currency is the source currency
+                        if (exchangeRate.base === source) {
+                            // If the base is the source, the rate is found directly
+                            rate = exchangeRate.rates.get(target) || 1; // default to 1 if rate is undefined
+                        } else {
+                            // If the base is not the source, we need to convert from the source to the base and then from the base to the target
+                            const baseToSourceRate =
+                                exchangeRate.rates.get(source) || 1;
+                            const baseToTargetRate =
+                                exchangeRate.rates.get(target) || 1;
+
+                            rate = baseToTargetRate / baseToSourceRate;
+                        }
+                        serie.data = (serie.data as any[]).map((d) => {
+                            return [
+                                d[0],
+                                Math.trunc(
+                                    d[1] *
+                                        rate *
+                                        10 ** selectedWallet!.currency.digits,
+                                ) /
+                                    10 ** selectedWallet!.currency.digits,
+                            ];
+                        });
+                        serie.name = `${selectedWallet!.currency.code}* (exchanged from ${serie.name})`;
+                    }
+                }
+                analytics!.legend = {
+                    ...analytics!.legend,
+                    data: analytics!.series.map((s) => String(s.name)),
+                };
+                return analytics;
+            }
+        }
+        return new Promise(() => {}) as Promise<EChartsOption>;
+    }
     let loading = false;
     let wallets: Wallet[] = [];
     let selectedWallet: Wallet | null = null;
@@ -44,73 +97,14 @@
     let transactions: WalletTransaction[] = [];
     let exchangeRate: ExchangeRate | null = null;
 
-    $: selectedWallet, applyExchangeToAnalytics();
-
     async function reloadSelected() {
         loading = true;
         await Promise.all([
             loadWallets(),
             loadTransactions(),
             loadExchangeRates(),
-            loadAnalytics(),
         ]);
-        applyExchangeToAnalytics();
         loading = false;
-    }
-
-    async function applyExchangeToAnalytics() {
-        computedWalletAnalytics = JSON.parse(JSON.stringify(walletAnalytics));
-        if (exchangeRate == null) return;
-        if (Array.isArray(computedWalletAnalytics!.series)) {
-            for (const serie of computedWalletAnalytics!.series) {
-                if (serie.name != selectedWallet!.currency.code) {
-                    // we want to convert the serie to the selected wallet currency
-                    // the exchange rate base is found on exchangeRate.base
-                    // the target currency is selectedWallet.currency.code
-                    // the source currency is serie.name
-                    let rate = 1;
-                    const source = String(serie.name);
-                    const target = selectedWallet!.currency.code;
-
-                    // Check if the base currency is the source currency
-                    if (exchangeRate.base === source) {
-                        // If the base is the source, the rate is found directly
-                        rate = exchangeRate.rates.get(target) || 1; // default to 1 if rate is undefined
-                    } else {
-                        // If the base is not the source, we need to convert from the source to the base and then from the base to the target
-                        const baseToSourceRate =
-                            exchangeRate.rates.get(source) || 1;
-                        const baseToTargetRate =
-                            exchangeRate.rates.get(target) || 1;
-
-                        rate = baseToTargetRate / baseToSourceRate;
-                    }
-                    serie.data = (serie.data as any[]).map((d) => {
-                        return [
-                            d[0],
-                            Math.trunc(
-                                d[1] *
-                                    rate *
-                                    10 ** selectedWallet!.currency.digits,
-                            ) /
-                                10 ** selectedWallet!.currency.digits,
-                        ];
-                    });
-                    serie.name = `${selectedWallet!.currency.code}* (exchanged from ${serie.name})`;
-                }
-            }
-            computedWalletAnalytics!.legend = {
-                ...computedWalletAnalytics!.legend,
-                data: computedWalletAnalytics!.series.map((s) =>
-                    String(s.name),
-                ),
-            };
-        }
-        computedWalletAnalytics = computedWalletAnalytics;
-    }
-
-    async function loadAnalytics() {
-        walletAnalytics = await Wallet.getAnalytics(new Date(1733011200000), new Date());
     }
 
     async function loadWallets() {
@@ -203,7 +197,9 @@
     </AmountBox>
 </div>
 
-<BarChart options={computedWalletAnalytics} />
+{#key [selectedWallet, exchangeRate]}
+    <BarChart name="Balance Transactions" provider={analyticsProvider} />
+{/key}
 
 <Accordion.Root>
     <Accordion.Item value="item-1">

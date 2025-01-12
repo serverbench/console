@@ -5,6 +5,7 @@
     import ReferralProgramRow from "./ReferralProgramRow.svelte";
     import { Input } from "$lib/components/ui/input";
     import Button from "$lib/components/ui/button/button.svelte";
+    import BarChart from "$lib/components/sb/chart/BarChart.svelte";
 
     let loading = false;
     let referralPrograms: ReferralProgram[] = [];
@@ -19,8 +20,13 @@
         } catch (error) {}
         loading = false;
     });
+
+    const creatorsProvider = ReferralProgram.getCreatorAnalytics;
+    const membersProvider = ReferralProgram.getMemberAnalytics;
 </script>
 
+<BarChart name="Enrolled Creators" provider={creatorsProvider} />
+<BarChart name="Referred Members" provider={membersProvider} />
 <Section name="Referral Programs" list used={referralPrograms.length} {loading}>
     <div slot="add" class="flex flex-col gap-3">
         <Input

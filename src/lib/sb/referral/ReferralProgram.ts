@@ -1,3 +1,4 @@
+import type { EChartsOption } from "echarts";
 import Community from "../Community";
 import Member from "../member/Member";
 import User from "../User";
@@ -54,5 +55,23 @@ export default class ReferralProgram {
             page
         })
         return members.map((m: any) => Member.fromObj(this.community!, m))
+    }
+
+    public static async getMemberAnalytics(from:Date, to:Date): Promise<EChartsOption> {
+        const user = await User.get()
+        const community = await Community.get();
+        return await user!.post(`/community/${community!.id}/referral/program/analytics/members`, {
+            from: from.getTime(),
+            to: to.getTime()
+        })
+    }
+
+    public static async getCreatorAnalytics(from:Date, to:Date): Promise<EChartsOption> {
+        const user = await User.get()
+        const community = await Community.get();
+        return await user!.post(`/community/${community!.id}/referral/program/analytics/creators`, {
+            from: from.getTime(),
+            to: to.getTime()
+        })
     }
 }

@@ -1,3 +1,4 @@
+import type { EChartsOption } from "echarts";
 import Community from "../../Community";
 import User from "../../User";
 import type ListingSite from "./ListingSite";
@@ -57,6 +58,15 @@ export default class ListingSiteSetup extends ListingSiteTimings {
     async delete() {
         const user = await User.get()
         await user!.delete(`/community/${this.community.id}/listing/site/${this.site.id}`)
+    }
+
+    public static async getJoinAnalytics(from:Date, to:Date): Promise<EChartsOption> {
+        const user = await User.get()
+        const community = await Community.get();
+        return await user!.post(`/community/${community!.id}/listing/site/analytics`, {
+            from: from.getTime(),
+            to: to.getTime()
+        })
     }
 
 }
