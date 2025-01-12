@@ -115,7 +115,7 @@
                 domain!,
                 protocols,
                 resetScheme == "fixed" ? timezone : null,
-                resetScheme == "fixed" ? reset * 3600 : null,
+                resetScheme == "fixed" ? reset : null,
                 resetScheme == "cooldown" ? cooldown * 3600 : null,
             );
             listingSites = [...listingSites, listingSite];
