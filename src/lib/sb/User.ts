@@ -20,7 +20,7 @@ export default class User {
         this.id = id
         this.accessToken = accessToken
         this.refreshToken = refreshToken
-        this.test = test
+        this.test = false
     }
 
     public static fromObject(obj: any) {
@@ -100,6 +100,34 @@ export default class User {
         User.instance = new User("", accessToken, refreshToken, !window.location.origin.includes('serverbench.io'))
         if (this.onLogin) await this.onLogin()
         return User.instance.renewIfDue()
+    }
+
+    public socket(action: string, callback: (result: any) => void) {
+        const url = new URL(`${this.test ? 'ws://localhost:3030' : 'wss://stream.beta.serverbench.io'}/`)
+        url.searchParams.append('token', this.accessToken!)
+        const ws = new WebSocket(url.toString())
+        ws.onopen = () => {
+            ws.send(JSON.stringify({
+                action,
+                rid: this.randomRid()
+            }))
+        }
+        ws.onmessage = (m) => {
+            const parsed = JSON.parse(m.data)
+            if (parsed.result) {
+                callback(parsed.result)
+            } else {
+                ws.send(JSON.stringify({
+                    rid: this.randomRid(),
+                    action: [parsed.realm,parsed.action].join('.')
+                }))
+            }
+        }
+        return ws
+    }
+
+    private randomRid() {
+        return (Math.random() + 1).toString(36).substring(7)
     }
 
     private store() {
