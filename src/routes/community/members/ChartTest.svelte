@@ -40,6 +40,8 @@
 
     let data: DataPoint[] = [];
 
+    let resolution = 10
+
     function getBands(
         selector: "active" | "idle",
         color: string,
@@ -204,19 +206,26 @@
     }
 
     onMount(async () => {
+        load()
+    });
+
+    $: resolution, load()
+
+    async function load(){
         const user = await User.get();
         const community = await Community.get();
         data = await user!.post(`/community/${community!.id}/count`, {
-            resolution: 15,
+            resolution,
         });
-    });
+    }
 </script>
 
-<div class="h-96 w-full border">
+<div class="h-96 w-full border flex flex-col gap-5 py-5 items-center">
     <Chart
         bind:chart
         {init}
         {options}
         on:legendselectchanged={handleLegendSelect}
     />
+    <input type="number" bind:value={resolution} />
 </div>
