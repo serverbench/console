@@ -3,7 +3,8 @@
     import countryCode from "i18n-iso-countries";
 
     export let country: string | null,
-        fullName: boolean = false;
+        fullName: boolean = false,
+        hideShortName: boolean = false;
 </script>
 
 <div class="flex flex-row gap-1 items-center">
@@ -18,7 +19,7 @@
         <span>
             {#if fullName}
                 {countryCode.getName(country, "en")}
-            {:else}
+            {:else if !hideShortName}
                 {country}
             {/if}
         </span>

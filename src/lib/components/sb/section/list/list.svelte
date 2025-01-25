@@ -3,7 +3,7 @@
     import * as Card from "$lib/components/ui/card";
 </script>
 
-<Card.Root>
+<Card.Root class="overflow-hidden">
     <Table.Root>
         <Table.Body>
             <slot />

@@ -220,12 +220,11 @@
     }
 </script>
 
-<div class="h-96 w-full border flex flex-col gap-5 py-5 items-center">
+<div class="h-96 w-full border flex flex-col gap-5 pt-5">
     <Chart
         bind:chart
         {init}
         {options}
         on:legendselectchanged={handleLegendSelect}
     />
-    <input type="number" bind:value={resolution} />
 </div>

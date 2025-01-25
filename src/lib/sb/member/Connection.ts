@@ -5,6 +5,8 @@ import Member from "./Member"
 
 export default class Connection {
 
+    public readonly id: string | null
+    public readonly idle: boolean
     public readonly created: Date
     public readonly closed: Date | null
     public readonly member: Member
@@ -17,6 +19,7 @@ export default class Connection {
 
 
     constructor(
+        id: string,
         created: Date,
         closed: Date | null,
         member: Member,
@@ -25,8 +28,10 @@ export default class Connection {
         timezone: string | null,
         entrypoint: string | null,
         referral: ReferralCode | null,
-        listingSite: ListingSite | null
+        listingSite: ListingSite | null,
+        idle: boolean
     ) {
+        this.id = id
         this.created = created
         this.closed = closed
         this.member = member
@@ -36,10 +41,12 @@ export default class Connection {
         this.entrypoint = entrypoint
         this.referral = referral
         this.listingSite = listingSite
+        this.idle = idle
     }
 
     public static fromObj(obj: any, member: Member) {
         return new Connection(
+            obj.id,
             new Date(obj.created),
             obj.closed ? new Date(obj.closed) : null,
             member,
@@ -48,7 +55,8 @@ export default class Connection {
             obj.timezone,
             obj.entrypoint,
             obj.referral ? ReferralCode.fromObj(obj.referral, member.community) : null,
-            obj.listingSite && obj.listingSite.domain ? ListingSite.fromObject(null, obj.listingSite) : null
+            obj.listingSite && obj.listingSite.domain ? ListingSite.fromObject(null, obj.listingSite) : null,
+            obj.idle
         )
     }
 
