@@ -4,17 +4,18 @@
     import Connection from "$lib/sb/member/Connection";
     import Member from "$lib/sb/member/Member";
     import User from "$lib/sb/User";
-    import { onMount } from "svelte";
+    import { createEventDispatcher, onMount } from "svelte";
     import { fade, scale, slide } from "svelte/transition";
     import * as Tooltip from "$lib/components/ui/tooltip";
     import Card from "$lib/components/ui/card/card.svelte";
     import Section from "$lib/components/sb/section/section.svelte";
     import Item from "$lib/components/sb/section/list/Item.svelte";
-    import Badge from "$lib/components/ui/badge/badge.svelte";
     import { History } from "lucide-svelte";
     import Time from "svelte-time";
     import { flip } from "svelte/animate";
     import Country from "$lib/components/sb/country.svelte";
+
+    const dispatch = createEventDispatcher();
 
     let list: Connection[] = [];
 
@@ -24,10 +25,10 @@
         const ws = user!.socket(
             `community.${community!.id}.member.connection`,
             (data) => {
-                console.log(data);
                 list = data.map((i: any) =>
                     Connection.fromObj(i, Member.fromObj(community!, i.member)),
                 );
+                dispatch("update", { list });
             },
         );
     });

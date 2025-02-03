@@ -14,6 +14,7 @@
     import { onMount } from "svelte";
     import User from "$lib/sb/User";
     import Community from "$lib/sb/Community";
+    import OnlineMembers from "./OnlineMembers.svelte";
     use([
         LineChart,
         BarChart,
@@ -40,7 +41,7 @@
 
     let data: DataPoint[] = [];
 
-    let resolution = 10
+    let resolution = 20;
 
     function getBands(
         selector: "active" | "idle",
@@ -206,12 +207,12 @@
     }
 
     onMount(async () => {
-        load()
+        load();
     });
 
-    $: resolution, load()
+    $: resolution, load();
 
-    async function load(){
+    async function load() {
         const user = await User.get();
         const community = await Community.get();
         data = await user!.post(`/community/${community!.id}/count`, {
@@ -228,3 +229,5 @@
         on:legendselectchanged={handleLegendSelect}
     />
 </div>
+
+<OnlineMembers on:update={() => load()} />

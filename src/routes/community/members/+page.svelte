@@ -8,4 +8,3 @@
 </script>
 
 <ChartTest />
-<OnlineMembers />
