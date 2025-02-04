@@ -20,7 +20,7 @@ export default class User {
         this.id = id
         this.accessToken = accessToken
         this.refreshToken = refreshToken
-        this.test = false
+        this.test = test
     }
 
     public static fromObject(obj: any) {
