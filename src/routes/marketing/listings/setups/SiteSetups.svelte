@@ -38,8 +38,9 @@
     let scheduledDividerUpdate: number | null = null;
 
     function scheduleDividerUpdate() {
+        return null
         if (scheduledDividerUpdate != null) {
-            clearTimeout(scheduledDividerUpdate);
+            clearTimeout(scheduledDividerUpdate!);
         }
         scheduledDividerUpdate = setTimeout(async () => {
             scheduledDividerUpdate = null;
@@ -206,15 +207,17 @@
         </Item>
         {#if settings != null}
             {#if i == primaryFallbackStart}
+                <!-- 
                 <MoveableDivider
                     bind:position={primaryFallbackStart}
                     max={secondaryStart}
                     loading={updatingLimits}
                 >
                     fallback primary sites
-                </MoveableDivider>
+                </MoveableDivider>-->
             {/if}
             {#if i == secondaryStart}
+            <!-- 
                 <MoveableDivider
                     bind:position={secondaryStart}
                     min={primaryFallbackStart}
@@ -222,9 +225,10 @@
                     loading={updatingLimits}
                 >
                     secondary sites
-                </MoveableDivider>
+                </MoveableDivider>-->
             {/if}
             {#if i == secondaryFallbackStart}
+            <!-- 
                 <MoveableDivider
                     bind:position={secondaryFallbackStart}
                     min={secondaryStart}
@@ -232,9 +236,10 @@
                     loading={updatingLimits}
                 >
                     fallback secondary sites
-                </MoveableDivider>
+                </MoveableDivider>-->
             {/if}
             {#if i == secondaryEnd}
+            <!-- 
                 <MoveableDivider
                     bind:position={secondaryEnd}
                     min={secondaryFallbackStart}
@@ -242,7 +247,7 @@
                     loading={updatingLimits}
                 >
                     extra (hidden) sites
-                </MoveableDivider>
+                </MoveableDivider>-->
             {/if}
         {/if}
     {/each}
