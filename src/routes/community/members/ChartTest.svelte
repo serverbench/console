@@ -41,7 +41,7 @@
 
     let data: DataPoint[] = [];
 
-    let resolution = 1;
+    let resolution = 60;
 
     function getBands(
         selector: "active" | "idle",
