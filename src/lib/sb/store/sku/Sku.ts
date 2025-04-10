@@ -27,6 +27,7 @@ export default class Sku {
     }
 
     public static fromObj(category: StoreCategory | null, obj: any) {
+        console.log(obj)
         const item = new Sku(
             obj.id,
             category,
@@ -34,9 +35,13 @@ export default class Sku {
             obj.type,
             obj.img
         )
-        item.prices = obj.prices.map((p: any) => SkuPrice.fromObj(item, p))
+        item.prices = obj.prices.filter((p: any) => p != null).map((p: any) => SkuPrice.fromObj(item, p))
         if (category) {
-            item.perks = obj.perks.map((p: any) => SkuPerkUsage.fromObj(SkuPerk.fromObj(category?.community ?? null, p.perk), item, p))
+            try {
+                item.perks = obj.perks.map((p: any) => SkuPerkUsage.fromObj(SkuPerk.fromObj(category?.community ?? null, p.perk), item, p))
+            } catch (error) {
+                // perks might be empty
+            }
         }
         return item
     }
@@ -88,7 +93,6 @@ export default class Sku {
     }
 
     public async addPerk(perk: SkuPerk, amount: number | null = null) {
-        console.log(perk)
         const user = await User.get()
         const obj = await user!.post(`/community/${this.category!.community.id}/store/category/${this.category!.id}/sku/${this.id}/perk/${perk.id}`, {
             amount: amount ? String(amount) : null
