@@ -140,7 +140,7 @@
                 </Table.Row>
             {/each}
             {#if loading}
-                {#each Array(10) as _}
+                {#each Array(20) as _}
                     <Table.Row>
                         {#each Array(4) as _}
                             <Table.Cell>
