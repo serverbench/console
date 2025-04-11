@@ -25,7 +25,7 @@
         loading = true;
         try {
             const loaded = await Transaction.list(page);
-            if (loaded.length < 10) {
+            if (loaded.length < 20) {
                 hasMore = false;
             }
             transactions = [...transactions, ...loaded];
@@ -43,8 +43,8 @@
         <Table.Header>
             <Table.Row>
                 <Table.Head>Created</Table.Head>
-                <Table.Head>User</Table.Head>
                 <Table.Head>Package</Table.Head>
+                <Table.Head>User</Table.Head>
                 <Table.Head class="text-right">Amount</Table.Head>
             </Table.Row>
         </Table.Header>
@@ -52,25 +52,13 @@
             {#each transactions as transaction}
                 <Table.Row>
                     <Table.Cell>
-                        <Badge>
+                        <Badge class="whitespace-nowrap">
                             <Time
                                 relative
                                 timestamp={transaction.result?.created ??
                                     transaction.checkout.created}
                             />
                         </Badge>
-                    </Table.Cell>
-                    <Table.Cell>
-                        {#if transaction.checkout.member}
-                            <div class="flex flex-col gap-1">
-                                <p>{transaction.checkout.member.name}</p>
-                                <p class="text-xs">
-                                    {transaction.checkout.member
-                                        .eid}@{transaction.checkout.member.game
-                                        .slug}
-                                </p>
-                            </div>
-                        {/if}
                     </Table.Cell>
                     <Table.Cell>
                         {#each transaction.checkout.groups as group}
@@ -90,6 +78,18 @@
                                 </div>
                             {/each}
                         {/each}
+                    </Table.Cell>
+                    <Table.Cell>
+                        {#if transaction.checkout.member}
+                            <div class="flex flex-col gap-1">
+                                <p>{transaction.checkout.member.name}</p>
+                                <p class="text-xs">
+                                    {transaction.checkout.member
+                                        .eid}@{transaction.checkout.member.game
+                                        .slug}
+                                </p>
+                            </div>
+                        {/if}
                     </Table.Cell>
                     <Table.Cell>
                         {#if transaction.result}
