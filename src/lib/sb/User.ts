@@ -159,7 +159,7 @@ export default class User {
                 finalBody = JSON.stringify(body)
             }
         }
-        const req = await fetch(`https://${this.test ? 'dev.serverbench.io' : 'api.beta.serverbench.io'}${path}`, {
+        const req = await fetch(`https://${false ? 'dev.serverbench.io' : 'api.beta.serverbench.io'}${path}`, {
             headers,
             body: finalBody,
             method: method
