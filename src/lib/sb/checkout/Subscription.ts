@@ -1,7 +1,10 @@
+import Community from "../Community";
 import type Currency from "../store/Currency";
 import type { Frequency } from "../store/sku/SkuPrice";
+import User from "../User";
 import Authorization from "./Authorization";
-import type Checkout from "./Checkout";
+import Checkout from "./Checkout";
+import StoreCheckout from "./StoreCheckout";
 
 export default class Subscription extends Authorization {
 
@@ -29,6 +32,26 @@ export default class Subscription extends Authorization {
             obj.finished ? new Date(obj.finished) : null,
             obj.cycle
         )
+    }
+
+    public static async list(page: number = 0) {
+        const user = await User.get()
+        const community = await Community.get()
+        return (await user!.post(`/community/${community?.id}/subscription`, {
+            page
+        })).map((s: any) => {
+            s.checkout.store.checkout = s.checkout
+            const storeCheckout = StoreCheckout.fromObject(community!, s.checkout.store)
+            return Subscription.fromObject(s, storeCheckout.checkout!)
+        })
+    }
+
+    public async end(instantly: boolean) {
+        const user = await User.get()
+        const community = await Community.get()
+        await user!.post(`/community/${community?.id}/subscription/${this.id}/end`, {
+            instantly
+        })
     }
 
 }

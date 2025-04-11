@@ -7,6 +7,9 @@
     import { onMount } from "svelte";
     import MemberPicker from "../../../../community/members/MemberPicker.svelte";
     import type Member from "$lib/sb/member/Member";
+    import Community from "$lib/sb/Community";
+    import Serverbench from "@serverbench/js";
+    import { goto } from "$app/navigation";
 
     let user: User | null = null;
     let member: Member | null = null;
@@ -16,55 +19,61 @@
     export let price: SkuPrice,
         open = false;
 
-    let src: string | null = null;
     let loading = false;
+    let mounted = false;
+    let mountTarget: HTMLDivElement | null = null;
 
     async function load() {
         loading = true;
         try {
-            const checkout = await price.checkoutPreview(member!);
-            src =
-                `https://safe.serverbench.io/checkout?token=${checkout.checkout.token}` +
-                (localStorage.getItem("dark") ? "&dark" : "");
+            const community = await Community.get();
+            const keys = await community!.getKeys();
+            const serverbench = Serverbench.get(
+                community!.id,
+                keys.pk,
+                (await User.get())!.isTest(),
+            );
+            const m = await serverbench.store
+                .checkout([price!.id], [], member!.id, null)
+                .setDark(localStorage.getItem("dark") ? true : false)
+                .mount(mountTarget!);
+            m.addEventListener("payment", () => {
+                open = false;
+                goto('/payments/transactions');
+            });
+            mounted = true;
         } catch (error) {}
         loading = false;
     }
 
     $: open,
         (() => {
-            src = null;
+            mounted = false;
+            member = null;
+            loading = false;
         })();
 </script>
 
 <Dialog.Root bind:open>
     <Dialog.Content class="overflow-hidden max-w-screen-sm">
-        <div
-            class:h-96={src}
-            class="overflow-y-auto flex flex-col items-center justify-center"
-        >
+        <div class="overflow-y-auto flex flex-col items-center justify-center">
+            <div
+                class:hidden={!mounted}
+                class="w-full"
+                bind:this={mountTarget}
+            ></div>
             {#if loading}
                 <Loader2 class="animate-spin" />
-            {:else if !src}
+            {:else if !mounted}
                 <MemberPicker bind:member />
-            {:else}
-                <iframe
-                    class="block h-full w-full"
-                    title="checkout preview"
-                    {src}
-                />
             {/if}
         </div>
         <Dialog.Footer>
-            {#if src}
-                <Button
-                    variant="secondary"
-                    href={`${src}&popup&background`}
-                    target="_blank">Open</Button
-                >
-            {/if}
             <Button type="submit" on:click={() => (open = false)}>Done</Button>
-            {#if !src}
-                <Button on:click={() => load()} disabled={loading}>Next</Button>
+            {#if !mounted}
+                <Button on:click={() => load()} disabled={loading || !member}
+                    >Next</Button
+                >
             {/if}
         </Dialog.Footer>
     </Dialog.Content>

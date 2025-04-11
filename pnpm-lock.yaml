@@ -14,6 +14,9 @@ importers:
       '@number-flow/svelte':
         specifier: ^0.3.3
         version: 0.3.3(svelte@4.2.19)
+      '@serverbench/js':
+        specifier: ^1.4.5
+        version: 1.4.5
       apexcharts:
         specifier: ^3.54.1
         version: 3.54.1
@@ -363,6 +366,9 @@ packages:
     peerDependencies:
       svelte: ^4 || ^5
 
+  '@open-iframe-resizer/core@1.2.1':
+    resolution: {integrity: sha512-s2+Z53j/+91TZCIg00OobWjuTb50Z0Dqmu+e0Ocs+hlmUIZ6qYXu58dbEUKkZvLwoMnhZrnuqlLPsVUzMfopOQ==}
+
   '@pkgjs/parseargs@0.11.0':
     resolution: {integrity: sha512-+1VkjdD0QBLPodGrJUeqarH8VAIvQODIbwh9XpP5Syisf7YoQgsJKPNFoqqLQlu+VQ/tVSshMR6loPMn8U+dPg==}
     engines: {node: '>=14'}
@@ -464,6 +470,9 @@ packages:
     resolution: {integrity: sha512-k3MVFD9Oq+laHkw2N2v7ILgoa9017ZMF/inTtHzyTVZjYs9cSH18sdyAf6spBAJIGwJ5UaC7et2ZH1WCdlhkMw==}
     cpu: [x64]
     os: [win32]
+
+  '@serverbench/js@1.4.5':
+    resolution: {integrity: sha512-zuravdcy77AA1U3ic63jlv286WotvtZ0SeU+miQD0/+R7+jv7m9jIjqd/FczNoswtMSnVRTycFA8crPhxQ0rmA==}
 
   '@sveltejs/adapter-auto@3.3.1':
     resolution: {integrity: sha512-5Sc7WAxYdL6q9j/+D0jJKjGREGlfIevDyHSQ2eNETHcB1TKlQWHcAo8AS8H1QdjNvSXpvOwNjykDUHPEAyGgdQ==}
@@ -1618,6 +1627,8 @@ snapshots:
       number-flow: 0.5.3
       svelte: 4.2.19
 
+  '@open-iframe-resizer/core@1.2.1': {}
+
   '@pkgjs/parseargs@0.11.0':
     optional: true
 
@@ -1679,6 +1690,10 @@ snapshots:
 
   '@rollup/rollup-win32-x64-msvc@4.34.1':
     optional: true
+
+  '@serverbench/js@1.4.5':
+    dependencies:
+      '@open-iframe-resizer/core': 1.2.1
 
   '@sveltejs/adapter-auto@3.3.1(@sveltejs/kit@2.17.1(@sveltejs/vite-plugin-svelte@3.1.2(svelte@4.2.19)(vite@5.4.14))(svelte@4.2.19)(vite@5.4.14))':
     dependencies:

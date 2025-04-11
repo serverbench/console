@@ -27,6 +27,10 @@ export default class User {
         return new User(obj.id, null, null, false)
     }
 
+    public isTest(){
+        return this.test
+    }
+
     public static async login(service: string, state: string = (Math.random() + 1).toString(36).substring(7)): Promise<User> {
         const redirect_uri = `https://${product}`
         return new Promise(async (resolve, reject) => {
@@ -159,7 +163,7 @@ export default class User {
                 finalBody = JSON.stringify(body)
             }
         }
-        const req = await fetch(`https://${false ? 'dev.serverbench.io' : 'api.beta.serverbench.io'}${path}`, {
+        const req = await fetch(`https://${this.test ? 'dev.serverbench.io' : 'api.beta.serverbench.io'}${path}`, {
             headers,
             body: finalBody,
             method: method

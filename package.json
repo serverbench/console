@@ -37,6 +37,7 @@
 	"dependencies": {
 		"@bedard/gradient": "^0.1.3",
 		"@number-flow/svelte": "^0.3.3",
+		"@serverbench/js": "^1.4.5",
 		"apexcharts": "^3.54.1",
 		"currency-codes": "^2.2.0",
 		"i18n-iso-countries": "^7.13.0",
