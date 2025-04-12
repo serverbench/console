@@ -4,12 +4,26 @@
     import Transaction from "$lib/sb/store/Transaction";
     import Amount from "../../me/wallet/Amount.svelte";
     import Badge from "$lib/components/ui/badge/badge.svelte";
-    import { Check, Gift, Package, RefreshCw, StopCircle } from "lucide-svelte";
+    import {
+        Check,
+        EllipsisVertical,
+        Gift,
+        Package,
+        RefreshCw,
+        Square,
+        SquareX,
+        StopCircle,
+        Trash2,
+    } from "lucide-svelte";
     import Time from "svelte-time/Time.svelte";
     import * as Table from "$lib/components/ui/table";
     import { inview } from "svelte-inview";
     import { Skeleton } from "$lib/components/ui/skeleton";
     import Subscription from "$lib/sb/checkout/Subscription";
+    import * as DropdownMenu from "$lib/components/ui/dropdown-menu";
+    import Button from "$lib/components/ui/button/button.svelte";
+    import DropdownItem from "$lib/components/sb/section/list/DropdownItem.svelte";
+    import SubscriptionRow from "./SubscriptionRow.svelte";
 
     let transactions: Subscription[] = [];
     let hasMore = true;
@@ -49,79 +63,8 @@
             </Table.Row>
         </Table.Header>
         <Table.Body>
-            {#each transactions as transaction}
-                <Table.Row>
-                    <Table.Cell>
-                        <Badge class="whitespace-nowrap">
-                            <Time relative timestamp={transaction.created} />
-                        </Badge>
-                    </Table.Cell>
-                    <Table.Cell>
-                        {#each transaction.checkout.store.groups as group}
-                            {#each group.lines as line}
-                                <div
-                                    class="bg-black dark:bg-white border border-opacity-10 bg-opacity-5 dark:bg-opacity-5 py-1 px-2 text-sm rounded flex-row gap-1 items-center inline-flex"
-                                >
-                                    {#if line.group.owner.id == transaction.checkout.store.member?.id}
-                                        <Package />
-                                    {:else}
-                                        <Gift />
-                                    {/if}
-                                    {line.price.sku.name}
-                                    {#if line.amount > 1}
-                                        ({line.amount})
-                                    {/if}
-                                </div>
-                            {/each}
-                        {/each}
-                    </Table.Cell>
-                    <Table.Cell>
-                        {#if transaction.checkout.store.member}
-                            <div class="flex flex-col gap-1">
-                                <p>{transaction.checkout.store.member.name}</p>
-                                <p class="text-xs">
-                                    {transaction.checkout.store.member
-                                        .eid}@{transaction.checkout.store.member
-                                        .game.slug}
-                                </p>
-                            </div>
-                        {/if}
-                    </Table.Cell>
-                    <Table.Cell>
-                        <div
-                            class="flex flex-row gap-2 items-center justify-end"
-                        >
-                            {#if transaction.finished}
-                                <Badge
-                                    class="flex flex-row gap-1 items-center capitalize dark:text-yellow-500 dark:bg-yellow-500 dark:bg-opacity-10 text-yellow-700 bg-yellow-50"
-                                    variant="secondary"
-                                >
-                                    {transaction.finished.toLocaleString()}
-                                    <StopCircle />
-                                </Badge>
-                            {:else}
-                                <Badge
-                                    class="flex flex-row gap-1 items-center capitalize dark:text-green-500 dark:bg-green-500 dark:bg-opacity-10 text-green-700 bg-green-50"
-                                    variant="secondary"
-                                >
-                                    Active
-                                    <Check />
-                                </Badge>
-                            {/if}
-                            <Badge
-                                class="flex flex-row gap-1 items-center capitalize"
-                                variant="secondary"
-                            >
-                                {transaction.frequency}
-                                {transaction.cycle}
-                            </Badge>
-                            <Amount
-                                amount={transaction.amount}
-                                currency={transaction.currency}
-                            />
-                        </div>
-                    </Table.Cell>
-                </Table.Row>
+            {#each transactions as subscription}
+                <SubscriptionRow {subscription} />
             {/each}
             {#if loading}
                 {#each Array(20) as _}
