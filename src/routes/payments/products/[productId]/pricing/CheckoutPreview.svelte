@@ -10,6 +10,7 @@
     import Community from "$lib/sb/Community";
     import Serverbench from "@serverbench/js";
     import { goto } from "$app/navigation";
+    import { toast } from "svelte-sonner";
 
     let user: User | null = null;
     let member: Member | null = null;
@@ -39,7 +40,10 @@
                 .mount(mountTarget!);
             m.addEventListener("payment", () => {
                 open = false;
-                goto('/payments/transactions');
+                toast.success("Paid", {
+                    description: "The checkout has been completed",
+                });
+                goto("/payments/transactions");
             });
             mounted = true;
         } catch (error) {}

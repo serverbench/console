@@ -21,6 +21,7 @@
     import Button from "$lib/components/ui/button/button.svelte";
     import UserNav from "$lib/components/sb/nav/userNav.svelte";
     import Skeleton from "$lib/components/ui/skeleton/skeleton.svelte";
+    import { Toaster } from "$lib/components/ui/sonner";
     let loggedIn = false;
 
     let afterLogin: string | null = null;
@@ -77,6 +78,8 @@
     let activeSidebar = false;
     let community: Community | null = null;
 </script>
+
+<Toaster />
 
 <main>
     {#if !["/onboarding", "/login"].includes($page.url.pathname)}
