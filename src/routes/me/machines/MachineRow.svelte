@@ -29,7 +29,7 @@
             <Dialog.Title>Setup</Dialog.Title>
             <Dialog.Description>
                 <Textarea
-                    value="curl -fsSL https://get.serverbench.io | sh -s -- "{sk}""
+                    value={`curl -fsSL https://get.serverbench.io | sh -s -- "${sk}"`}
                     readonly
                 />
             </Dialog.Description>
