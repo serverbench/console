@@ -7,6 +7,8 @@
     import { Wrench } from "lucide-svelte";
     import { onMount } from "svelte";
     import Input from "$lib/components/ui/input/input.svelte";
+    import Textarea from "$lib/components/ui/textarea/textarea.svelte";
+    import { readonly } from "svelte/store";
 
     export let machine: Machine,
         setup = false;
@@ -26,9 +28,8 @@
         <Dialog.Header>
             <Dialog.Title>Setup</Dialog.Title>
             <Dialog.Description>
-                <Input
-                    type="password"
-                    value={sk}
+                <Textarea
+                    value="curl -fsSL https://get.serverbench.io | sh -s -- "{sk}""
                     readonly
                 />
             </Dialog.Description>
