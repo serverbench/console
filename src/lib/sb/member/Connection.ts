@@ -3,6 +3,12 @@ import ReferralCode from "../referral/ReferralCode"
 import ListingSite from "../voting/site/ListingSite"
 import Member from "./Member"
 
+export type CountryCount = {
+    country: string;
+    idle: number;
+    total: number;
+};
+
 export default class Connection {
 
     public readonly id: string | null

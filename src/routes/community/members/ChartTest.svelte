@@ -20,6 +20,8 @@
     import { Switch } from "$lib/components/ui/switch";
     import Label from "$lib/components/ui/label/label.svelte";
     import { Loader2 } from "lucide-svelte";
+    import CountryPie from "./CountryPie.svelte";
+    import type { CountryCount } from "$lib/sb/member/Connection";
     use([
         LineChart,
         BarChart,
@@ -204,9 +206,6 @@
 
     function getComparedOptions() {
         options = {
-            legend: {
-                data: ["gains", "loses"],
-            },
             tooltip: {
                 trigger: "axis",
                 axisPointer: {
@@ -311,11 +310,9 @@
 
     let firstLoad = false;
 
-    async function load(reset = false) {
-        firstLoad = reset;
-        loadedResolution = resolution;
-        const user = await User.get();
-        const community = await Community.get();
+    let countries: CountryCount[] = [];
+
+    async function updateData(user: User, community: Community) {
         if (!compare) {
             data = await user!.post(`/community/${community!.id}/count`, {
                 resolution: resolution.resolution,
@@ -330,40 +327,62 @@
                 },
             );
         }
+    }
+
+    async function updateCountries(user: User, community: Community) {
+        countries = await user!.post(
+            `/community/${community!.id}/countries/online`,
+        );
+    }
+
+    async function load(reset = false) {
+        firstLoad = reset;
+        loadedResolution = resolution;
+        const user = await User.get();
+        const community = await Community.get();
+        await Promise.all([
+            updateData(user!, community!),
+            updateCountries(user!, community!),
+        ]);
         firstLoad = false;
     }
 </script>
 
-<div class="h-96 w-full border flex flex-col gap-5 pt-5 relative">
-    {#if firstLoad}
-        <div
-            class="absolute top-0 left-0 w-full h-full flex items-center justify-center"
-        >
-            <Loader2 class="animate-spin" />
-        </div>
-    {/if}
-    <div class="h-full w-full transition" class:opacity-0={firstLoad}>
-        <Chart
-            bind:chart
-            {init}
-            {options}
-            on:legendselectchanged={handleLegendSelect}
-        />
-    </div>
-    <div
-        class="absolute top-0 w-full pt-5 px-5 flex flex-row gap-5 items-center justify-between"
-    >
-        <div class="flex flex-row gap-2 items-center">
-            <Switch id="compare" bind:checked={compare} />
-            <Label for="compare">Compare</Label>
-        </div>
-        <div class="w-48">
-            <SimplePicker
-                bind:value={resolution}
-                items={resolutions}
-                name="Resolution"
+<div class="h-96 flex flex-row gap-5">
+    <div class="h-full w-full border flex flex-col gap-5 pt-5 relative">
+        {#if firstLoad}
+            <div
+                class="absolute top-0 left-0 w-full h-full flex items-center justify-center"
+            >
+                <Loader2 class="animate-spin" />
+            </div>
+        {/if}
+        <div class="h-full w-full transition" class:opacity-0={firstLoad}>
+            <Chart
+                bind:chart
+                {init}
+                {options}
+                on:legendselectchanged={handleLegendSelect}
             />
         </div>
+        <div
+            class="absolute top-0 w-full pt-5 px-5 flex flex-row gap-5 items-center justify-between"
+        >
+            <div class="flex flex-row gap-2 items-center">
+                <Switch id="compare" bind:checked={compare} />
+                <Label for="compare">Compare</Label>
+            </div>
+            <div class="w-48">
+                <SimplePicker
+                    bind:value={resolution}
+                    items={resolutions}
+                    name="Resolution"
+                />
+            </div>
+        </div>
+    </div>
+    <div class="border p-5 h-full aspect-square">
+        <CountryPie {countries} />
     </div>
 </div>
 
