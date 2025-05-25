@@ -3,25 +3,8 @@ import Community from "./Community";
 
 const product = 'serverbench.io'
 
-class Mutex {
-    private mutex = Promise.resolve();
-
-    lock(): Promise<() => void> {
-        let resolve: (() => void) = () => { };
-        const promise = new Promise<void>(res => resolve = res);
-
-        const unlock = () => resolve();
-
-        const oldMutex = this.mutex;
-        this.mutex = oldMutex.then(() => promise);
-        return oldMutex.then(() => unlock);
-    }
-}
-
-
 export default class User {
-    
-    private static mutex = new Mutex();
+
     public readonly id: string | null
     private accessToken: string | null
     private refreshToken: string | null
@@ -44,7 +27,7 @@ export default class User {
         return new User(obj.id, null, null, false)
     }
 
-    public isTest() {
+    public isTest(){
         return this.test
     }
 
@@ -108,26 +91,19 @@ export default class User {
     }
 
     public static async get(): Promise<User | null> {
-        const unlock = await this.mutex.lock(); // Acquire mutex
-        try {
-            if (User.instance == null) {
-                const accessToken = localStorage.getItem('accessToken');
-                const refreshToken = localStorage.getItem('refreshToken');
-                if (accessToken == null || refreshToken == null) {
-                    console.log('null tokens');
-                    await User.logout();
-                    return null;
-                }
-                User.instance = new User(
-                    "", accessToken, refreshToken,
-                    !window.location.origin.includes('serverbench.io')
-                );
-                if (this.onLogin) await this.onLogin();
-            }
-            return User.instance.renewIfDue();
-        } finally {
-            unlock(); // Release mutex
+        if (User.instance != null) {
+            return User.instance.renewIfDue()
         }
+        const accessToken = localStorage.getItem('accessToken')
+        const refreshToken = localStorage.getItem('refreshToken')
+        if (accessToken == null || refreshToken == null) {
+            console.log('null tokens')
+            User.logout()
+            return null
+        }
+        User.instance = new User("", accessToken, refreshToken, !window.location.origin.includes('serverbench.io'))
+        if (this.onLogin) await this.onLogin()
+        return User.instance.renewIfDue()
     }
 
     public socket(action: string, callback: (result: any) => void) {
@@ -147,7 +123,7 @@ export default class User {
             } else {
                 ws.send(JSON.stringify({
                     rid: this.randomRid(),
-                    action: [parsed.realm, parsed.action].join('.')
+                    action: [parsed.realm,parsed.action].join('.')
                 }))
             }
         }
