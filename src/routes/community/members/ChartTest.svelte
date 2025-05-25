@@ -295,11 +295,11 @@
     });
 
     let resolutions = [
-        [{ resolution: 30, blocks: 48 }, "24h"],
-        [{ resolution: 2, blocks: 30 }, "1h"],
-        [{ resolution: 60, blocks: 168 }, "1w"],
-        [{ resolution: 60 * 6, blocks: (24 * 30) / 6 }, "1mo"],
-        [{ resolution: 60 * 24, blocks: 30 * 4 }, "4mo"],
+        [{ resolution: 30, blocks: 48 }, "24 Hours"],
+        [{ resolution: 2, blocks: 30 }, "60 Minutes"],
+        [{ resolution: 60, blocks: 168 }, "This Week"],
+        [{ resolution: 60 * 6, blocks: (24 * 30) / 6 }, "Current Month"],
+        [{ resolution: 60 * 24, blocks: 30 * 4 }, "Current Quarter"],
     ] as [any, string][];
 
     let resolution = resolutions[2][0];
@@ -357,7 +357,7 @@
             <Switch id="compare" bind:checked={compare} />
             <Label for="compare">Compare</Label>
         </div>
-        <div>
+        <div class="w-48">
             <SimplePicker
                 bind:value={resolution}
                 items={resolutions}
