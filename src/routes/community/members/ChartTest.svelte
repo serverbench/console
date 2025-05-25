@@ -15,6 +15,11 @@
     import User from "$lib/sb/User";
     import Community from "$lib/sb/Community";
     import OnlineMembers from "./OnlineMembers.svelte";
+    import SimplePicker from "$lib/components/sb/picker/SimplePicker.svelte";
+    import { CandlestickChart } from "echarts/charts";
+    import { Switch } from "$lib/components/ui/switch";
+    import Label from "$lib/components/ui/label/label.svelte";
+    import { Loader2 } from "lucide-svelte";
     use([
         LineChart,
         BarChart,
@@ -23,6 +28,7 @@
         TitleComponent,
         LegendComponent,
         TooltipComponent,
+        CandlestickChart,
     ]);
 
     type DataPoint = {
@@ -37,11 +43,20 @@
             avg: number;
             max: number;
         };
+        total: {
+            min: number;
+            avg: number;
+            max: number;
+        };
+    };
+
+    type ComparedDataPoint = {
+        current: DataPoint;
+        previous: DataPoint;
     };
 
     let data: DataPoint[] = [];
-
-    let resolution = 60;
+    let comparedData: ComparedDataPoint[] = [];
 
     function getBands(
         selector: "active" | "idle",
@@ -146,9 +161,11 @@
 
     let options: EChartsOption = {};
 
-    $: data, computeOptions();
+    $: data, comparedData, computeOptions();
 
-    function computeOptions() {
+    let compare = true;
+
+    function getRegularOptions() {
         options = {
             legend: {
                 data: ["active", "idle"],
@@ -185,6 +202,73 @@
         };
     }
 
+    function getComparedOptions() {
+        options = {
+            legend: {
+                data: ["gains", "loses"],
+            },
+            tooltip: {
+                trigger: "axis",
+                axisPointer: {
+                    type: "cross",
+                    animation: false,
+                    label: {
+                        backgroundColor: "#ccc",
+                        borderColor: "#aaa",
+                        borderWidth: 1,
+                        shadowBlur: 0,
+                        shadowOffsetX: 0,
+                        shadowOffsetY: 0,
+                        color: "#222",
+                    },
+                },
+            },
+            xAxis: {
+                type: "category",
+                data: data.map((d) => new Date(d.created * 1000) as any),
+                boundaryGap: false,
+            },
+            yAxis: {
+                splitNumber: 3,
+                type: "value",
+            },
+            series: [
+                {
+                    name: "total/avg",
+                    type: "candlestick",
+                    label: {
+                        show: true,
+                        position: "bottom",
+                    },
+                    data: (() => {
+                        let values: [number, number, number, number][] = [];
+                        for (const point of comparedData) {
+                            const currentTotal = point.current.total.max;
+                            const pastTotal = point.previous.total.max;
+                            const currentAvg = point.current.total.avg;
+                            const pastAvg = point.previous.total.avg;
+                            values.push([
+                                currentTotal,
+                                pastTotal,
+                                currentTotal,
+                                pastTotal,
+                            ]);
+                        }
+                        return values;
+                    })(),
+                },
+            ],
+        };
+    }
+
+    function computeOptions() {
+        if (!compare) {
+            return getRegularOptions();
+        } else {
+            return getComparedOptions();
+        }
+    }
+
     let chart: EChartsType;
     function handleLegendSelect(e: CustomEvent<CallbackDataParams>) {
         console.log(e);
@@ -210,24 +294,77 @@
         load();
     });
 
-    $: resolution, load();
+    let resolutions = [
+        [{ resolution: 30, blocks: 48 }, "24h"],
+        [{ resolution: 2, blocks: 30 }, "1h"],
+        [{ resolution: 60, blocks: 168 }, "1w"],
+        [{ resolution: 60 * 6, blocks: (24 * 30) / 6 }, "1mo"],
+        [{ resolution: 60 * 24, blocks: 30 * 4 }, "4mo"],
+    ] as [any, string][];
 
-    async function load() {
+    let resolution = resolutions[2][0];
+
+    $: resolution, load(loadedResolution != resolution);
+    $: compare, load(true);
+
+    let loadedResolution = resolutions[0][0];
+
+    let firstLoad = false;
+
+    async function load(reset = false) {
+        firstLoad = reset;
+        loadedResolution = resolution;
         const user = await User.get();
         const community = await Community.get();
-        data = await user!.post(`/community/${community!.id}/count`, {
-            resolution,
-        });
+        if (!compare) {
+            data = await user!.post(`/community/${community!.id}/count`, {
+                resolution: resolution.resolution,
+                blocks: resolution.blocks,
+            });
+        } else {
+            comparedData = await user!.post(
+                `/community/${community!.id}/count/compare`,
+                {
+                    resolution: resolution.resolution,
+                    blocks: resolution.blocks,
+                },
+            );
+        }
+        firstLoad = false;
     }
 </script>
 
-<div class="h-96 w-full border flex flex-col gap-5 pt-5">
-    <Chart
-        bind:chart
-        {init}
-        {options}
-        on:legendselectchanged={handleLegendSelect}
-    />
+<div class="h-96 w-full border flex flex-col gap-5 pt-5 relative">
+    {#if firstLoad}
+        <div
+            class="absolute top-0 left-0 w-full h-full flex items-center justify-center"
+        >
+            <Loader2 class="animate-spin" />
+        </div>
+    {/if}
+    <div class="h-full w-full transition" class:opacity-0={firstLoad}>
+        <Chart
+            bind:chart
+            {init}
+            {options}
+            on:legendselectchanged={handleLegendSelect}
+        />
+    </div>
+    <div
+        class="absolute top-0 w-full pt-5 px-5 flex flex-row gap-5 items-center justify-between"
+    >
+        <div class="flex flex-row gap-2 items-center">
+            <Switch id="compare" bind:checked={compare} />
+            <Label for="compare">Compare</Label>
+        </div>
+        <div>
+            <SimplePicker
+                bind:value={resolution}
+                items={resolutions}
+                name="Resolution"
+            />
+        </div>
+    </div>
 </div>
 
 <OnlineMembers on:update={() => load()} />
