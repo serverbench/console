@@ -9,6 +9,15 @@ export type CountryCount = {
     total: number;
 };
 
+export type InstanceCount = {
+    server: string,
+    instances: {
+        name: string,
+        count: number
+    }[]
+};
+
+
 export default class Connection {
 
     public readonly id: string | null

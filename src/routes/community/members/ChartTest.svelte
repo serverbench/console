@@ -21,7 +21,12 @@
     import Label from "$lib/components/ui/label/label.svelte";
     import { Loader2 } from "lucide-svelte";
     import CountryPie from "./CountryPie.svelte";
-    import type { CountryCount } from "$lib/sb/member/Connection";
+    import type {
+        CountryCount,
+        InstanceCount,
+    } from "$lib/sb/member/Connection";
+    import InstancePie from "./InstancePie.svelte";
+    import Badge from "$lib/components/ui/badge/badge.svelte";
     use([
         LineChart,
         BarChart,
@@ -290,12 +295,21 @@
     }
 
     onMount(async () => {
-        load();
+        await load();
+        setTimeout(
+            async () => {
+                setInterval(async () => {
+                    await load();
+                }, 60 * 1000);
+                await load();
+            },
+            Math.abs(60 - new Date().getSeconds()) * 1000,
+        );
     });
 
     let resolutions = [
         [{ resolution: 30, blocks: 48 }, "24 Hours"],
-        [{ resolution: 2, blocks: 30 }, "60 Minutes"],
+        [{ resolution: 1, blocks: 60 }, "60 Minutes"],
         [{ resolution: 60, blocks: 168 }, "This Week"],
         [{ resolution: 60 * 6, blocks: (24 * 30) / 6 }, "Current Month"],
         [{ resolution: 60 * 24, blocks: 30 * 4 }, "Current Quarter"],
@@ -311,6 +325,7 @@
     let firstLoad = false;
 
     let countries: CountryCount[] = [];
+    let instances: InstanceCount[] = [];
 
     async function updateData(user: User, community: Community) {
         if (!compare) {
@@ -335,6 +350,12 @@
         );
     }
 
+    async function updateInstances(user: User, community: Community) {
+        instances = await user!.post(
+            `/community/${community!.id}/instances/online`,
+        );
+    }
+
     async function load(reset = false) {
         firstLoad = reset;
         loadedResolution = resolution;
@@ -343,12 +364,13 @@
         await Promise.all([
             updateData(user!, community!),
             updateCountries(user!, community!),
+            updateInstances(user!, community!),
         ]);
         firstLoad = false;
     }
 </script>
 
-<div class="h-96 flex flex-row gap-5">
+<div class="flex flex-row gap-5" style="height: 30rem">
     <div class="h-full w-full border flex flex-col gap-5 pt-5 relative">
         {#if firstLoad}
             <div
@@ -381,8 +403,20 @@
             </div>
         </div>
     </div>
-    <div class="border p-5 h-full aspect-square">
+</div>
+
+<div class="flex flex-col md:flex-row gap-5">
+    <div class="h-72 w-full border py-5">
+        <div class="text-center">
+            <Badge>Countries</Badge>
+        </div>
         <CountryPie {countries} />
+    </div>
+    <div class="h-72 w-full border py-5">
+        <div class="text-center">
+            <Badge>Instances</Badge>
+        </div>
+        <InstancePie {instances} />
     </div>
 </div>
 
