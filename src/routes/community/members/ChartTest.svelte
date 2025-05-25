@@ -356,7 +356,27 @@
         );
     }
 
+    let lastLoad: Date | null = null;
+
     async function load(reset = false) {
+        const rateLimit = 10 * 1000;
+        if (reset) {
+            lastLoad = null;
+        }
+
+        if (lastLoad) {
+            const diff = Date.now() - lastLoad.getTime();
+            if (diff < rateLimit) {
+                setTimeout(async () => {
+                    await load(reset);
+                }, rateLimit - diff);
+                return;
+            }
+        }
+
+        // 💡 Always update before processing
+        lastLoad = new Date();
+
         firstLoad = reset;
         loadedResolution = resolution;
         const user = await User.get();

@@ -14,6 +14,7 @@
     import Time from "svelte-time";
     import { flip } from "svelte/animate";
     import Country from "$lib/components/sb/country.svelte";
+    import { toast } from "svelte-sonner";
 
     const dispatch = createEventDispatcher();
 
@@ -22,12 +23,33 @@
     onMount(async () => {
         const community = await Community.get();
         const user = await User.get();
+        let firstLoad = true;
         const ws = user!.socket(
             `community.${community!.id}.member.connection`,
             (data) => {
-                list = data.map((i: any) =>
+                const newList: Connection[] = data.map((i: any) =>
                     Connection.fromObj(i, Member.fromObj(community!, i.member)),
                 );
+                if (!firstLoad) {
+                    let leftToHandle = list;
+                    for (const connection of newList) {
+                        const alreadyConnected = list.find(
+                            (c) => c.member.id == connection.member.id,
+                        );
+                        if (!alreadyConnected) {
+                            toast.info(`${connection.member.name} connected`);
+                        }
+                        leftToHandle = leftToHandle.filter(
+                            (c) => c.member.id != connection.member.id,
+                        );
+                    }
+                    for (const connection of leftToHandle) {
+                        toast.info(`${connection.member.name} disconnected`);
+                    }
+                } else {
+                    firstLoad = false;
+                }
+                list = newList;
                 dispatch("update", { list });
             },
         );
@@ -35,7 +57,7 @@
 </script>
 
 <Section name="Online Members" list used={list.length}>
-    {#each list as connection, index (connection.id)}
+    {#each list as connection, index (connection.member.id)}
         <div animate:flip class:border-b={index < list.length - 1}>
             <Item>
                 <Tooltip.Root>
