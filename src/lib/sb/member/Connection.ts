@@ -59,7 +59,7 @@ export default class Connection {
         this.idle = idle
     }
 
-    public static fromObj(obj: any, member: Member) {
+    public static fromObj(obj: any, member: Member): Connection {
         return new Connection(
             obj.id,
             new Date(obj.created),

@@ -3,8 +3,25 @@ import Community from "./Community";
 
 const product = 'serverbench.io'
 
-export default class User {
+class Mutex {
+    private mutex = Promise.resolve();
 
+    lock(): Promise<() => void> {
+        let resolve: (() => void) = () => { };
+        const promise = new Promise<void>(res => resolve = res);
+
+        const unlock = () => resolve();
+
+        const oldMutex = this.mutex;
+        this.mutex = oldMutex.then(() => promise);
+        return oldMutex.then(() => unlock);
+    }
+}
+
+
+export default class User {
+    
+    private static mutex = new Mutex();
     public readonly id: string | null
     private accessToken: string | null
     private refreshToken: string | null
@@ -27,7 +44,7 @@ export default class User {
         return new User(obj.id, null, null, false)
     }
 
-    public isTest(){
+    public isTest() {
         return this.test
     }
 
@@ -91,23 +108,30 @@ export default class User {
     }
 
     public static async get(): Promise<User | null> {
-        if (User.instance != null) {
-            return User.instance.renewIfDue()
+        const unlock = await this.mutex.lock(); // Acquire mutex
+        try {
+            if (User.instance == null) {
+                const accessToken = localStorage.getItem('accessToken');
+                const refreshToken = localStorage.getItem('refreshToken');
+                if (accessToken == null || refreshToken == null) {
+                    console.log('null tokens');
+                    await User.logout();
+                    return null;
+                }
+                User.instance = new User(
+                    "", accessToken, refreshToken,
+                    !window.location.origin.includes('serverbench.io')
+                );
+                if (this.onLogin) await this.onLogin();
+            }
+            return User.instance.renewIfDue();
+        } finally {
+            unlock(); // Release mutex
         }
-        const accessToken = localStorage.getItem('accessToken')
-        const refreshToken = localStorage.getItem('refreshToken')
-        if (accessToken == null || refreshToken == null) {
-            console.log('null tokens')
-            User.logout()
-            return null
-        }
-        User.instance = new User("", accessToken, refreshToken, !window.location.origin.includes('serverbench.io'))
-        if (this.onLogin) await this.onLogin()
-        return User.instance.renewIfDue()
     }
 
     public socket(action: string, callback: (result: any) => void) {
-        const url = new URL(`${this.test ? 'ws://localhost:3030' : 'wss://stream.beta.serverbench.io'}/`)
+        const url = new URL(`${false ? 'ws://localhost:3030' : 'wss://stream.beta.serverbench.io'}/`)
         url.searchParams.append('token', this.accessToken!)
         const ws = new WebSocket(url.toString())
         ws.onopen = () => {
@@ -123,7 +147,7 @@ export default class User {
             } else {
                 ws.send(JSON.stringify({
                     rid: this.randomRid(),
-                    action: [parsed.realm,parsed.action].join('.')
+                    action: [parsed.realm, parsed.action].join('.')
                 }))
             }
         }
@@ -163,7 +187,7 @@ export default class User {
                 finalBody = JSON.stringify(body)
             }
         }
-        const req = await fetch(`https://${this.test ? 'dev.serverbench.io' : 'api.beta.serverbench.io'}${path}`, {
+        const req = await fetch(`https://${false ? 'dev.serverbench.io' : 'api.beta.serverbench.io'}${path}`, {
             headers,
             body: finalBody,
             method: method

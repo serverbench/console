@@ -27,9 +27,16 @@
         const ws = user!.socket(
             `community.${community!.id}.member.connection`,
             (data) => {
-                const newList: Connection[] = data.map((i: any) =>
-                    Connection.fromObj(i, Member.fromObj(community!, i.member)),
-                );
+                const newList: Connection[] = data
+                    .map((i: any) =>
+                        Connection.fromObj(
+                            i,
+                            Member.fromObj(community!, i.member),
+                        ),
+                    )
+                    .sort((a: Connection, b: Connection) =>
+                        a.member.name.localeCompare(b.member.name),
+                    );
                 if (!firstLoad) {
                     let leftToHandle = list;
                     for (const connection of newList) {
@@ -57,15 +64,15 @@
 </script>
 
 <Section name="Online Members" list used={list.length}>
-    {#each list as connection, index (connection.member.id)}
-        <div animate:flip class:border-b={index < list.length - 1}>
+    {#each list as connection, index (connection.id)}
+        <div class:border-b={index < list.length - 1}>
             <Item>
                 <Tooltip.Root>
                     <Tooltip.Trigger>
                         <div class="relative">
                             <Avatar.Root class="border">
                                 <Avatar.Image
-                                    src={`https://minotar.net/avatar/${connection.member.eid}`}
+                                    src={`https://minotar.net/helm/${connection.member.eid}`}
                                 />
                                 <Avatar.Fallback
                                     >{connection.member.name[0].toUpperCase()}</Avatar.Fallback
@@ -73,6 +80,7 @@
                             </Avatar.Root>
                             {#if connection.idle}
                                 <div
+                                    transition:scale
                                     class="absolute -top-1 -right-1 bg-black p-1 rounded-full bg-opacity-50 backdrop-blur-md text-white"
                                 >
                                     <History />
