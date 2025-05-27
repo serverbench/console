@@ -15,8 +15,9 @@ export default class Sku {
     prices: SkuPrice[]
     img: string | null
     perks: SkuPerkUsage[]
+    index: number
 
-    constructor(id: string, category: StoreCategory | null, name: string, type: SkuType, img: string | null, prices: SkuPrice[] = [], perks: SkuPerkUsage[] = []) {
+    constructor(id: string, category: StoreCategory | null, name: string, type: SkuType, img: string | null, prices: SkuPrice[] = [], perks: SkuPerkUsage[] = [], index: number) {
         this.id = id
         this.category = category
         this.name = name
@@ -24,6 +25,7 @@ export default class Sku {
         this.prices = prices
         this.img = img
         this.perks = perks
+        this.index = index
     }
 
     public static fromObj(category: StoreCategory | null, obj: any) {
@@ -33,7 +35,10 @@ export default class Sku {
             category,
             obj.name,
             obj.type,
-            obj.img
+            obj.img,
+            [],
+            [],
+            obj.index
         )
         item.prices = obj.prices.filter((p: any) => p != null).map((p: any) => SkuPrice.fromObj(item, p))
         if (category) {

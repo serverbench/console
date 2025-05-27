@@ -37,7 +37,7 @@ export default class StoreCategory {
             obj.paused,
             obj.sets.map((s: any) => StoreCategorySet.fromObj(community, s)),
         )
-        category.skus = obj.skus.filter((s: any) => s).map((s: any) => Sku.fromObj(category, s))
+        category.skus = obj.skus.filter((s: any) => s).map((s: any) => Sku.fromObj(category, s)).sort((a:Sku, b:Sku) => a.index - b.index)
         return category
     }
 
