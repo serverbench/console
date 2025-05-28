@@ -25,6 +25,12 @@ export default class Member {
         return this._firstConnection
     }
 
+    public static async import(file: File) {
+        const user = await User.get()
+        const community = await Community.get()
+        await user!.post(`/community/${community!.id}/member/import`, file)
+    }
+
     public static fromObj(community: Community, obj: any) {
         const member = new Member(
             obj.id,

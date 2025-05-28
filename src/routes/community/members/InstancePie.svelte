@@ -7,12 +7,12 @@
         LegendComponent,
         TitleComponent,
         TooltipComponent,
+        AriaComponent
     } from "echarts/components";
     import { CanvasRenderer } from "echarts/renderers";
     import type { EChartsOption, EChartsType } from "echarts";
     import { SunburstChart } from "echarts/charts";
     import type {
-        CountryCount,
         InstanceCount,
     } from "$lib/sb/member/Connection";
 
@@ -25,6 +25,7 @@
         LegendComponent,
         TooltipComponent,
         SunburstChart,
+        AriaComponent
     ]);
 
     let chart: EChartsType;
@@ -42,6 +43,7 @@
             },
             series: {
                 type: "sunburst",
+                radius: [60, '90%'],
                 data: instances.map((instance) => {
                     return {
                         name: instance.server,
@@ -57,6 +59,12 @@
                 }),
                 label: {
                     show: false,
+                },
+            },
+            aria: {
+                enabled: true,
+                decal: {
+                    show: true,
                 },
             },
         };

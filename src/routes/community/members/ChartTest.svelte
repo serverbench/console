@@ -3,6 +3,7 @@
     import { init, use } from "echarts/core";
     import { BarChart, LineChart } from "echarts/charts";
     import {
+        AriaComponent,
         GridComponent,
         LegendComponent,
         TitleComponent,
@@ -36,6 +37,7 @@
         LegendComponent,
         TooltipComponent,
         CandlestickChart,
+        AriaComponent,
     ]);
 
     type DataPoint = {
@@ -206,6 +208,12 @@
                 ...getBands("idle", "#fcca03", 1, 0.3),
                 ...getBands("active", "#00ff95", 1, 0.2),
             ],
+            aria: {
+                enabled: true,
+                decal: {
+                    show: true,
+                },
+            },
         };
     }
 

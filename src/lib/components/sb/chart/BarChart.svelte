@@ -9,6 +9,7 @@
         TitleComponent,
         LegendComponent,
         TooltipComponent,
+        AriaComponent,
     } from "echarts/components";
     import { CanvasRenderer } from "echarts/renderers";
     import { onMount } from "svelte";
@@ -24,6 +25,7 @@
         TitleComponent,
         LegendComponent,
         TooltipComponent,
+        AriaComponent,
     ]);
 
     let range: [Date, Date] | null = null;

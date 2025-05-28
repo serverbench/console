@@ -1,8 +1,9 @@
 <script lang="ts">
     import { Chart } from "svelte-echarts";
     import { init, use } from "echarts/core";
-    import { BarChart, LineChart } from "echarts/charts";
+    import { BarChart, LineChart, TreemapChart } from "echarts/charts";
     import {
+        AriaComponent,
         GridComponent,
         LegendComponent,
         TitleComponent,
@@ -10,7 +11,6 @@
     } from "echarts/components";
     import { CanvasRenderer } from "echarts/renderers";
     import type { EChartsOption, EChartsType } from "echarts";
-    import { SunburstChart } from "echarts/charts";
     import type { CountryCount } from "$lib/sb/member/Connection";
 
     use([
@@ -21,7 +21,8 @@
         TitleComponent,
         LegendComponent,
         TooltipComponent,
-        SunburstChart,
+        TreemapChart,
+        AriaComponent,
     ]);
 
     let chart: EChartsType;
@@ -29,6 +30,10 @@
     export let countries: CountryCount[] = [];
 
     let options: EChartsOption = {};
+
+    function getFlagURL(code: string): string {
+        return `image://https://flagcdn.com/w40/${code.toLowerCase()}.svg`;
+    }
 
     function computeOptions() {
         options = {
@@ -39,6 +44,7 @@
             },
             series: {
                 type: "sunburst",
+                radius: [60, '90%'],
                 data: countries.map((country) => ({
                     name: country.country,
                     value: Number(country.total),
@@ -65,6 +71,12 @@
                 })),
                 label: {
                     show: false,
+                },
+            },
+            aria: {
+                enabled: true,
+                decal: {
+                    show: true,
                 },
             },
         };
