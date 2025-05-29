@@ -1,3 +1,4 @@
+import type { Member } from "@serverbench/js"
 import Branding from "./branding/Branding"
 import User from "./User"
 
@@ -100,6 +101,12 @@ export default class Community {
         pk: string,
         sk: string
     }> {
-        return(await User.get())!.get(`/community/${this.id}/keys`)
+        return (await User.get())!.get(`/community/${this.id}/keys`)
+    }
+
+    public async getActivityClock(member:Member|null=null): Promise<number[][]> {
+        return (await User.get())!.post(`/community/${this.id}/activity/clock`, {
+            memberId: member ? member.id : null
+        })
     }
 }
