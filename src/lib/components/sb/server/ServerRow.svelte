@@ -3,12 +3,13 @@
     import { Badge } from "$lib/components/ui/badge";
     import StatusIndicator from "./statusIndicator.svelte";
     import type { state } from "$lib";
-    import { Trash2, ChevronsLeftRightEllipsis } from "lucide-svelte/icons";
+    import { Trash2, ChevronsLeftRightEllipsis, ServerCog } from "lucide-svelte/icons";
     import * as AlertDialog from "$lib/components/ui/alert-dialog/index.js";
     import { createEventDispatcher } from "svelte";
     import SetupInstructions from "./SetupInstructions.svelte";
     import Item from "../section/list/Item.svelte";
     import DropdownItem from "../section/list/DropdownItem.svelte";
+    import ServerHost from "./ServerHost.svelte";
 
     const dispatch = createEventDispatcher();
 
@@ -29,7 +30,10 @@
         } catch (error) {}
         loading = false;
     }
+    let hosting = false;
 </script>
+
+<ServerHost bind:hosting {server} />
 
 <AlertDialog.Root bind:open={deleting}>
     <AlertDialog.Content>
@@ -82,6 +86,10 @@
         <DropdownItem on:click={() => (settingUp = true)}>
             <ChevronsLeftRightEllipsis />
             <span>Setup</span>
+        </DropdownItem>
+        <DropdownItem on:click={() => (hosting = true)}>
+            <ServerCog />
+            <span>Host</span>
         </DropdownItem>
         <DropdownItem destructive on:click={() => (deleting = true)}>
             <Trash2 />

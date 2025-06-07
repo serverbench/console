@@ -2,16 +2,18 @@ import User from "../User"
 import Hardware from "./hardware/Hardware"
 
 export default class Machine {
+    public readonly created: Date
     public readonly id: string
     public readonly hardware: Hardware | null
 
-    constructor(id: string, hardware: Hardware | null) {
+    constructor(id: string, hardware: Hardware | null, created: Date) {
         this.id = id
         this.hardware = hardware
+        this.created = created
     }
     public static fromObj(obj: any): Machine {
         const hardware = obj.hardware ? Hardware.fromObject(obj.hardware) : null
-        return new Machine(obj.id, hardware)
+        return new Machine(obj.id, hardware, new Date(obj.created))
     }
 
     public static async list(): Promise<Machine[]> {

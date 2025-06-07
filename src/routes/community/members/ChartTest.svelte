@@ -365,9 +365,9 @@
         );
     }
 
-    let times:number[][] = [];
+    let times: number[][] = [];
     async function updateTimes(user: User, community: Community) {
-        times = await community.getActivityClock()
+        times = await community.getActivityClock();
     }
 
     let lastLoad: Date | null = null;

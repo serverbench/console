@@ -1,5 +1,6 @@
 import Community from "../Community"
 import User from "../User"
+import Instance from "./Instance"
 
 export default class Server {
 
@@ -41,5 +42,18 @@ export default class Server {
         await user!.delete(`/community/${community!.id}/server/${this.id}`)
     }
 
+    public async getInstances():Promise<Instance[]> {
+        const community = await Community.get()
+        const user = await User.get()
+        return (await user!.get(`/community/${community!.id}/server/${this.id}/instance`)).map((i: any) => Instance.fromObj(this, i))
+    }
+
+    public async createInstance(name: string | null) {
+        const community = await Community.get()
+        const user = await User.get()
+        return Instance.fromObj(this, await user!.post(`/community/${community!.id}/server/${this.id}/instance`, {
+            name
+        }))
+    }
 
 }

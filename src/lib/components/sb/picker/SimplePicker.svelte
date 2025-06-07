@@ -1,10 +1,11 @@
 <script lang="ts">
     import * as Select from "$lib/components/ui/select/index.js";
     import type { Selected } from "bits-ui";
-    export let items: [any, string][],
+    export let items: [any, string][] | [any, string, string][],
         name: string,
         optional: string | null = null,
         disabled = false,
+        images = false,
         value: any | null = null;
 
     const baseSelectable = optional
@@ -12,6 +13,7 @@
               {
                   value: null,
                   label: optional,
+                  image: null,
               },
           ]
         : [];
@@ -21,6 +23,7 @@
             return {
                 value: c[0],
                 label: c[1],
+                image: c[2] ?? null,
             };
         }),
     ];
@@ -28,6 +31,11 @@
     let selected: Selected<any> = {
         value: value,
         label: selectable.find((f) => f.value == value)?.label ?? "",
+    };
+
+    $: selectedImage = () => {
+        const found = selectable.find((f) => f.value == value);
+        return found ? found.image : null;
     };
 </script>
 
@@ -41,7 +49,14 @@
     }}
     bind:selected
 >
-    <Select.Trigger {disabled} class="w-full">
+    <Select.Trigger {disabled} class="w-full flex flex-row items-center gap-2">
+        {#if images && selectedImage()}
+            <div
+                class="h-6 w-6"
+                style:background-image={`url(${selectedImage()})`}
+                style="background-size: contain; background-position: center; background-repeat: no-repeat;"
+            />
+        {/if}
         <Select.Value placeholder={name} />
     </Select.Trigger>
     <Select.Content class="max-h-40 overflow-y-auto">
@@ -51,7 +66,14 @@
                 {#if optional && i == 1}
                     <Select.Separator />
                 {/if}
-                <Select.Item value={select.value} label={select.label ?? ""}>
+                <Select.Item class="flex flex-row gap-2 items-center" value={select.value} label={select.label ?? ""}>
+                    {#if images && select.value && select.image}
+                        <div
+                            class="h-6 w-6"
+                            style:background-image={`url(${select.image})`}
+                            style="background-size: contain; background-position: center; background-repeat: no-repeat;"
+                        />
+                    {/if}
                     {select.label}
                 </Select.Item>
             {/each}
