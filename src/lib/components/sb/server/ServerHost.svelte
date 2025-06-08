@@ -44,7 +44,7 @@
     let mount: string | null = null;
     let image: string | null = null;
     let machines: Machine[] | null = null;
-    let machine: Machine | null = null;
+    let machine: string | null = null;
     let instances: Instance[] | null = null;
     let instance: string | null = null;
     let instanceName: string | null = null;
@@ -73,7 +73,8 @@
             machineList.push(await Machine.create());
         }
         machines = machineList;
-        machine = machines[0] ?? null;
+        machine =
+            (machines.filter((m) => m.hardware)[0] ?? machines[0])?.id ?? null;
     }
 
     function reset() {
@@ -130,7 +131,7 @@
                 await instances
                     ?.find((i) => i.id == instance)
                     ?.host(
-                        machine!,
+                        selectedMachine!,
                         image!,
                         mount!,
                         ip!,
@@ -160,6 +161,10 @@
         }
     }
 
+    $: selectedMachine = machines?.find(
+        (m) => m.id == machine,
+    ) ?? null;
+
     $: missingDetails = () => {
         if (step == 1) {
             if (
@@ -168,8 +173,8 @@
                 (instanceName == null || instanceName.trim().length <= 0)
             )
                 return true;
-            if (machine == null) return true;
-            if (!machine.hardware?.hostname) return true;
+            if (selectedMachine == null) return true;
+            if (!selectedMachine?.hardware?.hostname) return true;
         } else if (step == 2) {
             if (ip == null) return true;
             if (image == null) return true;
@@ -198,8 +203,8 @@
 
     $: machineItems = () =>
         machines
-            ? machines.map((machine): [Machine, string] => [
-                  machine,
+            ? machines.map((machine): [string, string] => [
+                  machine.id,
                   `${machine.hardware?.hostname ?? machine.id} ${machine.created.toLocaleString()}`,
               ])
             : [];
@@ -220,7 +225,7 @@
     let ip: string | null = null;
 
     $: ips = () => {
-        const ifaces = machine?.hardware?.interfaces || [];
+        const ifaces = selectedMachine?.hardware?.interfaces || [];
         const ips: Set<string> = new Set();
         for (const iface of ifaces) {
             for (const cidr of iface.addresses) {
@@ -402,15 +407,16 @@
                                             </Button>
                                         </div>
                                         {#if machine}
-                                            {#if machine.hardware?.hostname}
+                                            {#if selectedMachine?.hardware?.hostname}
                                                 <Input
                                                     class="grow"
                                                     min="1"
-                                                    max={machine.hardware.cpus
-                                                        .length}
+                                                    max={selectedMachine
+                                                        ?.hardware?.cpus
+                                                        .length ?? 0}
                                                     bind:value={cpus}
                                                     type="number"
-                                                    placeholder={`${machine.hardware.cpus.reduce((sum, c) => sum + (c.cores > 0 ? c.cores : 1), 0)} vCPUs`}
+                                                    placeholder={`${selectedMachine?.hardware?.cpus.reduce((sum, c) => sum + (c.cores > 0 ? c.cores : 1), 0) ?? 0} vCPUs`}
                                                 />
                                                 <div
                                                     class="flex flex-row gap-2"
@@ -420,7 +426,7 @@
                                                         min="1"
                                                         bind:value={memory}
                                                         type="number"
-                                                        placeholder={`${machine.hardware.memory.size > 0 ? Math.trunc(machine.hardware.memory.size / memoryUnit) : "∞"} ${memoryOptions.find((o) => o[0] == memoryUnit)?.[1] ?? "B"}`}
+                                                        placeholder={`${selectedMachine?.hardware?.memory?.size > 0 ? Math.trunc((selectedMachine?.hardware?.memory?.size ?? 0) / memoryUnit) : "∞"} ${memoryOptions.find((o) => o[0] == memoryUnit)?.[1] ?? "B"}`}
                                                     />
                                                     <div class="w-32">
                                                         <SimplePicker
@@ -432,8 +438,10 @@
                                                         />
                                                     </div>
                                                 </div>
-                                            {:else}
-                                                <MachineSetup {machine} />
+                                            {:else if selectedMachine}
+                                                <MachineSetup
+                                                    machine={selectedMachine}
+                                                />
                                                 <Button
                                                     on:click={() =>
                                                         fetchMachines()}
