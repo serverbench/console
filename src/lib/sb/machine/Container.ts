@@ -3,6 +3,7 @@ import Port from "./Port"
 
 export default class Container {
     public readonly id: string
+    public readonly mount: string
     public readonly instance: Instance
     public readonly image: string
     public readonly envs: Record<string, string>
@@ -16,6 +17,7 @@ export default class Container {
     constructor(
         id: string,
         instance: Instance,
+        mount:string,
         image: string,
         envs: Record<string, string>,
         address: string,
@@ -27,6 +29,7 @@ export default class Container {
     ) {
         this.id = id
         this.instance = instance
+        this.mount = mount
         this.image = image
         this.envs = envs
         this.address = address
@@ -41,6 +44,7 @@ export default class Container {
         const c = new Container(
             obj.id,
             instance,
+            obj.mount,
             obj.image,
             obj.envs || {},
             obj.address,

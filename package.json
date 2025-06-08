@@ -42,6 +42,7 @@
 		"@serverbench/js": "^1.4.5",
 		"Pattern": "link:zrender/lib/graphic/Pattern",
 		"apexcharts": "^3.54.1",
+		"cidr-tools": "^11.0.3",
 		"currency-codes": "^2.2.0",
 		"i18n-iso-countries": "^7.13.0",
 		"is-ip": "^5.0.1",

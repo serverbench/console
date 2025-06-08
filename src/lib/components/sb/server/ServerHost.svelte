@@ -3,10 +3,12 @@
     import * as Dialog from "$lib/components/ui/dialog/index.js";
     import Instance from "$lib/sb/server/Instance";
     import type Server from "$lib/sb/server/Server";
+    import { expandCidr } from "cidr-tools";
     import {
+        ArrowLeft,
         Ban,
+        Check,
         CircleCheck,
-        Earth,
         Globe,
         GlobeLock,
         Loader2,
@@ -21,6 +23,8 @@
     import { Progress } from "$lib/components/ui/progress";
     import { isIP, isIPv6 } from "is-ip";
     import { presets, type Preset } from "./presets";
+    import { blur, slide } from "svelte/transition";
+    import type IPort from "$lib/sb/machine/IPort";
     export let hosting = false,
         server: Server;
     type Env = {
@@ -28,7 +32,7 @@
         value: string;
     };
     type Port = {
-        policy: "drop" | "allow";
+        policy: "DROP" | "ACCEPT";
         remotes: string[];
         name: string;
         value: number | null;
@@ -42,7 +46,7 @@
     let machines: Machine[] | null = null;
     let machine: Machine | null = null;
     let instances: Instance[] | null = null;
-    let instance: Instance | null = null;
+    let instance: string | null = null;
     let instanceName: string | null = null;
     let memory: number | null = null;
     let step = 1;
@@ -58,7 +62,7 @@
         instance = null;
         instances = null;
         instances = await server.getInstances();
-        instance = instances[0] ?? null;
+        instance = instances[0].id ?? null;
     }
 
     async function fetchMachines() {
@@ -72,12 +76,6 @@
         machine = machines[0] ?? null;
     }
 
-    function nextStep() {
-        if (step < steps) {
-            step++;
-        }
-    }
-
     function reset() {
         step = 1;
         instance = null;
@@ -89,11 +87,14 @@
         envs = [];
         ports = [];
         mount = null;
+        ip = null;
+        preset = null;
+        image = null;
+        firewall = null;
+        managingFirewall = false;
         addEnv();
         addPort();
     }
-
-    async function host() {}
 
     function addEnv() {
         envs.push({ key: "", value: "" });
@@ -101,16 +102,84 @@
     }
 
     function addPort() {
-        ports.push({ name: "", value: null, policy: "allow", remotes: [] });
+        ports.push({ name: "", value: null, policy: "ACCEPT", remotes: [] });
         ports = ports;
+    }
+
+    let loading = false;
+
+    async function next() {
+        loading = true;
+        try {
+            if (step == 1) {
+                if (instance == null) {
+                    const nameIsNull =
+                        !instanceName || instanceName.trim().length <= 0;
+                    if (instances?.find((i) => i.name == null) && nameIsNull) {
+                        throw new Error(
+                            "Please provide a name for the new instance.",
+                        );
+                    }
+                    const newinstance = await server.createInstance(
+                        nameIsNull ? null : instanceName,
+                    );
+                    instances!.push(newinstance);
+                    instance = newinstance.id;
+                }
+            } else if (step == 2) {
+                await instances
+                    ?.find((i) => i.id == instance)
+                    ?.host(
+                        machine!,
+                        image!,
+                        mount!,
+                        ip!,
+                        memory,
+                        cpus,
+                        ports
+                            .filter((p) => p.value != null)
+                            .map(
+                                (p): IPort => ({
+                                    name: p.name,
+                                    port: Number(p.value!),
+                                    policy: p.policy,
+                                    remotes: p.remotes,
+                                }),
+                            ),
+                        envs.reduce(
+                            (acc, e) => ({ ...acc, [e.key]: e.value }),
+                            {},
+                        ),
+                    );
+            }
+            step = step + 1;
+        } catch (error) {
+            console.log(error);
+        } finally {
+            loading = false;
+        }
     }
 
     $: missingDetails = () => {
         if (step == 1) {
-            if (instance == null) return true;
+            if (
+                instance == null &&
+                (instances || []).find((i) => i.name == null) &&
+                (instanceName == null || instanceName.trim().length <= 0)
+            )
+                return true;
             if (machine == null) return true;
             if (!machine.hardware?.hostname) return true;
         } else if (step == 2) {
+            if (ip == null) return true;
+            if (image == null) return true;
+            if (mount == null) return true;
+            if (ports.find((p) => p.name == null && p.value != null))
+                return true;
+            if (ports.find((p) => p.name != null && p.value == null))
+                return true;
+            if (envs.find((e) => e.key == null && e.value != null)) return true;
+            if (envs.find((e) => e.key != null && e.value == null)) return true;
         }
         return false;
     };
@@ -121,10 +190,9 @@
 
     $: items = () =>
         (instances
-            ? instances.map((instance): [Instance | null, string] => [
-                  instance,
-                  instance.name ?? "default",
-              ])
+            ? instances.map((instance): [string | null, string] => {
+                  return [instance.id, instance.name ?? "default"];
+              })
             : []
         ).concat([[null, "New Instance"]]);
 
@@ -149,6 +217,21 @@
         });
     };
 
+    let ip: string | null = null;
+
+    $: ips = () => {
+        const ifaces = machine?.hardware?.interfaces || [];
+        const ips: Set<string> = new Set();
+        for (const iface of ifaces) {
+            for (const cidr of iface.addresses) {
+                for (const ip of Array.from(expandCidr(cidr.ip))) {
+                    ips.add(ip);
+                }
+            }
+        }
+        return Array.from(ips).map((i): [string, string] => [i, i]);
+    };
+
     let preset: Preset | null = null;
 
     $: preset,
@@ -159,7 +242,7 @@
                 ports = Object.keys(preset!.ports).map((e) => ({
                     name: e,
                     value: preset!.ports[e],
-                    policy: 'allow',
+                    policy: "ACCEPT",
                     remotes: [],
                 }));
                 envs = Object.keys(preset!.envs).map((e) => ({
@@ -194,15 +277,15 @@
                 <SimplePicker
                     bind:value={firewall.policy}
                     items={[
-                        ["allow", "Allow (public)"],
-                        ["drop", "Drop (private)"],
+                        ["ACCEPT", "Accept (public)"],
+                        ["DROP", "Drop (private)"],
                     ]}
                     name="Policy"
                 />
                 <p
                     class="text-center text-sm text-muted-foreground flex flex-row items-center justify-center"
                 >
-                    {#if firewall.policy == "allow"}
+                    {#if firewall.policy == "ACCEPT"}
                         <Ban class="inline mr-2" />
                         Blacklisted Remotes:
                     {:else}
@@ -219,7 +302,7 @@
                                 firewall.remotes = [...firewall.remotes, ""];
                         }}
                     >
-                        Add {firewall.policy == "allow"
+                        Add {firewall.policy == "ACCEPT"
                             ? "Blacklisted"
                             : "Whitelisted"} Remote
                     </Button>
@@ -261,9 +344,12 @@
         <Dialog.Header>
             <Dialog.Title>Host {server.slug}</Dialog.Title>
         </Dialog.Header>
-        <div class="flex flex-col gap-2">
-            <Progress value={(step / (steps + 1)) * 100} />
-            {#if step == 1}
+        {#if loading}
+            <div class="flex flex-col gap-2">
+                <Loader2 class="mx-auto animate-spin my-20" />
+            </div>
+        {:else if step == 1}
+            <div class="flex flex-col gap-2">
                 <!-- instance and machine/plan selection -->
                 {#if !instances}
                     <Loader2 class="mx-auto animate-spin my-10" />
@@ -376,8 +462,11 @@
                         </Tabs.Root>
                     </div>
                 {/if}
-            {:else if step == 2}
+            </div>
+        {:else if step == 2}
+            <div class="flex flex-col gap-2">
                 <!-- app setup -->
+                <SimplePicker items={ips()} bind:value={ip} name="IP" />
                 <SimplePicker
                     images
                     items={presetValues()}
@@ -429,7 +518,7 @@
                                             }}
                                             variant="secondary"
                                         >
-                                            {#if port.policy == "allow"}
+                                            {#if port.policy == "ACCEPT"}
                                                 <Globe />
                                             {:else}
                                                 <GlobeLock />
@@ -484,20 +573,37 @@
                         </Tabs.Content>
                     </Tabs.Root>
                 </div>
-            {/if}
-        </div>
+            </div>
+        {:else if step == 3}
+            <div transition:blur>
+                <Check class="my-20 mx-auto text-emerald-400" />
+            </div>
+        {/if}
         <Dialog.Footer>
-            <Button
-                on:click={() => (missingSteps() ? nextStep() : host())}
-                disabled={missingDetails()}
-                type="submit"
-            >
-                {#if missingSteps()}
-                    Next
-                {:else}
-                    Host
+            <div class="flex flex-col gap-2 w-full">
+                {#if step <= steps}
+                    <div class="flex flex-row gap-2 items-center">
+                        {#if step > 1}
+                            <Button on:click={() => (step = step - 1)}>
+                                <ArrowLeft />
+                            </Button>
+                        {/if}
+                        <Button
+                            class="grow"
+                            on:click={() => next()}
+                            disabled={missingDetails()}
+                            type="submit"
+                        >
+                            {#if missingSteps()}
+                                Next
+                            {:else}
+                                Host
+                            {/if}
+                        </Button>
+                    </div>
                 {/if}
-            </Button>
+                <Progress class="h-1" value={(step / (steps + 1)) * 100} />
+            </div>
         </Dialog.Footer>
     </Dialog.Content>
 </Dialog.Root>

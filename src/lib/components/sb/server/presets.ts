@@ -44,8 +44,13 @@ export const presets: Preset[] = [
         envs: {
             EULA: 'TRUE',
             VERSION: 'LATEST',
-            TYPE: 'VANILLA',
-            SERVER_PORT: '${PORT_MC}'
+            TYPE: 'PAPER',
+            SERVER_PORT: '${PORT_MC}',
+            SERVERBENCH_SK: '${SERVERBENCH_SK}',
+            SERVERBENCH_SERVER: '${SERVERBENCH_SERVER}',
+            SERVERBENCH_INSTANCE: '${SERVERBENCH_INSTANCE}',
+            MOTD: 'a Minecraft Server hosted by serverbench',
+            PLUGINS: 'https://github.com/serverbench/minecraft-plugin/releases/download/pre-25-jun-1/serverbench-beta.jar'
         },
         ports: {
             MC: 25565,
