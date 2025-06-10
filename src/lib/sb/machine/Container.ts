@@ -1,4 +1,7 @@
-import type Instance from "../server/Instance"
+import Community from "../Community"
+import Instance from "../server/Instance"
+import Server from "../server/Server"
+import User from "../User"
 import Port from "./Port"
 
 export default class Container {
@@ -17,7 +20,7 @@ export default class Container {
     constructor(
         id: string,
         instance: Instance,
-        mount:string,
+        mount: string,
         image: string,
         envs: Record<string, string>,
         address: string,
@@ -38,6 +41,18 @@ export default class Container {
         this.memory = memory
         this.locked = locked
         this.deleted = deleted
+    }
+
+    public static async get(serverId: string, instanceId: string, containerId: string) {
+        const user = await User.get()
+        const community = await Community.get()
+        const data = await user!.get(`/community/${community!.id}/server/${serverId}/instance/${instanceId}/container/${containerId}`)
+        const server = Server.fromObj(data.instance.server)
+        const instance = Instance.fromObj(server, data.instance)
+        return Container.fromObj(
+            data,
+            instance
+        )
     }
 
     public static fromObj(obj: any, instance: Instance) {

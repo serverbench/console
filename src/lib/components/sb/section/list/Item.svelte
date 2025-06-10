@@ -8,14 +8,18 @@
         loading: boolean = false,
         slim = false,
         hideDropdown = false,
-        hideBottom = false;
+        hideBottom = false,
+        href: string | null = null;
     const SLOTS = $$props.$$slots;
 
     const dispatch = createEventDispatcher();
 </script>
 
 <Table.Row class="flex flex-col gap-4 {hideBottom ? 'border-b-0' : ''}">
-    <button
+    <a
+        {href}
+        tabindex="-1"
+        role="button"
         class:p-3={slim}
         class:px-5={!slim}
         class:pt-4={!slim}
@@ -50,7 +54,7 @@
                 </DropdownMenu.Content>
             </DropdownMenu.Root>
         {/if}
-    </button>
+    </a>
     {#if SLOTS.extra}
         <div class="pb-4 px-5">
             <slot name="extra" />

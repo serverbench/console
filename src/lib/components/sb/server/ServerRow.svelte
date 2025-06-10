@@ -3,13 +3,21 @@
     import { Badge } from "$lib/components/ui/badge";
     import StatusIndicator from "./statusIndicator.svelte";
     import type { state } from "$lib";
-    import { Trash2, ChevronsLeftRightEllipsis, ServerCog } from "lucide-svelte/icons";
+    import {
+        Trash2,
+        ChevronsLeftRightEllipsis,
+        ServerCog,
+        Loader2,
+    } from "lucide-svelte/icons";
     import * as AlertDialog from "$lib/components/ui/alert-dialog/index.js";
     import { createEventDispatcher } from "svelte";
     import SetupInstructions from "./SetupInstructions.svelte";
     import Item from "../section/list/Item.svelte";
     import DropdownItem from "../section/list/DropdownItem.svelte";
     import ServerHost from "./ServerHost.svelte";
+    import * as Dialog from "$lib/components/ui/dialog/index.js";
+    import type Instance from "$lib/sb/server/Instance";
+    import List from "../section/list/list.svelte";
 
     const dispatch = createEventDispatcher();
 
@@ -21,6 +29,7 @@
     let loading = false;
 
     export let settingUp = false;
+    let selecting = false;
 
     async function remove() {
         loading = true;
@@ -31,6 +40,13 @@
         loading = false;
     }
     let hosting = false;
+    let instances: Instance[] | null = null;
+
+    async function loadInstances() {
+        selecting = true;
+        instances = null;
+        instances = await server.getInstances();
+    }
 </script>
 
 <ServerHost bind:hosting {server} />
@@ -72,7 +88,43 @@
     </AlertDialog.Content>
 </AlertDialog.Root>
 
-<Item {loading} name={server.slug}>
+<Dialog.Root bind:open={selecting}>
+    <Dialog.Content>
+        <Dialog.Header>
+            <Dialog.Title class="mb-2">{server.slug} instances</Dialog.Title>
+            <Dialog.Description>
+                {#if instances}
+                    <List>
+                        {#each instances as instance}
+                            <Item
+                                href="/servers/manage/{server.id}/instance/{instance.id}"
+                            >
+                                <div
+                                    class="grow"
+                                    class:italic={instance.name == null}
+                                >
+                                    {instance.name ?? "default"}
+                                </div>
+                                {#if instance.containers.length > 0}
+                                    <Badge>
+                                        {instance.containers.length}
+                                        container{instance.containers.length > 1
+                                            ? "s"
+                                            : ""}
+                                    </Badge>
+                                {/if}
+                            </Item>
+                        {/each}
+                    </List>
+                {:else}
+                    <Loader2 class="animate-spin my-16 mx-auto" />
+                {/if}
+            </Dialog.Description>
+        </Dialog.Header>
+    </Dialog.Content>
+</Dialog.Root>
+
+<Item on:click={() => loadInstances()} {loading} name={server.slug}>
     <div>
         <StatusIndicator {status} />
     </div>
