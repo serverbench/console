@@ -17,6 +17,7 @@
     import { Loader2 } from "lucide-svelte";
     import Badge from "$lib/components/ui/badge/badge.svelte";
     import SimplePicker from "../picker/SimplePicker.svelte";
+    import * as Card from "$lib/components/ui/card"
 
     use([
         BarChart,
@@ -73,7 +74,7 @@
     $: range, reload();
 </script>
 
-<div class="border h-96 relative">
+<Card.Root class="border h-96 relative">
     {#if options}
         <div class="pt-7 h-full">
             <Chart {init} {options} />
@@ -84,11 +85,11 @@
         </div>
     {/if}
     <div class="mt-3 px-3 flex flex-row justify-between absolute top-0 w-full">
-        <span
+        <Card.Root
             class="text-sm border px-3 flex flex-col items-center justify-center bg-white dark:bg-black dark:bg-opacity-50 bg-opacity-50 backdrop-blur-md"
         >
             {name}
-        </span>
+        </Card.Root>
         <div class="grow max-w-44">
             {#key selectableRange}
                 <SimplePicker
@@ -99,4 +100,4 @@
             {/key}
         </div>
     </div>
-</div>
+</Card.Root>

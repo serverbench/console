@@ -5,6 +5,30 @@
 @tailwind components;
 @tailwind utilities;
 
+@layer utilities {
+  .mask-gradient-top {
+    mask-image: linear-gradient(to bottom,
+        black 0%,
+        black 50%,
+        transparent 100%);
+    -webkit-mask-image: linear-gradient(to bottom,
+        black 0%,
+        black 50%,
+        transparent 100%);
+  }
+
+  .mask-gradient-bottom {
+    mask-image: linear-gradient(to top,
+        black 0%,
+        black 50%,
+        transparent 100%);
+    -webkit-mask-image: linear-gradient(to top,
+        black 0%,
+        black 50%,
+        transparent 100%);
+  }
+}
+
 * {
   font-family: "Sora", sans-serif;
   font-optical-sizing: auto;
@@ -66,7 +90,7 @@
 
     --ring: 0 0% 3.9%;
 
-    --radius: 0rem;
+    --radius: 1.5rem;
 
   }
 

@@ -20,6 +20,7 @@
         small = false,
         tabs: Record<string, ComponentType> | null = null,
         emptySubtitle = true,
+        bottom = false,
         name: string;
 
     export let tab: string = tabs ? Object.keys(tabs)[0] : "";

@@ -27,6 +27,7 @@
     import PerkTable from "./perks/PerkTable.svelte";
     import * as AlertDialog from "$lib/components/ui/alert-dialog/index.js";
     import Tab from "$lib/components/sb/section/tab/Tab.svelte";
+    import Empty from "$lib/components/sb/section/empty.svelte";
 
     let categories: StoreCategory[] = [];
     let product: Sku | null = null;
@@ -141,22 +142,26 @@
     </Section>
     <PricingTable bind:product />
     <PerkTable bind:product />
-    <Section
-        name="other"
-        hideName
-        list
-        tabs={{
-            limits: InfinityIcon,
-            restrictions: RouteOff,
-            visibility: EyeOff,
-            gifting: Gift,
-            goals: Flag,
-            upselling: ArchiveRestore,
-        }}
-        bind:tab
-    >
-        <Section name={tab} hideName used={0}>
-            <Tab {tab} name="limits"></Tab>
+    <Section name="other">
+        <Section
+            name="other"
+            hideName
+            list
+            tabs={{
+                limits: InfinityIcon,
+                restrictions: RouteOff,
+                visibility: EyeOff,
+                gifting: Gift,
+                goals: Flag,
+                upselling: ArchiveRestore,
+            }}
+            bind:tab
+        >
+            <div class="py-16">
+                <Empty type={tab}>
+                    <Button class="w-full">Create {tab}</Button>
+                </Empty>
+            </div>
         </Section>
     </Section>
 {/if}

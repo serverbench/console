@@ -22,6 +22,9 @@
     import UserNav from "$lib/components/sb/nav/userNav.svelte";
     import Skeleton from "$lib/components/ui/skeleton/skeleton.svelte";
     import { Toaster } from "$lib/components/ui/sonner";
+    import * as Card from "$lib/components/ui/card";
+    import CommunityPicker from "$lib/components/sb/nav/CommunityPicker.svelte";
+    import { blur, fade } from "svelte/transition";
     let loggedIn = false;
 
     let afterLogin: string | null = null;
@@ -77,110 +80,131 @@
 
     let activeSidebar = false;
     let community: Community | null = null;
+
+    $: mainContent = !["/onboarding", "/login"].includes($page.url.pathname);
+    $: userContent = $page.url.pathname.startsWith("/me");
 </script>
 
 <Toaster />
 
-<main>
-    {#if !["/onboarding", "/login"].includes($page.url.pathname)}
-        <div class="flex flex-row h-full absolute w-full">
+<div class="fixed h-screen w-full top-0 z-20">
+    {#if mainContent}
+        <div
+            transition:blur
+            class="flex flex-row h-full absolute inset-0 lg:p-3 gap-5"
+        >
+            <!-- Sidebar -->
             <div
-                class:hidden={!activeSidebar}
-                class="h-full w-3/4 md:w-full md:max-w-72 border-r fixed md:relative md:block z-50 bg-white dark:bg-black"
+                class="h-full w-3/4 lg:w-full lg:max-w-72 absolute lg:relative lg:block z-30"
+                class:translate-x-0={activeSidebar}
+                class:-translate-x-full={!activeSidebar}
+                class:lg:translate-x-0={true}
             >
-                <div class="h-full w-full flex flex-col">
-                    {#if $page.url.pathname.startsWith("/me")}
-                        <UserNav />
-                    {:else}
-                        <CommunityNav bind:community />
-                    {/if}
-                    <div class="px-3 pt-2 pb-7 hidden md:block">
-                        <Logo center />
+                <Card.Root class="h-full w-full overflow-hidden">
+                    <div class="h-full w-full flex flex-col">
+                        {#if userContent}
+                            <UserNav />
+                        {:else}
+                            <CommunityNav />
+                        {/if}
                     </div>
-                </div>
+                </Card.Root>
             </div>
+
+            <!-- Overlay -->
             <button
                 on:click={() => (activeSidebar = false)}
                 class:hidden={!activeSidebar}
-                class="md:hidden fixed w-full h-full bg-black z-40 backdrop-blur-sm bg-opacity-50"
+                class="md:hidden absolute inset-0 bg-black z-30 backdrop-blur-sm bg-opacity-50"
             />
-            <div class="grow h-screen overflow-y-scroll flex flex-col gap-5">
-                <div class="border-b p-2 px-3 flex flex-row gap-5 items-center">
-                    <Button
-                        size="icon"
-                        on:click={() => (activeSidebar = !activeSidebar)}
-                        class="aspect-square rounded-full md:hidden block"
-                        variant="ghost"
-                    >
-                        <Menu />
-                    </Button>
-                    <div class="md:hidden">
-                        <Logo />
-                    </div>
-                    <DropdownMenu.Root>
-                        <DropdownMenu.Trigger class="ml-auto">
-                            <Avatar.Root>
-                                <Avatar.Fallback>
-                                    <PersonStanding />
-                                </Avatar.Fallback>
-                            </Avatar.Root>
-                        </DropdownMenu.Trigger>
-                        <DropdownMenu.Content>
-                            <DropdownMenu.Group>
-                                <DropdownMenu.Label
-                                    >My Account</DropdownMenu.Label
-                                >
-                                <DropdownMenu.Separator />
-                                <DropdownMenu.Item href="/me/referrals">
-                                    <Link />
-                                    Referrals
-                                </DropdownMenu.Item>
-                                <DropdownMenu.Item href="/me/wallet">
-                                    <Landmark />
-                                    Wallet
-                                </DropdownMenu.Item>
-                                <DropdownMenu.Separator />
-                                <DropdownMenu.Item
-                                    on:click={() => toggleDark(!dark)}
-                                >
-                                    {#if dark}
-                                        <Sun />
-                                        Light Mode
-                                    {:else}
-                                        <Moon />
-                                        Dark Mode
-                                    {/if}
-                                </DropdownMenu.Item>
-                                <DropdownMenu.Separator />
-                                <DropdownMenu.Item
-                                    class="destructive"
-                                    on:click={() => User.logout()}
-                                >
-                                    <DoorOpen />
-                                    Log Out
-                                </DropdownMenu.Item>
-                            </DropdownMenu.Group>
-                        </DropdownMenu.Content>
-                    </DropdownMenu.Root>
+        </div>
+    {/if}
+</div>
+
+<!-- Top bar -->
+<div class="flex flex-row gap-5 lg:py-3 lg:px-4 p-2 fixed w-full top-0 z-30">
+    <div class="w-3/4 md:w-full md:max-w-72 lg:block hidden"></div>
+    <div
+        class="w-full z-50 top-0 left-0 right-0 lg:relative lg:top-auto lg:left-auto lg:right-auto"
+    >
+        <Card.Root
+            class="p-2 px-3 flex flex-row gap-5 items-center backdrop-blur-xl bg-white dark:bg-black bg-opacity-50 dark:bg-opacity-50 rounded-full"
+        >
+            <Button
+                size="icon"
+                on:click={() => (activeSidebar = !activeSidebar)}
+                class="aspect-square rounded-full lg:hidden block"
+                variant="ghost"
+            >
+                <Menu />
+            </Button>
+            {#if !userContent}
+                <div>
+                    <CommunityPicker bind:community />
                 </div>
-                <div class="w-full mx-auto max-w-screen-2xl pb-10">
-                    <div class="grow p-5 flex flex-col gap-5">
-                        {#key community}
-                            {#if $page.url.pathname.startsWith("/me")}
-                                <slot />
-                            {:else if community}
-                                <slot />
+            {/if}
+            <DropdownMenu.Root>
+                <DropdownMenu.Trigger class="ml-auto">
+                    <Avatar.Root>
+                        <Avatar.Fallback>
+                            <PersonStanding />
+                        </Avatar.Fallback>
+                    </Avatar.Root>
+                </DropdownMenu.Trigger>
+                <DropdownMenu.Content>
+                    <DropdownMenu.Group>
+                        <DropdownMenu.Label>My Account</DropdownMenu.Label>
+                        <DropdownMenu.Separator />
+                        <DropdownMenu.Item href="/me/referrals">
+                            <Link />
+                            Referrals
+                        </DropdownMenu.Item>
+                        <DropdownMenu.Item href="/me/wallet">
+                            <Landmark />
+                            Wallet
+                        </DropdownMenu.Item>
+                        <DropdownMenu.Separator />
+                        <DropdownMenu.Item on:click={() => toggleDark(!dark)}>
+                            {#if dark}
+                                <Sun />
+                                Light Mode
                             {:else}
-                                <Skeleton />
+                                <Moon />
+                                Dark Mode
                             {/if}
-                        {/key}
-                    </div>
-                    <div class="w-1/5"></div>
-                </div>
-            </div>
+                        </DropdownMenu.Item>
+                        <DropdownMenu.Separator />
+                        <DropdownMenu.Item
+                            class="destructive"
+                            on:click={() => User.logout()}
+                        >
+                            <DoorOpen />
+                            Log Out
+                        </DropdownMenu.Item>
+                    </DropdownMenu.Group>
+                </DropdownMenu.Content>
+            </DropdownMenu.Root>
+        </Card.Root>
+    </div>
+</div>
+
+<!-- Main content -->
+<main class="relative flex flex-row gap-5 min-h-screen lg:py-3 lg:px-4 p-2">
+    {#if mainContent}
+        <div class="w-3/4 md:w-full md:max-w-72 lg:block hidden"></div>
+        <div class="grow flex flex-col gap-5 mt-16 pt-2 z-20 px-1">
+            {#key community}
+                {#if $page.url.pathname.startsWith("/me")}
+                    <slot />
+                {:else if community}
+                    <slot />
+                {:else}
+                    <Skeleton />
+                {/if}
+            {/key}
         </div>
     {:else}
-        <div>
+        <div class="h-full">
             <Gradient />
             <div
                 class="w-full h-full absolute flex flex-col items-center justify-center px-5"

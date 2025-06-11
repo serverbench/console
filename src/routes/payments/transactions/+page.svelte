@@ -10,7 +10,6 @@
     import * as Table from "$lib/components/ui/table";
     import { inview } from "svelte-inview";
     import { Skeleton } from "$lib/components/ui/skeleton";
-    import MemberImport from "./MemberImport.svelte";
 
     let transactions: Transaction[] = [];
     let hasMore = true;
@@ -39,9 +38,7 @@
     }
 </script>
 
-<MemberImport />
-
-<Section name="Transactions" small>
+<Section name="Transactions" small used={transactions.length}>
     <Table.Root>
         <Table.Header>
             <Table.Row>

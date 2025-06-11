@@ -29,6 +29,7 @@
     import InstancePie from "./InstancePie.svelte";
     import Badge from "$lib/components/ui/badge/badge.svelte";
     import ActivityClock from "./ActivityClock.svelte";
+    import * as Card from "$lib/components/ui/card";
     use([
         LineChart,
         BarChart,
@@ -405,8 +406,8 @@
     }
 </script>
 
-<div class="flex flex-row gap-5" style="height: 30rem">
-    <div class="h-full w-full border flex flex-col gap-5 pt-5 relative">
+<Card.Root class="flex flex-row gap-5" style="height: 30rem">
+    <div class="h-full w-full flex flex-col gap-5 pt-5 relative">
         {#if firstLoad}
             <div
                 class="absolute top-0 left-0 w-full h-full flex items-center justify-center"
@@ -438,27 +439,27 @@
             </div>
         </div>
     </div>
-</div>
+</Card.Root>
 
 <div class="flex flex-col md:flex-row gap-5">
-    <div class="h-72 w-full border py-5">
+    <Card.Root class="h-72 w-full border py-5">
         <div class="text-center">
             <Badge>Countries</Badge>
         </div>
         <CountryPie {countries} />
-    </div>
-    <div class="h-72 w-full border py-5">
+    </Card.Root>
+    <Card.Root class="h-72 w-full border py-5">
         <div class="text-center">
             <Badge>Instances</Badge>
         </div>
         <InstancePie {instances} />
-    </div>
-    <div class="h-72 w-full border py-5 pb-2 flex flex-col gap-2">
+    </Card.Root>
+    <Card.Root class="h-72 w-full border py-5 pb-2 flex flex-col gap-2">
         <div class="text-center">
             <Badge>Activity</Badge>
         </div>
         <ActivityClock data={times} />
-    </div>
+    </Card.Root>
 </div>
 
 <OnlineMembers on:update={() => load()} />

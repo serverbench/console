@@ -17,6 +17,3 @@
 {#if settings}
     <SiteSetups {settings} />
 {/if}
-{#key settings}
-    <SiteSetups {settings} />
-{/key}

@@ -52,7 +52,7 @@
     }
 </script>
 
-<Section name="Subscriptions" small>
+<Section name="Subscriptions" small used={transactions.length}>
     <Table.Root>
         <Table.Header>
             <Table.Row>

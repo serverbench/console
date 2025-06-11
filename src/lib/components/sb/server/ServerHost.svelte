@@ -25,6 +25,7 @@
     import { presets, type Preset } from "./presets";
     import { blur, slide } from "svelte/transition";
     import type IPort from "$lib/sb/machine/IPort";
+    import * as Card from "$lib/components/ui/card";
     export let hosting = false,
         server: Server;
     type Env = {
@@ -298,8 +299,8 @@
                         Whitelisted Remotes:
                     {/if}
                 </p>
-                <div
-                    class="flex flex-col gap-2 p-3 border h-60 overflow-y-auto"
+                <Card.Root
+                    class="flex flex-col gap-2 p-3 h-60 overflow-y-auto"
                 >
                     <Button
                         on:click={() => {
@@ -330,7 +331,7 @@
                             </Button>
                         </div>
                     {/each}
-                </div>
+                </Card.Root>
             </div>
             <Dialog.Footer>
                 <Button
@@ -359,10 +360,8 @@
                 {#if !instances}
                     <Loader2 class="mx-auto animate-spin my-10" />
                 {:else if instances != null}
-                    <div
-                        class="flex flex-col gap-2"
-                        class:border={instance == null}
-                        class:p-3={instance == null}
+                    <Card.Root
+                        class="flex flex-col gap-2 p-3"
                     >
                         <SimplePicker
                             bind:value={instance}
@@ -377,8 +376,8 @@
                                     : "default (empty)"}
                             />
                         {/if}
-                    </div>
-                    <div class="flex flex-col gap-2 border p-3">
+                                </Card.Root>
+                    <Card.Root class="flex flex-col gap-2 border p-3">
                         <Tabs.Root value="self">
                             <Tabs.List class="grid w-full grid-cols-2">
                                 <Tabs.Trigger value="self"
@@ -443,6 +442,7 @@
                                                     machine={selectedMachine}
                                                 />
                                                 <Button
+                                                    variant="secondary"
                                                     on:click={() =>
                                                         fetchMachines()}
                                                 >
@@ -468,7 +468,7 @@
                                 </Alert.Root>
                             </Tabs.Content>
                         </Tabs.Root>
-                    </div>
+                    </Card.Root>
                 {/if}
             </div>
         {:else if step == 2}
@@ -486,7 +486,7 @@
                     placeholder="docker.io/<namespace>/<image>:<tag>"
                 />
                 <Input bind:value={mount} placeholder="/data" />
-                <div
+                <Card.Root
                     class="flex flex-col gap-2 p-3 border overflow-y-auto h-60"
                 >
                     <Tabs.Root value="ports">
@@ -580,7 +580,7 @@
                             </div>
                         </Tabs.Content>
                     </Tabs.Root>
-                </div>
+                </Card.Root>
             </div>
         {:else if step == 3}
             <div transition:blur>
