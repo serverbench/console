@@ -6,8 +6,8 @@
     import FileIconsMinecraft from "~icons/file-icons/minecraft";
     import SkillIconsDiscord from "~icons/skill-icons/discord";
     import GgGoogle from "~icons/gg/google";
-    import MdiMicrosoft from '~icons/mdi/microsoft'
-    import MdiGithub from '~icons/mdi/github'
+    import MdiMicrosoft from "~icons/mdi/microsoft";
+    import MdiGithub from "~icons/mdi/github";
     import { page } from "$app/stores";
     import { goto } from "$app/navigation";
 
@@ -17,7 +17,7 @@
         loading = true;
         try {
             await User.login(service);
-            console.log("fully logged in");
+            goto("/me");
         } catch (error) {
             loading = false;
         }
@@ -27,7 +27,7 @@
 <Logo center big />
 <CardLines>
     serverbench is still in beta. we are making steady progress to become the
-    ultimate way to manage your game server communities. <a
+    ultimate way to manage your apps. <a
         class="underline"
         href="https://nominal.es/discord">click here</a
     >

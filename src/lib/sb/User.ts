@@ -1,5 +1,6 @@
 import { jwtDecode } from "jwt-decode";
 import Community from "./Community";
+import { Mutex } from "async-mutex";
 
 const product = 'serverbench.io'
 
@@ -27,7 +28,7 @@ export default class User {
         return new User(obj.id, null, null, false)
     }
 
-    public isTest(){
+    public isTest() {
         return this.test
     }
 
@@ -123,7 +124,7 @@ export default class User {
             } else {
                 ws.send(JSON.stringify({
                     rid: this.randomRid(),
-                    action: [parsed.realm,parsed.action].join('.')
+                    action: [parsed.realm, parsed.action].join('.')
                 }))
             }
         }
@@ -189,12 +190,15 @@ export default class User {
         return this.call(path, 'DELETE')
     }
 
+    private static renewMutex = new Mutex();
+
     private async renewIfDue() {
+        const release = await User.renewMutex.acquire();
         try {
             const access = jwtDecode(this.accessToken!)
-            const refresh = jwtDecode(this.refreshToken!)
             const now = Math.trunc(new Date().getTime() / 1000) + 60
             if (access.exp! < now) {
+                const refresh = jwtDecode(this.refreshToken!)
                 if (refresh.exp! < now) {
                     throw new Error('refresh expired')
                 }
@@ -217,6 +221,8 @@ export default class User {
         } catch (error) {
             User.logout()
             return null
+        } finally {
+            release();
         }
     }
 

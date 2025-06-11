@@ -24,7 +24,7 @@
     import { Toaster } from "$lib/components/ui/sonner";
     import * as Card from "$lib/components/ui/card";
     import CommunityPicker from "$lib/components/sb/nav/CommunityPicker.svelte";
-    import { blur, fade } from "svelte/transition";
+    import { blur, fade, slide } from "svelte/transition";
     let loggedIn = false;
 
     let afterLogin: string | null = null;
@@ -87,10 +87,9 @@
 
 <Toaster />
 
-<div class="fixed h-screen w-full top-0 z-20">
-    {#if mainContent}
+{#if mainContent}
+    <div class="fixed h-screen w-full top-0 z-20">
         <div
-            transition:blur
             class="flex flex-row h-full absolute inset-0 lg:p-3 gap-5"
         >
             <!-- Sidebar -->
@@ -118,11 +117,14 @@
                 class="md:hidden absolute inset-0 bg-black z-30 backdrop-blur-sm bg-opacity-50"
             />
         </div>
-    {/if}
-</div>
+    </div>
+{/if}
 
 <!-- Top bar -->
-<div class="flex flex-row gap-5 lg:py-3 lg:px-4 p-2 fixed w-full top-0 z-30">
+<div
+    class:hidden={!mainContent}
+    class="flex flex-row gap-5 lg:py-3 lg:px-4 p-2 fixed w-full top-0 z-30"
+>
     <div class="w-3/4 md:w-full md:max-w-72 lg:block hidden"></div>
     <div
         class="w-full z-50 top-0 left-0 right-0 lg:relative lg:top-auto lg:left-auto lg:right-auto"
