@@ -30,6 +30,7 @@
     import Badge from "$lib/components/ui/badge/badge.svelte";
     import ActivityClock from "./ActivityClock.svelte";
     import * as Card from "$lib/components/ui/card";
+    import NumberFlow from "@number-flow/svelte";
     use([
         LineChart,
         BarChart,
@@ -41,6 +42,8 @@
         CandlestickChart,
         AriaComponent,
     ]);
+
+    let online = 0;
 
     type DataPoint = {
         created: number;
@@ -430,6 +433,11 @@
                 <Switch id="compare" bind:checked={compare} />
                 <Label for="compare">Compare</Label>
             </div>
+            <div class="ml-auto">
+                <NumberFlow
+                    value={online}
+                />
+            </div>
             <div class="w-48">
                 <SimplePicker
                     bind:value={resolution}
@@ -462,4 +470,9 @@
     </Card.Root>
 </div>
 
-<OnlineMembers on:update={() => load()} />
+<OnlineMembers
+    on:update={(event) => {
+        online = event.detail.length;
+        load();
+    }}
+/>

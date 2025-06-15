@@ -108,7 +108,7 @@ export default class User {
     }
 
     public socket(action: string, callback: (result: any) => void) {
-        const url = new URL(`${this.test ? 'ws://localhost:3030' : 'wss://stream.beta.serverbench.io'}/`)
+        const url = new URL(`${false ? 'ws://localhost:3030' : 'wss://stream.beta.serverbench.io'}/`)
         url.searchParams.append('token', this.accessToken!)
         const ws = new WebSocket(url.toString())
         ws.onopen = () => {
@@ -164,7 +164,7 @@ export default class User {
                 finalBody = JSON.stringify(body)
             }
         }
-        const req = await fetch(`https://${this.test ? 'dev.serverbench.io' : 'api.beta.serverbench.io'}${path}`, {
+        const req = await fetch(`https://${false ? 'dev.serverbench.io' : 'api.beta.serverbench.io'}${path}`, {
             headers,
             body: finalBody,
             method: method

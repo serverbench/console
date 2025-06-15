@@ -154,7 +154,7 @@
             href={sku != null ? `/payments/products/${sku.id}` : "#"}
             on:click={() => (sku == null ? (creating = true) : {})}
         >
-            <Card.Root class="p-3 h-36">
+            <Card.Root class="p-3 h-56">
                 {#if !sku}
                     <div
                         class="w-full h-full flex flex-col items-center justify-center"
@@ -163,7 +163,7 @@
                     </div>
                 {:else}
                     <div class="flex flex-col w-full h-full justify-between">
-                        <p class="text-lg text-left">
+                        <p class="text-left text-3xl p-1">
                             {sku.name}
                         </p>
                         <div class="flex flex-row gap-2">

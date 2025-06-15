@@ -52,7 +52,7 @@
     }
 </script>
 
-<Section name="Subscriptions" small used={transactions.length}>
+<Section name="Subscriptions" small used={loading && !transactions.length ? null : transactions.length}>
     <Table.Root>
         <Table.Header>
             <Table.Row>

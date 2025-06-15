@@ -88,18 +88,16 @@
 <Toaster />
 
 {#if mainContent}
-    <div class="fixed h-screen w-full top-0 z-20">
-        <div
-            class="flex flex-row h-full absolute inset-0 lg:p-3 gap-5"
-        >
+    <div class="fixed h-screen w-full top-0" class:z-20={!activeSidebar} class:z-50={activeSidebar}>
+        <div class="flex flex-row h-full absolute inset-0 lg:p-3 gap-5">
             <!-- Sidebar -->
             <div
-                class="h-full w-3/4 lg:w-full lg:max-w-72 absolute lg:relative lg:block z-30"
+                class="h-full w-3/5 lg:w-full lg:max-w-72 absolute lg:relative lg:block z-50 transition-transform"
                 class:translate-x-0={activeSidebar}
                 class:-translate-x-full={!activeSidebar}
                 class:lg:translate-x-0={true}
             >
-                <Card.Root class="h-full w-full overflow-hidden">
+                <Card.Root class="h-full w-full overflow-hidden rounded-l-none md:rounded-l-lg">
                     <div class="h-full w-full flex flex-col">
                         {#if userContent}
                             <UserNav />
@@ -121,74 +119,80 @@
 {/if}
 
 <!-- Top bar -->
-<div
-    class:hidden={!mainContent}
-    class="flex flex-row gap-5 lg:py-3 lg:px-4 p-2 fixed w-full top-0 z-30"
->
-    <div class="w-3/4 md:w-full md:max-w-72 lg:block hidden"></div>
+{#if !activeSidebar}
     <div
-        class="w-full z-50 top-0 left-0 right-0 lg:relative lg:top-auto lg:left-auto lg:right-auto"
+        transition:fade={{ duration: 200 }}
+        class:hidden={!mainContent}
+        class:z-30={!activeSidebar}
+        class="flex flex-row gap-5 lg:py-3 lg:px-4 p-2 fixed w-full top-0"
     >
-        <Card.Root
-            class="p-2 px-3 flex flex-row gap-5 items-center backdrop-blur-xl bg-white dark:bg-black bg-opacity-50 dark:bg-opacity-50 rounded-full"
+        <div class="w-3/4 md:w-full md:max-w-72 lg:block hidden"></div>
+        <div
+            class="w-full z-50 top-0 left-0 right-0 lg:relative lg:top-auto lg:left-auto lg:right-auto"
         >
-            <Button
-                size="icon"
-                on:click={() => (activeSidebar = !activeSidebar)}
-                class="aspect-square rounded-full lg:hidden block"
-                variant="ghost"
+            <Card.Root
+                class="p-2 px-3 flex flex-row gap-5 items-center backdrop-blur-xl bg-white dark:bg-black bg-opacity-50 dark:bg-opacity-50 rounded-full"
             >
-                <Menu />
-            </Button>
-            {#if !userContent}
-                <div>
-                    <CommunityPicker bind:community />
-                </div>
-            {/if}
-            <DropdownMenu.Root>
-                <DropdownMenu.Trigger class="ml-auto">
-                    <Avatar.Root>
-                        <Avatar.Fallback>
-                            <PersonStanding />
-                        </Avatar.Fallback>
-                    </Avatar.Root>
-                </DropdownMenu.Trigger>
-                <DropdownMenu.Content>
-                    <DropdownMenu.Group>
-                        <DropdownMenu.Label>My Account</DropdownMenu.Label>
-                        <DropdownMenu.Separator />
-                        <DropdownMenu.Item href="/me/referrals">
-                            <Link />
-                            Referrals
-                        </DropdownMenu.Item>
-                        <DropdownMenu.Item href="/me/wallet">
-                            <Landmark />
-                            Wallet
-                        </DropdownMenu.Item>
-                        <DropdownMenu.Separator />
-                        <DropdownMenu.Item on:click={() => toggleDark(!dark)}>
-                            {#if dark}
-                                <Sun />
-                                Light Mode
-                            {:else}
-                                <Moon />
-                                Dark Mode
-                            {/if}
-                        </DropdownMenu.Item>
-                        <DropdownMenu.Separator />
-                        <DropdownMenu.Item
-                            class="destructive"
-                            on:click={() => User.logout()}
-                        >
-                            <DoorOpen />
-                            Log Out
-                        </DropdownMenu.Item>
-                    </DropdownMenu.Group>
-                </DropdownMenu.Content>
-            </DropdownMenu.Root>
-        </Card.Root>
+                <Button
+                    size="icon"
+                    on:click={() => (activeSidebar = !activeSidebar)}
+                    class="aspect-square rounded-full lg:hidden block"
+                    variant="ghost"
+                >
+                    <Menu />
+                </Button>
+                {#if !userContent}
+                    <div>
+                        <CommunityPicker bind:community />
+                    </div>
+                {/if}
+                <DropdownMenu.Root>
+                    <DropdownMenu.Trigger class="ml-auto">
+                        <Avatar.Root>
+                            <Avatar.Fallback>
+                                <PersonStanding />
+                            </Avatar.Fallback>
+                        </Avatar.Root>
+                    </DropdownMenu.Trigger>
+                    <DropdownMenu.Content>
+                        <DropdownMenu.Group>
+                            <DropdownMenu.Label>My Account</DropdownMenu.Label>
+                            <DropdownMenu.Separator />
+                            <DropdownMenu.Item href="/me/referrals">
+                                <Link />
+                                Referrals
+                            </DropdownMenu.Item>
+                            <DropdownMenu.Item href="/me/wallet">
+                                <Landmark />
+                                Wallet
+                            </DropdownMenu.Item>
+                            <DropdownMenu.Separator />
+                            <DropdownMenu.Item
+                                on:click={() => toggleDark(!dark)}
+                            >
+                                {#if dark}
+                                    <Sun />
+                                    Light Mode
+                                {:else}
+                                    <Moon />
+                                    Dark Mode
+                                {/if}
+                            </DropdownMenu.Item>
+                            <DropdownMenu.Separator />
+                            <DropdownMenu.Item
+                                class="destructive"
+                                on:click={() => User.logout()}
+                            >
+                                <DoorOpen />
+                                Log Out
+                            </DropdownMenu.Item>
+                        </DropdownMenu.Group>
+                    </DropdownMenu.Content>
+                </DropdownMenu.Root>
+            </Card.Root>
+        </div>
     </div>
-</div>
+{/if}
 
 <!-- Main content -->
 <main class="relative flex flex-row gap-5 min-h-screen lg:py-3 lg:px-4 p-2">

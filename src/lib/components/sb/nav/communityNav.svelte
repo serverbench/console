@@ -26,12 +26,12 @@
             class="backdrop-blur-xl w-full py-8 mask-gradient-bottom transition-all duration-1000 ease-in-out"
         ></div>
     </div>
-    <div class="flex flex-col gap-5 px-6 pt-14 pb-6">
+    <div class="mt-14 border mx-5 mb-4 rounded-full"></div>
+    <div class="flex flex-col gap-5 px-6 pb-14">
         <NavSection icon={UsersRound} name="community">
             <NavLink href="/community/members">Members</NavLink>
-            <NavLink href="/community/demographics">Demographics</NavLink>
-            <NavLink href="/community/playtime">Playtime</NavLink>
-            <NavLink href="/community/image">Image</NavLink>
+            <NavLink href="/community/briefings">Briefings</NavLink>
+            <NavLink href="/community/branding">Branding</NavLink>
         </NavSection>
         <NavSection icon={Megaphone} name="marketing">
             <NavLink href="/marketing/listings">Listings</NavLink>

@@ -38,7 +38,11 @@
     }
 </script>
 
-<Section name="Transactions" small used={transactions.length}>
+<Section
+    name="Transactions"
+    small
+    used={loading && !transactions.length ? null : transactions.length}
+>
     <Table.Root>
         <Table.Header>
             <Table.Row>

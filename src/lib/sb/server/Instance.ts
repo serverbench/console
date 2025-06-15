@@ -22,7 +22,12 @@ export default class Instance {
         return this._containers
     }
 
-    public static fromObj(server: Server, obj: any) {
+    public static fromObj(server: Server | null, obj: any) {
+        if(server === null) {
+            server = Server.fromObj(
+                obj.server
+            )
+        }
         const i = new Instance(
             server,
             obj.id,

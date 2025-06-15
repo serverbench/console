@@ -6,7 +6,7 @@
     import Logo from "../logo.svelte";
 </script>
 
-<ScrollArea class="grow ">
+<ScrollArea class="grow">
     <div class="absolute top-0 py-5 w-full pointer-events-none z-50">
         <Logo center />
     </div>
@@ -20,7 +20,8 @@
             class="backdrop-blur-xl w-full py-8 mask-gradient-bottom transition-all duration-1000 ease-in-out"
         ></div>
     </div>
-    <div class="flex flex-col gap-5 px-6 pt-14 pb-6">
+    <div class="mt-14 border mx-5 mb-4 rounded-full"></div>
+    <div class="flex flex-col gap-5 px-6 pb-6">
         <NavSection icon={Landmark} name="balance">
             <NavLink href="/me/wallet">Wallet</NavLink>
         </NavSection>

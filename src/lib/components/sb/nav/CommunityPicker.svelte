@@ -47,11 +47,11 @@
             if (branding && branding.primary) {
                 document.documentElement.style.setProperty(
                     "--primary",
-                    `${branding.primary.h} ${branding.primary.s}% 40%`,
+                    `${branding.primary.h} ${branding.primary.s}% 15%`,
                 );
                 document.documentElement.style.setProperty(
                     "--primary-dark",
-                    `${branding.primary.h} ${branding.primary.s}% 50%`,
+                    `${branding.primary.h} ${branding.primary.s}% 90%`,
                 );
             } else {
                 document.documentElement.style.setProperty(

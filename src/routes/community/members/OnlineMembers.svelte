@@ -4,7 +4,7 @@
     import Connection from "$lib/sb/member/Connection";
     import Member from "$lib/sb/member/Member";
     import User from "$lib/sb/User";
-    import { createEventDispatcher, onMount } from "svelte";
+    import { createEventDispatcher, onDestroy, onMount } from "svelte";
     import { fade, scale, slide } from "svelte/transition";
     import * as Tooltip from "$lib/components/ui/tooltip";
     import Card from "$lib/components/ui/card/card.svelte";
@@ -20,11 +20,13 @@
 
     let list: Connection[] = [];
 
+    let ws: WebSocket | null = null;
+
     onMount(async () => {
         const community = await Community.get();
         const user = await User.get();
         let firstLoad = true;
-        const ws = user!.socket(
+        ws = user!.socket(
             `community.${community!.id}.member.connection`,
             (data) => {
                 const newList: Connection[] = data
@@ -57,9 +59,15 @@
                     firstLoad = false;
                 }
                 list = newList;
-                dispatch("update", { list });
+                dispatch("update", list);
             },
         );
+    });
+
+    onDestroy(() => {
+        if (ws) {
+            ws.close();
+        }
     });
 </script>
 
