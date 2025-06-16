@@ -1,5 +1,5 @@
-import type { Member } from "@serverbench/js"
 import Branding from "./branding/Branding"
+import type Member from "./member/Member"
 import User from "./User"
 
 export default class Community {

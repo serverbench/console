@@ -1,10 +1,12 @@
 import Community from "../Community"
 import Game from "../Game"
+import ChatMessage from "../moderation/chat/ChatMessage"
 import User from "../User"
-import Connection from "./Connection"
+import Connection, { type InstanceCount } from "./Connection"
 
 export default class Member {
 
+    public readonly created: Date
     public readonly id: string
     public readonly eid: string
     public readonly name: string
@@ -12,8 +14,9 @@ export default class Member {
     public readonly community: Community
     private _firstConnection: Connection | null
 
-    constructor(id: string, eid: string, name: string, game: Game, community: Community, firstConnection: Connection | null = null) {
+    constructor(id: string, created: Date, eid: string, name: string, game: Game, community: Community, firstConnection: Connection | null = null) {
         this.id = id
+        this.created = created
         this.eid = eid
         this.name = name
         this.game = game
@@ -34,6 +37,7 @@ export default class Member {
     public static fromObj(community: Community, obj: any) {
         const member = new Member(
             obj.id,
+            new Date(obj.created),
             obj.eid,
             obj.name,
             Game.fromObj(obj.game),
@@ -61,6 +65,63 @@ export default class Member {
             page
         })
         return data.map((d: any) => Member.fromObj(community!, d))
+    }
+
+    public static async fromId(id: string) {
+        const user = await User.get()
+        const community = await Community.get()
+        return Member.fromObj(community!, await user!.get(`/community/${community!.id}/member/${id}`))
+    }
+
+    public async getCountry() {
+        const user = await User.get()
+        const community = await Community.get()
+        return (await user!.get(`/community/${community!.id}/member/${this.id}/country`)).country
+    }
+
+    public async getFavoriteInstances(anchor = new Date()) {
+        const user = await User.get()
+        const community = await Community.get()
+        return (await user!.post(`/community/${community!.id}/member/${this.id}/instances`, {
+            anchor: anchor.getTime()
+        })) as InstanceCount[]
+    }
+
+    public async getChatMessages(page: number = 0, anchor: Date = new Date(), filters?: {
+        minToxicity?: number,
+        minToxicityProfanity?: number,
+        minToxicityAverage?: number,
+        minToxicityAverageProfanity?: number,
+        tagged?: boolean
+    }): Promise<ChatMessage[]> {
+        const user = await User.get()
+        const community = await Community.get()
+        return (await user!.post(`/community/${community!.id}/chat/member/${this.id}`, {
+            page,
+            anchor: anchor.getTime(),
+            minToxicity: filters?.minToxicity,
+            minToxicityProfanity: filters?.minToxicityProfanity,
+            minToxicityAverage: filters?.minToxicityAverage,
+            minToxicityAverageProfanity: filters?.minToxicityAverageProfanity,
+            tagged: filters?.tagged
+        })).map((c: any) => ChatMessage.fromObj(community!, c))
+    }
+
+    public async getConnections(page: number = 0, anchor: Date = new Date()) {
+        const user = await User.get()
+        const community = await Community.get()
+        return (await user!.post(`/community/${community!.id}/activity/connection/member/${this.id}`, {
+            page,
+            anchor: anchor.getTime()
+        })).result.map((c: any) => Connection.fromObj(c, this))
+    }
+
+    public async getActivityCalendar() {
+        return await Connection.getActivityCalendar(this)
+    }
+
+    public async getActivityClock() {
+        return this.community.getActivityClock(this)
     }
 
 }

@@ -1,5 +1,6 @@
-import type Community from "../Community"
+import Community from "../Community"
 import ReferralCode from "../referral/ReferralCode"
+import User from "../User";
 import ListingSite from "../voting/site/ListingSite"
 import Member from "./Member"
 
@@ -73,6 +74,15 @@ export default class Connection {
             obj.listingSite && obj.listingSite.domain ? ListingSite.fromObject(null, obj.listingSite) : null,
             obj.idle
         )
+    }
+
+    public static async getActivityCalendar(member: Member | null = null): Promise<[Date, number][]> {
+        const user = await User.get()
+        const community = await Community.get()
+        const data = await user!.post(`/community/${community!.id}/activity/calendar`, {
+            memberId: member ? member.id : null
+        })
+        return data.map((d: any) => [new Date(d[0]), d[1]])
     }
 
 }

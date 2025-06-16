@@ -434,9 +434,7 @@
                 <Label for="compare">Compare</Label>
             </div>
             <div class="ml-auto">
-                <NumberFlow
-                    value={online}
-                />
+                <NumberFlow value={online} />
             </div>
             <div class="w-48">
                 <SimplePicker

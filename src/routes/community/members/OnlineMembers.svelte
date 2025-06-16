@@ -74,7 +74,7 @@
 <Section name="Online Members" list used={list.length}>
     {#each list as connection, index (connection.id)}
         <div class:border-b={index < list.length - 1}>
-            <Item>
+            <Item href={`/community/members/${connection.member.id}`}>
                 <Tooltip.Root>
                     <Tooltip.Trigger>
                         <div class="relative">

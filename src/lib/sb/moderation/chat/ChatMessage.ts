@@ -16,7 +16,7 @@ export default class ChatMessage {
     public readonly tagged: boolean
     public readonly processed: Date | null
     public readonly session: InstanceSession
-    public readonly toxicity: Toxicity | null
+    public readonly toxicity: Toxicity
 
     constructor(
         from: Member,
@@ -29,7 +29,7 @@ export default class ChatMessage {
         tagged: boolean,
         processed: Date | null,
         session: InstanceSession,
-        toxicity: Toxicity | null
+        toxicity: Toxicity
     ) {
         this.from = from;
         this.message = message;
@@ -62,7 +62,7 @@ export default class ChatMessage {
                 null,
                 obj.session
             ),
-            obj.toxicity ? Toxicity.fromObj(obj.toxicity) : null
+            Toxicity.fromObj(obj.toxicity)
         )
     }
 
