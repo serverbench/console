@@ -97,15 +97,19 @@
         <List>
             {#each connections as connection}
                 <Item>
-                    <Badge
-                        variant="secondary"
-                        class="whitespace-nowrap mr-auto"
-                    >
-                        {connection.session?.instance.server.slug}
-                        {#if connection.session?.instance.name}
-                            {connection.session?.instance.name}
-                        {/if}
-                    </Badge>
+                    {#if connection.session}
+                        <Badge
+                            variant="secondary"
+                            class="whitespace-nowrap mr-auto"
+                        >
+                            {connection.session?.instance.server.slug}
+                            {#if connection.session?.instance.name}
+                                {connection.session?.instance.name}
+                            {/if}
+                        </Badge>
+                    {:else}
+                        <div class="w-full"></div>
+                    {/if}
                     {#if connection.closed}
                         <Badge variant="secondary" class="whitespace-nowrap">
                             <Time relative timestamp={connection.created} />
