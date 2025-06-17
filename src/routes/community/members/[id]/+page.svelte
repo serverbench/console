@@ -1,13 +1,10 @@
 <script lang="ts">
     import { page } from "$app/stores";
     import type { InstanceCount } from "$lib/sb/member/Connection";
-    import Member from "$lib/sb/member/Member";
+    import Member, { type ChatMessageFilter } from "$lib/sb/member/Member";
     import { onMount } from "svelte";
-    import MemberMessages from "./MemberMessages.svelte";
+    import MemberMessages from "./messages/MemberMessages.svelte";
     import * as Avatar from "$lib/components/ui/avatar";
-    import Section from "$lib/components/sb/section/section.svelte";
-    import * as HoverCard from "$lib/components/ui/hover-card/index.js";
-    import Button from "$lib/components/ui/button/button.svelte";
     import { Activity, History, Loader2 } from "lucide-svelte";
     import * as Breadcrumb from "$lib/components/ui/breadcrumb/index.js";
     import * as Card from "$lib/components/ui/card/index.js";
@@ -16,11 +13,18 @@
     import { blur, fade } from "svelte/transition";
     import InstancePie from "../InstancePie.svelte";
     import ActivityClock from "../ActivityClock.svelte";
+    import CalendarHeatmap from "../CalendarHeatmap.svelte";
+    import * as Tabs from "$lib/components/ui/tabs/index.js";
+    import MemberMessagesFilter from "./messages/MemberMessagesFilter.svelte";
+    import MemberSessions from "./sessions/MemberSessions.svelte";
 
     let member: Member | null = null;
     let country: string | null | undefined = undefined;
     let instances: InstanceCount[] = [];
-    let clock: number[][] = []
+    let clock: number[][] | null = null;
+    let calendar: [Date, number][] | null = null;
+    let tab: string = "messages";
+    let chatFilters: ChatMessageFilter = {};
 
     onMount(async () => {
         const id = $page.params.id;
@@ -28,6 +32,7 @@
         country = await member.getCountry();
         instances = await member.getFavoriteInstances();
         clock = await member.getActivityClock();
+        calendar = await member.getActivityCalendar();
     });
 </script>
 
@@ -85,16 +90,40 @@
             </Card.Content>
         </Card.Root>
         <div class="h-64 w-full flex flex-row gap-4">
-            <Card.Root class="h-full py-5 aspect-square">
+            <Card.Root class="h-full py-5 md:aspect-square w-full md:w-auto">
                 <InstancePie {instances} />
             </Card.Root>
-            <Card.Root class="h-full py-5 aspect-square">
+            <Card.Root class="h-full py-5 md:aspect-square w-full md:w-auto">
                 <ActivityClock data={clock} />
             </Card.Root>
-            <Card.Root class="h-full w-full flex flex-col items-center justify-center">
-                calendar heatmap
+            <Card.Root
+                class="h-full w-full flex-col items-center justify-center p-5 md:flex hidden"
+            >
+                <CalendarHeatmap data={calendar} />
             </Card.Root>
         </div>
-        <MemberMessages {member} />
+        <Card.Root
+            class="h-64 flex-col items-center justify-center p-5 flex md:hidden"
+        >
+            <CalendarHeatmap data={calendar} />
+        </Card.Root>
+
+        <Tabs.Root bind:value={tab}>
+            <div class="flex flex-row items-center w-full justify-between">
+                <Tabs.List>
+                    <Tabs.Trigger value="messages">Messages</Tabs.Trigger>
+                    <Tabs.Trigger value="sessions">Sessions</Tabs.Trigger>
+                </Tabs.List>
+                {#if tab == "messages"}
+                    <MemberMessagesFilter bind:filters={chatFilters} />
+                {/if}
+            </div>
+            <Tabs.Content value="messages">
+                <MemberMessages {member} filters={chatFilters} />
+            </Tabs.Content>
+            <Tabs.Content value="sessions">
+                <MemberSessions {member} />
+            </Tabs.Content>
+        </Tabs.Root>
     </div>
 {/if}

@@ -20,6 +20,9 @@
     import type { EChartsOption, EChartsType } from "echarts";
     import { SunburstChart } from "echarts/charts";
     import type { InstanceCount } from "$lib/sb/member/Connection";
+    import { Loader2 } from "lucide-svelte";
+    import { blur } from "svelte/transition";
+    import { dark } from "$lib";
 
     use([
         LineChart,
@@ -39,38 +42,24 @@
 
     let chart: EChartsType;
 
-    export let data: number[][] = [];
+    export let data: number[][] | null = null;
 
     let options: EChartsOption = {};
 
     function computeOptions() {
-        if(data.length == 0) return {}
-        const hours = [
-            "12a",
-            "1a",
-            "2a",
-            "3a",
-            "4a",
-            "5a",
-            "6a",
-            "7a",
-            "8a",
-            "9a",
-            "10a",
-            "11a",
-            "12p",
-            "1p",
-            "2p",
-            "3p",
-            "4p",
-            "5p",
-            "6p",
-            "7p",
-            "8p",
-            "9p",
-            "10p",
-            "11p",
-        ];
+        if (!data || data.length <= 0) return {};
+        const currentHour = new Date().getHours();
+        const currentHourUtc = new Date().getUTCHours();
+        const hourDiff = currentHour - currentHourUtc;
+        const hours = Array(24)
+            .fill(0)
+            .map((_, i) => {
+                const hour = (i + hourDiff + 24) % 24;
+                if (hour === 0) return "12a";
+                if (hour < 12) return `${hour}a`;
+                if (hour === 12) return "12p";
+                return `${hour - 12}p`;
+            });
         const days = [
             "Saturday",
             "Friday",
@@ -91,7 +80,10 @@
                 top: "middle",
                 dimension: 2,
                 calculable: true,
-                show: false
+                show: false,
+                color: $dark
+                    ? ["rgba(103, 232, 249, 1)", "rgba(103, 232, 249, 0.1)"]
+                    : ["rgba(6, 182, 212, 1)", "rgba(6, 182, 212, 0.1)"],
             },
             angleAxis: {
                 type: "category",
@@ -112,7 +104,7 @@
                 type: "category",
                 data: days,
                 z: 100,
-                show: false
+                show: false,
             },
             series: [
                 {
@@ -150,4 +142,12 @@
     $: data, computeOptions();
 </script>
 
-<Chart bind:chart {init} {options} />
+<div class="w-full h-full flex flex-row items-center justify-center">
+    {#if data}
+        <div transition:blur class="w-full h-full">
+            <Chart bind:chart {init} {options} />
+        </div>
+    {:else}
+        <Loader2 class="animate-spin" />
+    {/if}
+</div>

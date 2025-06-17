@@ -25,10 +25,10 @@
     import * as Card from "$lib/components/ui/card";
     import CommunityPicker from "$lib/components/sb/nav/CommunityPicker.svelte";
     import { blur, fade, slide } from "svelte/transition";
+    import { dark } from "$lib";
     let loggedIn = false;
 
     let afterLogin: string | null = null;
-    let dark = false;
 
     function toggleDark(newDark: boolean) {
         if (newDark) {
@@ -36,9 +36,9 @@
         } else {
             localStorage.removeItem("dark");
         }
-        dark = newDark;
+        dark.set(newDark);
         const classList = document.getElementsByTagName("body")[0]!.classList;
-        if (dark) {
+        if ($dark) {
             classList.add("dark");
         } else {
             classList.remove("dark");
@@ -47,9 +47,9 @@
 
     onMount(async () => {
         if (localStorage.getItem("dark")) {
-            dark = true;
+            dark.set(true);
         }
-        toggleDark(dark);
+        toggleDark($dark);
 
         User.onLogin = async () => {
             console.log("logged in");
@@ -168,9 +168,9 @@
                             </DropdownMenu.Item>
                             <DropdownMenu.Separator />
                             <DropdownMenu.Item
-                                on:click={() => toggleDark(!dark)}
+                                on:click={() => toggleDark(!$dark)}
                             >
-                                {#if dark}
+                                {#if $dark}
                                     <Sun />
                                     Light Mode
                                 {:else}

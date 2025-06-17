@@ -1,5 +1,6 @@
 import Community from "../Community"
 import ReferralCode from "../referral/ReferralCode"
+import InstanceSession from "../server/InstanceSession";
 import User from "../User";
 import ListingSite from "../voting/site/ListingSite"
 import Member from "./Member"
@@ -32,6 +33,7 @@ export default class Connection {
     public readonly entrypoint: string | null
     public readonly referral: ReferralCode | null
     public readonly listingSite: ListingSite | null
+    public readonly session: InstanceSession | null
 
 
     constructor(
@@ -45,7 +47,8 @@ export default class Connection {
         entrypoint: string | null,
         referral: ReferralCode | null,
         listingSite: ListingSite | null,
-        idle: boolean
+        idle: boolean,
+        session: InstanceSession | null
     ) {
         this.id = id
         this.created = created
@@ -58,9 +61,19 @@ export default class Connection {
         this.referral = referral
         this.listingSite = listingSite
         this.idle = idle
+        this.session = session
     }
 
     public static fromObj(obj: any, member: Member): Connection {
+        let session: InstanceSession | null = null
+        try {
+            session = InstanceSession.fromObj(
+                null,
+                obj.session
+            )
+        } catch (error) {
+
+        }
         return new Connection(
             obj.id,
             new Date(obj.created),
@@ -72,7 +85,8 @@ export default class Connection {
             obj.entrypoint,
             obj.referral ? ReferralCode.fromObj(obj.referral, member.community) : null,
             obj.listingSite && obj.listingSite.domain ? ListingSite.fromObject(null, obj.listingSite) : null,
-            obj.idle
+            obj.idle,
+            session
         )
     }
 

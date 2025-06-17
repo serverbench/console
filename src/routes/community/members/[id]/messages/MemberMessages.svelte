@@ -18,6 +18,7 @@
     import List from "$lib/components/sb/section/list/list.svelte";
     import Button from "$lib/components/ui/button/button.svelte";
     import { fade } from "svelte/transition";
+    import type { ChatMessageFilter } from "$lib/sb/member/Member";
 
     export let member: Member;
     let page = 0;
@@ -25,6 +26,7 @@
 
     let loading = false;
     let messages: ChatMessage[] = [];
+    export let filters: ChatMessageFilter;
     let hasMore = true;
 
     const toxicityThreshold = 50;
@@ -33,19 +35,34 @@
     let profanity = false;
 
     onMount(async () => {
-        await loadMore();
+        await loadMore(true);
     });
 
-    async function loadMore() {
+    let last = Date.now();
+
+    $: filters, loadMore(true);
+
+    async function loadMore(reset = false) {
+        if (reset) {
+            last = Date.now();
+            page = 0;
+            hasMore = true;
+            anchor = new Date();
+            messages = [];
+            loading = false;
+        }
         if (loading) return;
         if (!hasMore) return;
+        const lastSnapshot = Number(last);
         loading = true;
-        const newMessages = await member.getChatMessages(page, anchor);
-        messages = [...messages, ...newMessages];
-        if (newMessages.length < pageSize) {
-            hasMore = false;
+        const newMessages = await member.getChatMessages(page, anchor, filters);
+        if (last == lastSnapshot) {
+            messages = [...messages, ...newMessages];
+            if (newMessages.length < pageSize) {
+                hasMore = false;
+            }
+            page++;
         }
-        page++;
         loading = false;
     }
 
@@ -78,7 +95,7 @@
                                 </Avatar.Fallback>
                             </Avatar.Root>
                             <Badge class="whitespace-nowrap">
-                                {member.name}
+                                {message.to.name}
                             </Badge>
                         </div>
                     {/if}
@@ -126,10 +143,10 @@
                 />
             {/if}
 
-            {#if loading}
+            {#if hasMore}
                 {#each Array(pageSize) as _}
                     <Item>
-                        <Skeleton class="h-[20px] my-2" />
+                        <Skeleton class="h-[20px] w-full my-2" />
                     </Item>
                 {/each}
             {/if}

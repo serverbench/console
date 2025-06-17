@@ -4,6 +4,14 @@ import ChatMessage from "../moderation/chat/ChatMessage"
 import User from "../User"
 import Connection, { type InstanceCount } from "./Connection"
 
+export type ChatMessageFilter = {
+    minToxicity?: number,
+    minToxicityProfanity?: number,
+    minToxicityAverage?: number,
+    minToxicityAverageProfanity?: number,
+    tagged?: boolean
+}
+
 export default class Member {
 
     public readonly created: Date
@@ -87,13 +95,7 @@ export default class Member {
         })) as InstanceCount[]
     }
 
-    public async getChatMessages(page: number = 0, anchor: Date = new Date(), filters?: {
-        minToxicity?: number,
-        minToxicityProfanity?: number,
-        minToxicityAverage?: number,
-        minToxicityAverageProfanity?: number,
-        tagged?: boolean
-    }): Promise<ChatMessage[]> {
+    public async getChatMessages(page: number = 0, anchor: Date = new Date(), filters?: ChatMessageFilter): Promise<ChatMessage[]> {
         const user = await User.get()
         const community = await Community.get()
         return (await user!.post(`/community/${community!.id}/chat/member/${this.id}`, {
@@ -107,13 +109,13 @@ export default class Member {
         })).map((c: any) => ChatMessage.fromObj(community!, c))
     }
 
-    public async getConnections(page: number = 0, anchor: Date = new Date()) {
+    public async getConnections(page: number = 0, anchor: Date = new Date()): Promise<Connection[]> {
         const user = await User.get()
         const community = await Community.get()
         return (await user!.post(`/community/${community!.id}/activity/connection/member/${this.id}`, {
             page,
             anchor: anchor.getTime()
-        })).result.map((c: any) => Connection.fromObj(c, this))
+        })).map((c: any) => Connection.fromObj(c, this))
     }
 
     public async getActivityCalendar() {
