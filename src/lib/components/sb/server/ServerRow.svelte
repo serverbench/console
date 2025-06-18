@@ -88,43 +88,7 @@
     </AlertDialog.Content>
 </AlertDialog.Root>
 
-<Dialog.Root bind:open={selecting}>
-    <Dialog.Content>
-        <Dialog.Header>
-            <Dialog.Title class="mb-2">{server.slug} instances</Dialog.Title>
-            <Dialog.Description>
-                {#if instances}
-                    <List>
-                        {#each instances as instance}
-                            <Item
-                                href="/servers/manage/{server.id}/instance/{instance.id}"
-                            >
-                                <div
-                                    class="grow"
-                                    class:italic={instance.name == null}
-                                >
-                                    {instance.name ?? "default"}
-                                </div>
-                                {#if instance.containers.length > 0}
-                                    <Badge>
-                                        {instance.containers.length}
-                                        container{instance.containers.length > 1
-                                            ? "s"
-                                            : ""}
-                                    </Badge>
-                                {/if}
-                            </Item>
-                        {/each}
-                    </List>
-                {:else}
-                    <Loader2 class="animate-spin my-16 mx-auto" />
-                {/if}
-            </Dialog.Description>
-        </Dialog.Header>
-    </Dialog.Content>
-</Dialog.Root>
-
-<Item on:click={() => loadInstances()} {loading} name={server.slug}>
+<Item href={`/servers/manage/${server.id}`} name={server.slug}>
     <div>
         <StatusIndicator {status} />
     </div>

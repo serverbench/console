@@ -83,7 +83,7 @@ export default class Connection {
             obj.country,
             obj.timezone,
             obj.entrypoint,
-            obj.referral ? ReferralCode.fromObj(obj.referral, member.community) : null,
+            obj.referral != null ? ReferralCode.fromObj(obj.referral, member.community) : null,
             obj.listingSite && obj.listingSite.domain ? ListingSite.fromObject(null, obj.listingSite) : null,
             obj.idle,
             session

@@ -56,4 +56,10 @@ export default class Server {
         }))
     }
 
+    public static async get(id: string) {
+        const community = await Community.get()
+        const user = await User.get()
+        return Server.fromObj(await user!.get(`/community/${community!.id}/server/${id}`))
+    }
+
 }

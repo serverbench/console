@@ -59,11 +59,15 @@
     let memoryUnit = memoryOptions[0][0];
     let cpus: null | number = null;
 
+    export let forcedInstance: Instance | null = null;
+
     async function fetchInstances() {
-        instance = null;
-        instances = null;
-        instances = await server.getInstances();
-        instance = instances[0].id ?? null;
+        instance = forcedInstance ? forcedInstance.id : null;
+        instances = forcedInstance ? [forcedInstance] : null;
+        if (!forcedInstance) {
+            instances = await server.getInstances();
+            instance = instances[0].id ?? null;
+        }
     }
 
     async function fetchMachines() {
@@ -162,9 +166,7 @@
         }
     }
 
-    $: selectedMachine = machines?.find(
-        (m) => m.id == machine,
-    ) ?? null;
+    $: selectedMachine = machines?.find((m) => m.id == machine) ?? null;
 
     $: missingDetails = () => {
         if (step == 1) {
@@ -299,9 +301,7 @@
                         Whitelisted Remotes:
                     {/if}
                 </p>
-                <Card.Root
-                    class="flex flex-col gap-2 p-3 h-60 overflow-y-auto"
-                >
+                <Card.Root class="flex flex-col gap-2 p-3 h-60 overflow-y-auto">
                     <Button
                         on:click={() => {
                             if (firewall)
@@ -348,7 +348,11 @@
 <Dialog.Root bind:open={hosting}>
     <Dialog.Content>
         <Dialog.Header>
-            <Dialog.Title>Host {server.slug}</Dialog.Title>
+            <Dialog.Title
+                >Host {server.slug}{forcedInstance
+                    ? ` (${forcedInstance.name ?? "default"})`
+                    : ""}</Dialog.Title
+            >
         </Dialog.Header>
         {#if loading}
             <div class="flex flex-col gap-2">
@@ -360,23 +364,23 @@
                 {#if !instances}
                     <Loader2 class="mx-auto animate-spin my-10" />
                 {:else if instances != null}
-                    <Card.Root
-                        class="flex flex-col gap-2 p-3"
-                    >
-                        <SimplePicker
-                            bind:value={instance}
-                            items={items()}
-                            name="instance"
-                        />
-                        {#if instance == null}
-                            <Input
-                                bind:value={instanceName}
-                                placeholder={instances.find((i) => !i.name)
-                                    ? "Instance Name"
-                                    : "default (empty)"}
+                    {#if !forcedInstance}
+                        <Card.Root class="flex flex-col gap-2 p-3">
+                            <SimplePicker
+                                bind:value={instance}
+                                items={items()}
+                                name="instance"
                             />
-                        {/if}
-                                </Card.Root>
+                            {#if instance == null}
+                                <Input
+                                    bind:value={instanceName}
+                                    placeholder={instances.find((i) => !i.name)
+                                        ? "Instance Name"
+                                        : "default (empty)"}
+                                />
+                            {/if}
+                        </Card.Root>
+                    {/if}
                     <Card.Root class="flex flex-col gap-2 border p-3">
                         <Tabs.Root value="self">
                             <Tabs.List class="grid w-full grid-cols-2">
