@@ -321,6 +321,7 @@
             },
             Math.abs(60 - new Date().getSeconds()) * 1000,
         );
+        updateTimes((await Community.get())!);
     });
 
     let resolutions = [
@@ -381,7 +382,6 @@
     async function load(reset = false) {
         const rateLimit = 10 * 1000;
         if (reset) {
-            await updateTimes((await Community.get())!);
             lastLoad = null;
         }
 
