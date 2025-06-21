@@ -46,8 +46,6 @@
 
     let online = 0;
 
-    let times: number[][] | null = null;
-
     type DataPoint = {
         created: number;
         active: {
@@ -321,7 +319,6 @@
             },
             Math.abs(60 - new Date().getSeconds()) * 1000,
         );
-        updateTimes((await Community.get())!);
     });
 
     let resolutions = [
@@ -371,10 +368,6 @@
         instances = await user!.post(
             `/community/${community!.id}/instances/online`,
         );
-    }
-
-    async function updateTimes(community: Community) {
-        times = await community.getActivityClock();
     }
 
     let lastLoad: Date | null = null;
@@ -461,12 +454,6 @@
             <Badge>Instances</Badge>
         </div>
         <InstancePie {instances} />
-    </Card.Root>
-    <Card.Root class="h-72 w-full border py-5">
-        <div class="text-center">
-            <Badge>Clock</Badge>
-        </div>
-        <ActivityClock data={times} />
     </Card.Root>
 </div>
 <OnlineMembers
