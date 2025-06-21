@@ -378,11 +378,6 @@
         calendar = await Connection.getActivityCalendar();
     }
 
-    let times: number[][] | null = null;
-    async function updateTimes(user: User, community: Community) {
-        times = await community.getActivityClock();
-    }
-
     let lastLoad: Date | null = null;
 
     async function load(reset = false) {
@@ -412,7 +407,6 @@
             updateData(user!, community!),
             updateCountries(user!, community!),
             updateInstances(user!, community!),
-            updateTimes(user!, community!),
         ]);
         firstLoad = false;
     }
@@ -468,12 +462,6 @@
             <Badge>Instances</Badge>
         </div>
         <InstancePie {instances} />
-    </Card.Root>
-    <Card.Root class="h-72 w-full border py-5 pb-2 flex flex-col gap-2">
-        <div class="text-center">
-            <Badge>Activity</Badge>
-        </div>
-        <ActivityClock data={times} />
     </Card.Root>
 </div>
 <OnlineMembers
