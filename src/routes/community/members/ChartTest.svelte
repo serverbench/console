@@ -31,7 +31,6 @@
     import ActivityClock from "./ActivityClock.svelte";
     import * as Card from "$lib/components/ui/card";
     import NumberFlow from "@number-flow/svelte";
-    import CalendarHeatmap from "./CalendarHeatmap.svelte";
     import Connection from "$lib/sb/member/Connection";
     use([
         LineChart,
@@ -47,7 +46,7 @@
 
     let online = 0;
 
-    let calendar: [Date, number][] | null = null;
+    let times: number[][] | null = null;
 
     type DataPoint = {
         created: number;
@@ -312,8 +311,7 @@
     }
 
     onMount(async () => {
-        await load();
-        await updateCalendar();
+        await load(true);
         setTimeout(
             async () => {
                 setInterval(async () => {
@@ -374,8 +372,8 @@
         );
     }
 
-    async function updateCalendar() {
-        calendar = await Connection.getActivityCalendar();
+    async function updateTimes(community: Community) {
+        times = await community.getActivityClock();
     }
 
     let lastLoad: Date | null = null;
@@ -383,6 +381,7 @@
     async function load(reset = false) {
         const rateLimit = 10 * 1000;
         if (reset) {
+            await updateTimes((await Community.get())!);
             lastLoad = null;
         }
 
@@ -462,6 +461,12 @@
             <Badge>Instances</Badge>
         </div>
         <InstancePie {instances} />
+    </Card.Root>
+    <Card.Root class="h-72 w-full border py-5">
+        <div class="text-center">
+            <Badge>Clock</Badge>
+        </div>
+        <ActivityClock data={times} />
     </Card.Root>
 </div>
 <OnlineMembers
