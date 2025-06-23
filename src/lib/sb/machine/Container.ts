@@ -4,7 +4,10 @@ import Server from "../server/Server"
 import User from "../User"
 import Port from "./Port"
 
+export type PowerState = "start" | "stop" | "restart" | "pause" | "unpause" | "kill"
+
 export default class Container {
+    public readonly created: Date
     public readonly id: string
     public readonly mount: string
     public readonly instance: Instance
@@ -18,6 +21,7 @@ export default class Container {
     public readonly deleted: Date | null
 
     constructor(
+        created: Date,
         id: string,
         instance: Instance,
         mount: string,
@@ -30,6 +34,7 @@ export default class Container {
         locked: Date | null,
         deleted: Date | null
     ) {
+        this.created = created
         this.id = id
         this.instance = instance
         this.mount = mount
@@ -57,6 +62,7 @@ export default class Container {
 
     public static fromObj(obj: any, instance: Instance) {
         const c = new Container(
+            new Date(obj.created),
             obj.id,
             instance,
             obj.mount,
@@ -75,6 +81,34 @@ export default class Container {
 
     public get ports() {
         return this._ports
+    }
+
+    public async logs(cb: (data: [Date, string]) => void, open: () => void, close: () => void, since: Date = new Date(), until: Date | null = null, limit = 0) {
+        const user = await User.get()
+        const community = await Community.get()
+        return user!.pipe(`community.${community!.id}.server.${this.instance.server.id}.instance.${this.instance.id}.container.${this.id}.logs`, {
+            since: since.getTime(),
+            until: until?.getTime() ?? 0,
+            limit
+        }, (result: any) => {
+            cb([new Date(result.timestamp), result.content])
+        }, open, close)
+    }
+
+    public async status(cb: (status: string) => void, close: () => void) {
+        const user = await User.get()
+        const community = await Community.get()
+        return user!.pipe(`community.${community!.id}.server.${this.instance.server.id}.instance.${this.instance.id}.container.${this.id}.status`, {}, (result: any) => {
+            cb(result.status)
+        }, () => { }, close)
+    }
+
+    public async power(target: PowerState) {
+        const user = await User.get()
+        const community = await Community.get()
+        return user!.post(`/community/${community!.id}/server/${this.instance.server.id}/instance/${this.instance.id}/container/${this.id}/power`, {
+            target
+        })
     }
 
 }

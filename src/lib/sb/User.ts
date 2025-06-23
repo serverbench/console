@@ -108,7 +108,7 @@ export default class User {
     }
 
     public socket(action: string, callback: (result: any) => void) {
-        const url = new URL(`${false ? 'ws://localhost:3030' : 'wss://stream.beta.serverbench.io'}/`)
+        const url = new URL(`${this.test ? 'ws://localhost:3030' : 'wss://stream.beta.serverbench.io'}/`)
         url.searchParams.append('token', this.accessToken!)
         const ws = new WebSocket(url.toString())
         ws.onopen = () => {
@@ -127,6 +127,34 @@ export default class User {
                     action: [parsed.realm, parsed.action].join('.')
                 }))
             }
+        }
+        return ws
+    }
+
+    public pipe(action: string, params: Record<string, any>, callback: (result: any) => void, connect: () => void, disconnect: () => void) {
+        const url = new URL(`${this.test ? 'ws://localhost:3030' : 'wss://stream.beta.serverbench.io'}/`)
+        url.searchParams.append('token', this.accessToken!)
+        const ws = new WebSocket(url.toString())
+        const rid = this.randomRid()
+        ws.onopen = () => {
+            ws.send(JSON.stringify({
+                action,
+                params,
+                rid: rid
+            }))
+        }
+        ws.onmessage = (m) => {
+            const parsed = JSON.parse(m.data)
+            if (parsed.rid) {
+                connect()
+            } else if (parsed.data && !parsed.end) {
+                callback(parsed.data)
+            } else if (parsed.end) {
+                ws.close()
+            }
+        }
+        ws.onclose = () => {
+            disconnect()
         }
         return ws
     }
@@ -164,7 +192,7 @@ export default class User {
                 finalBody = JSON.stringify(body)
             }
         }
-        const req = await fetch(`https://${false ? 'dev.serverbench.io' : 'api.beta.serverbench.io'}${path}`, {
+        const req = await fetch(`https://${this.test ? 'dev.serverbench.io' : 'api.beta.serverbench.io'}${path}`, {
             headers,
             body: finalBody,
             method: method

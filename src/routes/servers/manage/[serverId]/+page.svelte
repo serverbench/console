@@ -7,11 +7,14 @@
     import type Container from "$lib/sb/machine/Container";
     import type Instance from "$lib/sb/server/Instance";
     import Server from "$lib/sb/server/Server";
-    import { Loader2 } from "lucide-svelte";
+    import { ArrowLeft, Loader2 } from "lucide-svelte";
     import { onMount } from "svelte";
     import { fade } from "svelte/transition";
+    import Console from "./Console.svelte";
+    import Status from "./Status.svelte";
     export let server: Server | null = null;
     let instances: Instance[] = [];
+    let online = false;
     onMount(async () => {
         if (!server) {
             const id = page.params.serverId;
@@ -40,28 +43,20 @@
 {/if}
 
 <div class="flex flex-row">
-    <Breadcrumb.Root>
-        <Breadcrumb.List>
-            <Breadcrumb.Item>
-                <Breadcrumb.Link href="/servers/manage">servers</Breadcrumb.Link
-                >
-            </Breadcrumb.Item>
-            <Breadcrumb.Separator />
+    <div class="flex flex-row items-center gap-3">
+        <Button variant="secondary" size="icon" href="/servers/manage">
             {#if server}
-                <Breadcrumb.Item>
-                    <Breadcrumb.Page>
-                        {server.slug}
-                    </Breadcrumb.Page>
-                </Breadcrumb.Item>
+                <ArrowLeft />
             {:else}
-                <Breadcrumb.Item>
-                    <Breadcrumb.Page>
-                        <Loader2 class="animate-spin" />
-                    </Breadcrumb.Page>
-                </Breadcrumb.Item>
+                <Loader2 class="animate-spin" />
             {/if}
-        </Breadcrumb.List>
-    </Breadcrumb.Root>
+        </Button>
+        {#if server}
+            <span transition:fade={{ duration: 200 }}>
+                {server.slug}
+            </span>
+        {/if}
+    </div>
     {#if server && instance}
         <div
             transition:fade={{ duration: 200 }}
@@ -85,7 +80,20 @@
                         items={instance.containers.map((c) => [c.id, c.id])}
                     />
                 {/if}
+                {#key container}
+                    {#if container}
+                        <Status
+                            on:online={(o) => (online = o.detail)}
+                            {container}
+                        />
+                    {/if}
+                {/key}
             {/if}
         </div>
     {/if}
 </div>
+{#key container}
+    {#if container}
+        <Console {online} {container} />
+    {/if}
+{/key}
