@@ -24,6 +24,7 @@
 
     function handleServerAdd(server: CustomEvent<Server>) {
         lastCreated = server.detail;
+        console.log(server.detail)
         servers = [...servers, server.detail];
     }
 
@@ -38,7 +39,7 @@
     </div>
     {#each servers as server}
         <ServerRow
-            settingUp={lastCreated != null && lastCreated.id == server.id}
+            hosting={lastCreated != null && lastCreated.id == server.id}
             on:removed={() => handleServerRemove(server)}
             {server}
         />

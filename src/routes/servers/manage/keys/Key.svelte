@@ -8,7 +8,13 @@
 </script>
 
 <Item>
-    <p class="w-1/2 md:w-1/6">Public Key</p>
+    <p class="w-1/2 md:w-1/6">
+        {#if secret}
+            Secret Key
+        {:else}
+            Public Key
+        {/if}
+    </p>
     <Input type={secret ? "password" : "text"} value={key} disabled />
     <Button
         disabled={!key}

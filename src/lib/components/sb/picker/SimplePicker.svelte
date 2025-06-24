@@ -1,6 +1,10 @@
 <script lang="ts">
     import * as Select from "$lib/components/ui/select/index.js";
     import type { Selected } from "bits-ui";
+    import { createEventDispatcher } from "svelte";
+
+    const dispatcher = createEventDispatcher()
+
     export let items: [any, string][] | [any, string, string][],
         name: string,
         optional: string | null = null,
@@ -32,6 +36,8 @@
         value: value,
         label: selectable.find((f) => f.value == value)?.label ?? "",
     };
+
+    $: value, dispatcher('change', value)
 
     $: selectedImage = () => {
         const found = selectable.find((f) => f.value == value);

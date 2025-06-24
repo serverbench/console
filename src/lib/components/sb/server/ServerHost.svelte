@@ -133,30 +133,27 @@
                     instance = newinstance.id;
                 }
             } else if (step == 2) {
-                await instances
-                    ?.find((i) => i.id == instance)
-                    ?.host(
-                        selectedMachine!,
-                        image!,
-                        mount!,
-                        ip!,
-                        memory,
-                        cpus,
-                        ports
-                            .filter((p) => p.value != null)
-                            .map(
-                                (p): IPort => ({
-                                    name: p.name,
-                                    port: Number(p.value!),
-                                    policy: p.policy,
-                                    remotes: p.remotes,
-                                }),
-                            ),
-                        envs.reduce(
-                            (acc, e) => ({ ...acc, [e.key]: e.value }),
-                            {},
+                const ins = instances?.find((i) => i.id == instance)
+                const c = await ins!.host(
+                    selectedMachine!,
+                    image!,
+                    mount!,
+                    ip!,
+                    memory,
+                    cpus,
+                    ports
+                        .filter((p) => p.value != null)
+                        .map(
+                            (p): IPort => ({
+                                name: p.name,
+                                port: Number(p.value!),
+                                policy: p.policy,
+                                remotes: p.remotes,
+                            }),
                         ),
-                    );
+                    envs.reduce((acc, e) => ({ ...acc, [e.key]: e.value }), {}),
+                );
+                window.location.href = `/servers/manage/${server.id}?instance=${ins!.id}&container=${c.id}`;
             }
             step = step + 1;
         } catch (error) {

@@ -7,35 +7,71 @@
     import type Container from "$lib/sb/machine/Container";
     import type Instance from "$lib/sb/server/Instance";
     import Server from "$lib/sb/server/Server";
-    import { ArrowLeft, Loader2 } from "lucide-svelte";
-    import { onMount } from "svelte";
+    import { ArrowLeft, Files, Loader2 } from "lucide-svelte";
+    import { onMount, tick } from "svelte";
     import { fade } from "svelte/transition";
     import Console from "./Console.svelte";
     import Status from "./Status.svelte";
+    import Password from "./Password.svelte";
+    import Section from "$lib/components/sb/section/section.svelte";
+    import Input from "$lib/components/ui/input/input.svelte";
+    import Label from "$lib/components/ui/label/label.svelte";
+    import Badge from "$lib/components/ui/badge/badge.svelte";
+    import * as AlertDialog from "$lib/components/ui/alert-dialog/index.js";
+    import Skeleton from "$lib/components/ui/skeleton/skeleton.svelte";
     export let server: Server | null = null;
     let instances: Instance[] = [];
     let online = false;
+    let preferedContainer: string | null = null;
     onMount(async () => {
         if (!server) {
             const id = page.params.serverId;
+            const preferedInstance = page.url.searchParams.get("instance");
+            preferedContainer = page.url.searchParams.get("container");
             server = await Server.get(id);
             instances = await server.getInstances();
             if (instances.length > 0) {
-                instanceId = instances[0].id;
-                if (instances[0].containers.length > 0) {
-                    containerId = instances[0].containers[0].id;
-                }
+                instanceId =
+                    instances.find((i) => i.id == preferedInstance)?.id ??
+                    instances[0].id ??
+                    null;
             }
         }
     });
 
-    let instanceId: string | null = null;
-    $: instance = instances.find((i) => i.id == instanceId) ?? null;
+    let instance: Instance | null = null;
+    let containers: Container[] = [];
+    let container: Container | null = null;
 
-    let containerId: string | null = null;
-    $: container = instance?.containers.find((c) => c.id == containerId);
+    $: instanceId,
+        (() => {
+            instance = instances.find((i) => i.id == instanceId) ?? null;
+            containers =
+                instance?.containers.filter((c) => c.deleted == null) ?? [];
+            container =
+                containers.find((c) => c.id == preferedContainer) ??
+                containers[0] ??
+                null;
+        })();
+
+    let instanceId: string | null = null;
+
+    $: items = (instance?.containers.map((c) => [c.id, c.id]) ?? []) as [
+        string,
+        string,
+    ][];
 
     let hosting = false;
+
+    let deleting = false;
+    let status: string | null = null;
+
+    async function remove(container: Container | null) {
+        await container!.delete();
+        containers = containers.filter((c) => c.id != container!.id);
+        // reload website
+        window.location.reload();
+    }
 </script>
 
 {#if server}
@@ -71,18 +107,25 @@
                 />
             </div>
             {#if instance}
-                {#if !instance.containers || instance.containers.length <= 0}
+                {#if !instance.containers || instance.containers.filter((c) => c.deleted == null).length <= 0}
                     <Button on:click={() => (hosting = true)}>Host Now</Button>
                 {:else}
-                    <SimplePicker
-                        name="Container"
-                        bind:value={containerId}
-                        items={instance.containers.map((c) => [c.id, c.id])}
-                    />
+                    {#key containers}
+                        <SimplePicker
+                            name="Container"
+                            items={containers.map((c) => [c.id, c.id])}
+                            on:change={(c) =>
+                                (container =
+                                    containers.find((i) => i.id == c.detail) ??
+                                    null)}
+                            value={container?.id ?? null}
+                        />
+                    {/key}
                 {/if}
                 {#key container}
                     {#if container}
                         <Status
+                            bind:status
                             on:online={(o) => (online = o.detail)}
                             {container}
                         />
@@ -94,6 +137,83 @@
 </div>
 {#key container}
     {#if container}
-        <Console {online} {container} />
+        {#if status}
+            <Console {online} {container} />
+        {:else}
+            <Skeleton class="h-96" />
+        {/if}
+        <Section name="ports">
+            <div class="grid grid-cols-8 gap-2 items-center">
+                {#each container.ports as port}
+                    <div class="col-span-1">
+                        <Badge>
+                            {port.name}
+                        </Badge>
+                        <Badge>
+                            {port.policy}
+                        </Badge>
+                    </div>
+                    <div class="col-span-6">
+                        <Input readonly value={container.address} type="text" />
+                    </div>
+                    <div class="col-span-1">
+                        <Input readonly value={port.port} type="number" />
+                    </div>
+                {/each}
+            </div>
+        </Section>
+        <Section name="access">
+            <div>
+                <div class="flex flex-row gap-2">
+                    <div class="w-full">
+                        <Label>Address</Label>
+                        <Input readonly bind:value={container.address} />
+                    </div>
+                    <div>
+                        <Label>Port</Label>
+                        <Input readonly value="23" type="number" />
+                    </div>
+                </div>
+            </div>
+            <div class="flex flex-row gap-2 items-center">
+                <div class="w-full">
+                    <AlertDialog.Root>
+                        <AlertDialog.Trigger asChild let:builder>
+                            <Button builders={[builder]} variant="destructive"
+                                >Delete</Button
+                            >
+                        </AlertDialog.Trigger>
+                        <AlertDialog.Content>
+                            <AlertDialog.Header>
+                                <AlertDialog.Title
+                                    >Are you absolutely sure?</AlertDialog.Title
+                                >
+                                <AlertDialog.Description>
+                                    This action cannot be undone. This will
+                                    permanently delete your container and remove
+                                    your data from the server.
+                                </AlertDialog.Description>
+                            </AlertDialog.Header>
+                            <AlertDialog.Footer>
+                                <AlertDialog.Cancel>Cancel</AlertDialog.Cancel>
+                                {#if container.id}
+                                    <AlertDialog.Action
+                                        on:click={() => remove(container)}
+                                        >Continue</AlertDialog.Action
+                                    >
+                                {/if}
+                            </AlertDialog.Footer>
+                        </AlertDialog.Content>
+                    </AlertDialog.Root>
+                </div>
+                <Password {container} />
+                <a href={`sftp://${container.id}@${container.address}:23`}>
+                    <Button>
+                        Open sFTP
+                        <Files />
+                    </Button>
+                </a>
+            </div>
+        </Section>
     {/if}
 {/key}

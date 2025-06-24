@@ -31,46 +31,57 @@
         paused,
         stopped,
         dispatcher("online", running),
-        (expectingChange = false),
-        slowInterval ? clearInterval(slowInterval) : {},
-        (slow = false);
+        (expectingChange = expectingChange && running == fromRunning),
+        (showKill = showKill && !stopped);
 
     export let container: Container;
-    let status: string | null = null;
+    export let status: string | null = null;
     let ws: WebSocket | null = null;
+    let exit = false;
+    let loading = false;
     onMount(async () => {
+        await loadStatus();
+    });
+
+    async function loadStatus() {
+        if (loading) return;
+        loading = true;
         ws = await container.status(
             (s) => {
                 status = s;
             },
-            () => {
+            async () => {
+                loading = false;
                 status = null;
+                if (!exit) {
+                    await loadStatus();
+                }
             },
         );
-    });
+    }
 
     onDestroy(() => {
+        exit = true;
         if (ws) {
             ws.close();
         }
     });
 
     let expectingChange = false;
-    let slow = false;
-    let slowInterval: number | null = null;
+    let fromRunning = false;
+    let showKill = false;
 
     async function state(state: PowerState) {
-        if (expectingChange) return;
+        if (expectingChange && state != "kill") return;
+        fromRunning = running;
         expectingChange = true;
+        showKill = state == "stop";
         await container.power(state);
-        slowInterval = setTimeout(() => {
-            slow = true;
-        }, 1);
     }
 </script>
 
 <div class="flex flex-row gap-2 items-center">
-    {#if slow}
+    {#if showKill}
         <div class="inline-block" transition:scale>
             <Tooltip.Root>
                 <Tooltip.Trigger>
@@ -96,7 +107,7 @@
                 disabled={stopped || changing || paused}
                 class="bg-red-200 hover:bg-red-100 text-red-900"
             >
-                {#if stopped && changing}
+                {#if (stopped || showKill) && changing}
                     <Loader2 class="animate-spin" />
                 {:else}
                     <Square />
@@ -115,12 +126,12 @@
                 disabled={changing || paused}
                 class="bg-green-200 hover:bg-green-100 text-green-900"
             >
-                {#if stopped}
-                    <Play />
-                {:else if !changing}
-                    <RotateCcw />
-                {:else}
+                {#if running && changing && !showKill}
                     <Loader2 class="animate-spin" />
+                {:else if stopped || status == null}
+                    <CirclePlay />
+                {:else if running || paused}
+                    <RotateCcw />
                 {/if}
             </Button>
         </Tooltip.Trigger>

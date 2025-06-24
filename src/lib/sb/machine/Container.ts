@@ -83,6 +83,20 @@ export default class Container {
         return this._ports
     }
 
+    public async delete() {
+        const user = await User.get()
+        const community = await Community.get()
+        return user!.delete(`/community/${community!.id}/server/${this.instance.server.id}/instance/${this.instance.id}/container/${this.id}`)
+    }
+
+    public async password(cb: (password: string) => void, close: () => void) {
+        const user = await User.get()
+        const community = await Community.get()
+        return user!.pipe(`community.${community!.id}.server.${this.instance.server.id}.instance.${this.instance.id}.container.${this.id}.password`, {}, (result: any) => {
+            cb(result.password)
+        }, () => { }, close)
+    }
+
     public async logs(cb: (data: [Date, string]) => void, open: () => void, close: () => void, since: Date = new Date(), until: Date | null = null, limit = 0) {
         const user = await User.get()
         const community = await Community.get()

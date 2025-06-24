@@ -8,6 +8,7 @@
     import { onDestroy, onMount } from "svelte";
     import { inview } from "svelte-inview";
     import Time from "svelte-time/Time.svelte";
+    import { slide } from "svelte/transition";
 
     export let container: Container;
     export let online = false;
@@ -68,13 +69,13 @@
             () => {},
             () => {
                 loading = false;
-                if (batchCount <= 0) {
-                    oldestLoaded = since;
-                }
                 if (since.getTime() <= begin.getTime()) {
                     hasMore = false;
                 }
-                console.log("loaded", batchCount, "messages since", since);
+                if (batchCount <= 0 && hasMore) {
+                    oldestLoaded = since;
+                    requestOlder()
+                }
             },
             since,
             oldestLoaded,
@@ -101,9 +102,12 @@
         messages = messages;
     }
 
+    let attaching = false
     async function attachLogs() {
         if (attached) return;
         if (!online) return;
+        if (attaching) return;
+        attaching = true;
         ws = await container.logs(
             (line) => {
                 insertInOrder(line);
@@ -118,6 +122,7 @@
                     setTimeout(resolve, 1000 * attempt),
                 );
                 attached = false;
+                attaching = false;
                 return attachLogs();
             },
             lastLoaded,
@@ -134,41 +139,48 @@
 </script>
 
 <Section small name="console">
-    <div class="overflow-y-auto flex gap-2 p-3 h-96 flex-col-reverse">
-        {#if !attached}
-            {#if online}
-                <Badge class="mx-auto">
-                    Connecting (#{attempt}) <Loader2
-                        class="animate-spin ml-2"
-                    />
-                </Badge>
-            {:else}
-                <Badge class="mx-auto">
-                    Live logs will resume when the container is online
-                </Badge>
-            {/if}
-        {/if}
-        {#each messages as message}
-            <div class="flex flex-row gap-2">
-                <div>
-                    <Badge>
-                        {moment(message[0]).format("HH:mm:ss")}
-                    </Badge>
+    <div class="h-96 relative">
+        <div
+            class="overflow-y-auto flex gap-2 p-3 flex-col-reverse relative max-h-full h-full"
+        >
+            {#each messages as message}
+                <div class="flex flex-row gap-2">
+                    <div>
+                        <Badge>
+                            {moment(message[0]).format("HH:mm:ss")}
+                        </Badge>
+                    </div>
+                    <p>
+                        {message[1]}
+                    </p>
                 </div>
-                <p>
-                    {message[1]}
+            {/each}
+            {#if !hasMore}
+                <p class="text-center">
+                    <Badge variant="outline" class="my-5">
+                        beggining of {container.id}
+                    </Badge>
                 </p>
-            </div>
-        {/each}
-        {#if !hasMore}
-            <p class="text-center">
-                <Badge variant="outline" class="my-5">
-                    beggining of {container.id}
-                </Badge>
-            </p>
-        {:else}
-            <div class="flex flex-col gap-4">
-                {#if hasMore}
+            {:else}
+                <div class="flex flex-col gap-4">
+                    {#if hasMore && !loading}
+                        <div
+                            use:inview
+                            class="mb-2"
+                            on:inview_enter={() => {
+                                requestOlder();
+                            }}
+                        />
+                    {/if}
+                </div>
+            {/if}
+        </div>
+        {#if !attached || (hasMore && loading)}
+            <div
+                transition:slide
+                class="absolute bottom-0 w-full flex flex-col gap-2 items-center pb-4"
+            >
+                {#if hasMore && loading}
                     <p
                         class="mx-auto text-center flex flex-row gap-2 items-center justify-center"
                     >
@@ -181,14 +193,18 @@
                         <Loader2 class="animate-spin ml-2" />
                     </p>
                 {/if}
-                {#if hasMore && !loading}
-                    <div
-                        use:inview
-                        class="mb-2"
-                        on:inview_enter={() => {
-                            requestOlder();
-                        }}
-                    />
+                {#if !attached}
+                    {#if online}
+                        <Badge class="mx-auto">
+                            Connecting (#{attempt}) <Loader2
+                                class="animate-spin ml-2"
+                            />
+                        </Badge>
+                    {:else}
+                        <Badge class="mx-auto">
+                            Live logs will resume when the container is online
+                        </Badge>
+                    {/if}
                 {/if}
             </div>
         {/if}

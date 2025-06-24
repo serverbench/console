@@ -39,7 +39,7 @@
         } catch (error) {}
         loading = false;
     }
-    let hosting = false;
+    export let hosting = false;
     let instances: Instance[] | null = null;
 
     async function loadInstances() {
