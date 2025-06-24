@@ -37,8 +37,6 @@
         label: selectable.find((f) => f.value == value)?.label ?? "",
     };
 
-    $: value, dispatcher('change', value)
-
     $: selectedImage = () => {
         const found = selectable.find((f) => f.value == value);
         return found ? found.image : null;
@@ -52,6 +50,7 @@
         } else {
             value = v.value;
         }
+        dispatcher('change', value)
     }}
     bind:selected
 >

@@ -1,4 +1,5 @@
 <script lang="ts">
+    import { onMount } from "svelte";
     import Button from "$lib/components/ui/button/button.svelte";
     import * as Dialog from "$lib/components/ui/dialog/index.js";
     import Instance from "$lib/sb/server/Instance";
@@ -26,18 +27,23 @@
     import { blur, slide } from "svelte/transition";
     import type IPort from "$lib/sb/machine/IPort";
     import * as Card from "$lib/components/ui/card";
-    export let hosting = false,
-        server: Server;
+
+    export let hosting = false;
+    export let server: Server;
+    export let forcedInstance: Instance | null = null;
+
     type Env = {
         key: string;
         value: string;
     };
+
     type Port = {
         policy: "DROP" | "ACCEPT";
         remotes: string[];
         name: string;
         value: number | null;
     };
+
     let managingFirewall = false;
     let firewall: Port | null = null;
     let ports: Port[] = [];
@@ -47,26 +53,28 @@
     let machines: Machine[] | null = null;
     let machine: string | null = null;
     let instances: Instance[] | null = null;
-    let instance: string | null = null;
+    let instanceId: string | null = null;
     let instanceName: string | null = null;
     let memory: number | null = null;
     let step = 1;
     let steps = 2;
-    const memoryOptions: [number, string][] = [
-        [1024 * 1024 * 1024, "GB"],
-        [1024 * 1024, "MB"],
-    ];
-    let memoryUnit = memoryOptions[0][0];
+    let loading = false;
+    let ip: string | null = null;
+    let preset: Preset | null = null;
     let cpus: null | number = null;
 
-    export let forcedInstance: Instance | null = null;
+    const memoryOptions: [number, string][] = [
+        [1000, "GB"],
+        [1, "MB"],
+    ];
+    let memoryUnit = memoryOptions[0][0];
 
     async function fetchInstances() {
-        instance = forcedInstance ? forcedInstance.id : null;
+        instanceId = forcedInstance ? forcedInstance.id : null;
         instances = forcedInstance ? [forcedInstance] : null;
         if (!forcedInstance) {
             instances = await server.getInstances();
-            instance = instances[0].id ?? null;
+            instanceId = instances[0].id ?? null;
         }
     }
 
@@ -80,11 +88,12 @@
         machines = machineList;
         machine =
             (machines.filter((m) => m.hardware)[0] ?? machines[0])?.id ?? null;
+        console.log("Machines fetched", machines);
     }
 
     function reset() {
         step = 1;
-        instance = null;
+        instanceId = null;
         instanceName = null;
         machine = null;
         memory = null;
@@ -103,22 +112,23 @@
     }
 
     function addEnv() {
-        envs.push({ key: "", value: "" });
-        envs = envs;
+        envs = [...envs, { key: "", value: "" }];
     }
 
     function addPort() {
-        ports.push({ name: "", value: null, policy: "ACCEPT", remotes: [] });
-        ports = ports;
+        ports = [
+            ...ports,
+            { name: "", value: null, policy: "ACCEPT", remotes: [] },
+        ];
     }
 
-    let loading = false;
-
     async function next() {
+        if (loading) return;
+
         loading = true;
         try {
             if (step == 1) {
-                if (instance == null) {
+                if (instanceId == null) {
                     const nameIsNull =
                         !instanceName || instanceName.trim().length <= 0;
                     if (instances?.find((i) => i.name == null) && nameIsNull) {
@@ -129,12 +139,14 @@
                     const newinstance = await server.createInstance(
                         nameIsNull ? null : instanceName,
                     );
-                    instances!.push(newinstance);
-                    instance = newinstance.id;
+                    instances = [...(instances || []), newinstance];
+                    instanceId = newinstance.id;
                 }
             } else if (step == 2) {
-                const ins = instances?.find((i) => i.id == instance)
-                const c = await ins!.host(
+                const selectedInstance = instances?.find(
+                    (i) => i.id == instanceId,
+                );
+                const container = await selectedInstance!.host(
                     selectedMachine!,
                     image!,
                     mount!,
@@ -153,22 +165,47 @@
                         ),
                     envs.reduce((acc, e) => ({ ...acc, [e.key]: e.value }), {}),
                 );
-                window.location.href = `/servers/manage/${server.id}?instance=${ins!.id}&container=${c.id}`;
+                window.location.href = `/servers/manage/${server.id}?instance=${selectedInstance!.id}&container=${container.id}`;
             }
             step = step + 1;
         } catch (error) {
-            console.log(error);
+            console.error("Error in next():", error);
         } finally {
             loading = false;
         }
     }
 
+    function updatePort() {
+        if (firewall == null) return;
+        const portIndex = ports.findIndex(
+            (p) => p.name == firewall!.name && p.value == firewall!.value,
+        );
+        if (portIndex !== -1) {
+            ports[portIndex] = firewall;
+            ports = [...ports]; // Trigger reactivity
+        }
+        managingFirewall = false;
+    }
+
+    // FIXED: Proper reactive handling to prevent infinite loops
+    async function handleHostingChange() {
+        if (hosting) {
+            reset();
+            try {
+                await Promise.all([fetchInstances(), fetchMachines()]);
+            } catch (error) {
+                console.error("Error initializing hosting:", error);
+            }
+        }
+    }
+
+    // Reactive statements
     $: selectedMachine = machines?.find((m) => m.id == machine) ?? null;
 
     $: missingDetails = () => {
         if (step == 1) {
             if (
-                instance == null &&
+                instanceId == null &&
                 (instances || []).find((i) => i.name == null) &&
                 (instanceName == null || instanceName.trim().length <= 0)
             )
@@ -222,52 +259,42 @@
         });
     };
 
-    let ip: string | null = null;
-
-    $: ips = () => {
+    function ips() {
         const ifaces = selectedMachine?.hardware?.interfaces || [];
         const ips: Set<string> = new Set();
         for (const iface of ifaces) {
             for (const cidr of iface.addresses) {
+                if (cidr.version=='IPv6') continue
                 for (const ip of Array.from(expandCidr(cidr.ip))) {
                     ips.add(ip);
                 }
+                console.log(cidr.ip, 2);
             }
         }
         return Array.from(ips).map((i): [string, string] => [i, i]);
-    };
-
-    let preset: Preset | null = null;
-
-    $: preset,
-        (() => {
-            if (preset != null) {
-                image = preset!.image;
-                mount = preset!.mount;
-                ports = Object.keys(preset!.ports).map((e) => ({
-                    name: e,
-                    value: preset!.ports[e],
-                    policy: "ACCEPT",
-                    remotes: [],
-                }));
-                envs = Object.keys(preset!.envs).map((e) => ({
-                    key: e,
-                    value: preset!.envs[e],
-                }));
-                preset = null;
-            }
-        })();
-
-    function updatePort() {
-        if (firewall == null) return;
-        ports.find(
-            (p) => p.name == firewall!.name && p.value == firewall!.value,
-        ) != firewall;
-        ports = ports;
-        managingFirewall = false;
     }
 
-    $: hosting, hosting && reset(), fetchInstances(), fetchMachines();
+    // Handle preset changes
+    $: if (preset != null) {
+        image = preset.image;
+        mount = preset.mount;
+        ports = Object.keys(preset.ports).map((e) => ({
+            name: e,
+            value: preset!.ports[e],
+            policy: "ACCEPT",
+            remotes: [],
+        }));
+        envs = Object.keys(preset.envs).map((e) => ({
+            key: e,
+            value: preset!.envs[e],
+        }));
+        preset = null;
+    }
+
+    // FIXED: Safe hosting change handler
+    $: if (hosting) {
+        handleHostingChange();
+    }
 </script>
 
 <Dialog.Root bind:open={managingFirewall}>
@@ -364,11 +391,11 @@
                     {#if !forcedInstance}
                         <Card.Root class="flex flex-col gap-2 p-3">
                             <SimplePicker
-                                bind:value={instance}
+                                bind:value={instanceId}
                                 items={items()}
                                 name="instance"
                             />
-                            {#if instance == null}
+                            {#if instanceId == null}
                                 <Input
                                     bind:value={instanceName}
                                     placeholder={instances.find((i) => !i.name)
@@ -474,7 +501,6 @@
             </div>
         {:else if step == 2}
             <div class="flex flex-col gap-2">
-                <!-- app setup -->
                 <SimplePicker items={ips()} bind:value={ip} name="IP" />
                 <SimplePicker
                     images
