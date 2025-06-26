@@ -19,6 +19,7 @@
     import Badge from "$lib/components/ui/badge/badge.svelte";
     import * as AlertDialog from "$lib/components/ui/alert-dialog/index.js";
     import Skeleton from "$lib/components/ui/skeleton/skeleton.svelte";
+    import User from "$lib/sb/User";
     export let server: Server | null = null;
     let instances: Instance[] = [];
     let online = false;

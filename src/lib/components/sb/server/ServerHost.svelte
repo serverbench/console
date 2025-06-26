@@ -10,10 +10,14 @@
         Ban,
         Check,
         CircleCheck,
+        Github,
         Globe,
         GlobeLock,
         Loader2,
+        Plus,
+        RotateCw,
         Trash2,
+        User,
     } from "lucide-svelte";
     import SimplePicker from "../picker/SimplePicker.svelte";
     import Input from "$lib/components/ui/input/input.svelte";
@@ -27,6 +31,7 @@
     import { blur, slide } from "svelte/transition";
     import type IPort from "$lib/sb/machine/IPort";
     import * as Card from "$lib/components/ui/card";
+    import Developer from "$lib/sb/ci/Developer";
 
     export let hosting = false;
     export let server: Server;
@@ -164,6 +169,8 @@
                             }),
                         ),
                     envs.reduce((acc, e) => ({ ...acc, [e.key]: e.value }), {}),
+                    repo,
+                    repo ? branch : null
                 );
                 window.location.href = `/servers/manage/${server.id}?instance=${selectedInstance!.id}&container=${container.id}`;
             }
@@ -192,7 +199,11 @@
         if (hosting) {
             reset();
             try {
-                await Promise.all([fetchInstances(), fetchMachines()]);
+                await Promise.all([
+                    fetchInstances(),
+                    fetchMachines(),
+                    loadDeveloperProfiles(),
+                ]);
             } catch (error) {
                 console.error("Error initializing hosting:", error);
             }
@@ -264,7 +275,7 @@
         const ips: Set<string> = new Set();
         for (const iface of ifaces) {
             for (const cidr of iface.addresses) {
-                if (cidr.version=='IPv6') continue
+                if (cidr.version == "IPv6") continue;
                 for (const ip of Array.from(expandCidr(cidr.ip))) {
                     ips.add(ip);
                 }
@@ -289,6 +300,22 @@
             value: preset!.envs[e],
         }));
         preset = null;
+    }
+
+    let repoId: string | null = null;
+    let developerProfiles: Developer[] = [];
+    let loadingDeveloper = false;
+    let branch: string | null = null;
+
+    $: repo =
+        developerProfiles
+            .flatMap((d) => d.repositories)
+            .find((r) => r.id == repoId) ?? null;
+
+    async function loadDeveloperProfiles(refresh = false) {
+        loadingDeveloper = true;
+        developerProfiles = await Developer.list(refresh);
+        loadingDeveloper = false;
     }
 
     // FIXED: Safe hosting change handler
@@ -508,6 +535,56 @@
                     bind:value={preset}
                     name="Preset"
                 />
+                <div class="flex flex-row gap-2 items-center">
+                    <SimplePicker
+                        images
+                        optional="No repository"
+                        disabled={developerProfiles.length <= 0 ||
+                            loadingDeveloper}
+                        items={developerProfiles
+                            .flatMap((d) => d.repositories)
+                            .map((r) => [r.id, r.uri])}
+                        bind:value={repoId}
+                        name="Repository"
+                        on:change={(ev) =>
+                            (branch =
+                                developerProfiles
+                                    .flatMap((d) => d.repositories)
+                                    .find((r) => r.id == ev.detail)
+                                    ?.branches[0] ?? null)}
+                    />
+                    <Button
+                        variant="secondary"
+                        class="aspect-square"
+                        size="icon"
+                        on:click={() => loadDeveloperProfiles(true)}
+                    >
+                        {#if loadingDeveloper}
+                            <Loader2 class="animate-spin" />
+                        {:else}
+                            <RotateCw />
+                        {/if}
+                    </Button>
+                    <Button
+                        class="aspect-square"
+                        size="icon"
+                        on:click={() => Developer.link("github")}
+                    >
+                        <Plus />
+                    </Button>
+                </div>
+                {#key repoId}
+                    {#if repoId && repo}
+                        <SimplePicker
+                            images
+                            disabled={developerProfiles.length <= 0 ||
+                                loadingDeveloper}
+                            items={repo.branches.map((b) => [b, b])}
+                            bind:value={branch}
+                            name="Branch"
+                        />
+                    {/if}
+                {/key}
                 <Input
                     bind:value={image}
                     placeholder="docker.io/<namespace>/<image>:<tag>"
