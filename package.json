@@ -13,7 +13,7 @@
 		"@iconify-json/file-icons": "^1.2.1",
 		"@iconify/json": "^2.2.352",
 		"@sveltejs/adapter-auto": "^3.3.1",
-		"@sveltejs/kit": "^2.22.0",
+		"@sveltejs/kit": "2.22.0",
 		"@sveltejs/vite-plugin-svelte": "^3.1.2",
 		"autoprefixer": "^10.4.21",
 		"bits-ui": "0.22.0",

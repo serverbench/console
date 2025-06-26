@@ -94,7 +94,7 @@ importers:
         specifier: ^3.3.1
         version: 3.3.1(@sveltejs/kit@2.22.0(@sveltejs/vite-plugin-svelte@3.1.2(svelte@4.2.20)(vite@5.4.19))(svelte@4.2.20)(vite@5.4.19))
       '@sveltejs/kit':
-        specifier: ^2.22.0
+        specifier: 2.22.0
         version: 2.22.0(@sveltejs/vite-plugin-svelte@3.1.2(svelte@4.2.20)(vite@5.4.19))(svelte@4.2.20)(vite@5.4.19)
       '@sveltejs/vite-plugin-svelte':
         specifier: ^3.1.2
@@ -330,12 +330,12 @@ packages:
     peerDependencies:
       eslint: '>=0.8.0'
 
-  '@builder.io/mitosis-cli@0.11.4':
-    resolution: {integrity: sha512-9UdvSqUVrRplW9vMnXIz3s0Siy8UUq12MARCM+k8aP+7YnuwPmoGxv5mi66Gz3IYYhQyWo8RGX23Sj21P3cLrQ==}
+  '@builder.io/mitosis-cli@0.11.5':
+    resolution: {integrity: sha512-BqP2bdy7ssLj6yVmclHiw/unr/tDKDgR6lDuTEXQJjZY6rb4Jn+wrJnmlwMd6eF7Hmusd9U6v8dr1Rs358l9ug==}
     hasBin: true
 
-  '@builder.io/mitosis@0.11.4':
-    resolution: {integrity: sha512-JKlRLpdX3jXZAzGQQfu8bCT28kwrdMV12lufLdRnd4WDqfpjpUB07tUmSCVwNTCPNLsofZ/dFd7xmC7G2YM4bQ==}
+  '@builder.io/mitosis@0.11.5':
+    resolution: {integrity: sha512-NOjdN1M8atSrMPRiE85T4xbpBC5bYmiacCyWVwulkNUCTNRpauXlRzJsNf2/eJXznULK+r4xnKWK9fp0PCcuDA==}
 
   '@builder.io/sdk@2.2.9':
     resolution: {integrity: sha512-B9DUNKYIkGXzvEm4ciZNjTQ6cdfuZXZ0gViKEXeAiIR/L6aDXdCyIlcPFtBOepVZQiI5fZNQAlbWY1pDgaW4BA==}
@@ -2937,9 +2937,9 @@ snapshots:
       eslint: 8.57.1
       ts-pattern: 3.3.5
 
-  '@builder.io/mitosis-cli@0.11.4(postcss-load-config@4.0.2(postcss@8.5.6))(postcss@8.5.6)(typescript@5.8.3)':
+  '@builder.io/mitosis-cli@0.11.5(postcss-load-config@4.0.2(postcss@8.5.6))(postcss@8.5.6)(typescript@5.8.3)':
     dependencies:
-      '@builder.io/mitosis': 0.11.4(postcss-load-config@4.0.2(postcss@8.5.6))(postcss@8.5.6)
+      '@builder.io/mitosis': 0.11.5(postcss-load-config@4.0.2(postcss@8.5.6))(postcss@8.5.6)
       cosmiconfig: 9.0.0(typescript@5.8.3)
       debug: 4.4.1
       dedent: 0.7.0
@@ -2966,7 +2966,7 @@ snapshots:
       - supports-color
       - typescript
 
-  '@builder.io/mitosis@0.11.4(postcss-load-config@4.0.2(postcss@8.5.6))(postcss@8.5.6)':
+  '@builder.io/mitosis@0.11.5(postcss-load-config@4.0.2(postcss@8.5.6))(postcss@8.5.6)':
     dependencies:
       '@angular/compiler': 11.2.14
       '@babel/core': 7.14.5
@@ -3431,8 +3431,8 @@ snapshots:
   activity-calendar-widget@0.0.18(postcss-load-config@4.0.2(postcss@8.5.6))(postcss@8.5.6)(typescript@5.8.3):
     dependencies:
       '@builder.io/eslint-plugin-mitosis': 0.0.15(eslint@8.57.1)
-      '@builder.io/mitosis': 0.11.4(postcss-load-config@4.0.2(postcss@8.5.6))(postcss@8.5.6)
-      '@builder.io/mitosis-cli': 0.11.4(postcss-load-config@4.0.2(postcss@8.5.6))(postcss@8.5.6)(typescript@5.8.3)
+      '@builder.io/mitosis': 0.11.5(postcss-load-config@4.0.2(postcss@8.5.6))(postcss@8.5.6)
+      '@builder.io/mitosis-cli': 0.11.5(postcss-load-config@4.0.2(postcss@8.5.6))(postcss@8.5.6)(typescript@5.8.3)
       eslint: 8.57.1
     transitivePeerDependencies:
       - '@volar/vue-language-plugin-pug'
@@ -4095,7 +4095,7 @@ snapshots:
 
   execa@5.1.1:
     dependencies:
-      cross-spawn: 7.0.3
+      cross-spawn: 7.0.6
       get-stream: 6.0.1
       human-signals: 2.1.0
       is-stream: 2.0.1
