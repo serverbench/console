@@ -221,29 +221,6 @@
     </Accordion.Item>
 </Accordion.Root>
 
-<Section name="withdrawals" used={0}>
-    <div slot="add" class="flex flex-col gap-2">
-        <div
-            class="bg-yellow-500 bg-opacity-10 border-yellow-500 border p-3 text-yellow-500"
-        >
-            Payouts are being worked on. You can keep accumulating your balance
-            until we finish this feature.
-        </div>
-        <div class="relative">
-            <div class="flex flex-col gap-2 blur opacity-10">
-                <SimplePicker name="Currency" items={[["eur", "EUR"]]} />
-                <SimplePicker name="Account" items={[["paypal", "PayPal"]]} />
-                <Button>Withdraw</Button>
-            </div>
-            <div
-                class="absolute w-full h-full top-0 flex flex-col items-center justify-center"
-            >
-                <FluentEmojiEyes class="h-10 w-10" />
-            </div>
-        </div>
-    </div>
-    ...
-</Section>
 <Section list {loading} name="transactions" used={1}>
     {#each transactions as transaction}
         <Item hideDropdown>
