@@ -1,7 +1,9 @@
+import Repository from "../ci/Repository"
 import Community from "../Community"
 import Instance from "../server/Instance"
 import Server from "../server/Server"
 import User from "../User"
+import type IPort from "./IPort"
 import Port from "./Port"
 
 export type PowerState = "start" | "stop" | "restart" | "pause" | "unpause" | "kill"
@@ -21,6 +23,8 @@ export default class Container {
     public readonly locked: Date | null
     public readonly deleted: Date | null
     public readonly label: ContainerLabel
+    public readonly repository:Repository|null
+    public readonly branch: string | null
 
     constructor(
         created: Date,
@@ -35,7 +39,9 @@ export default class Container {
         memory: number | null,
         locked: Date | null,
         deleted: Date | null,
-        label: ContainerLabel
+        label: ContainerLabel,
+        repository: Repository | null = null,
+        branch: string | null = null
     ) {
         this.created = created
         this.id = id
@@ -50,6 +56,8 @@ export default class Container {
         this.locked = locked
         this.deleted = deleted
         this.label = label
+        this.repository = repository
+        this.branch = branch
     }
 
     public static async get(serverId: string, instanceId: string, containerId: string) {
@@ -78,7 +86,9 @@ export default class Container {
             obj.memory || null,
             obj.locked ? new Date(obj.locked) : null,
             obj.deleted ? new Date(obj.deleted) : null,
-            obj.label
+            obj.label,
+            obj.repository ? Repository.fromObj(obj.repository) : null,
+            obj.branch || null
         )
         c._ports = obj.ports.map((p: any) => Port.fromObj(p, c))
         return c
@@ -92,6 +102,23 @@ export default class Container {
         const user = await User.get()
         const community = await Community.get()
         return user!.delete(`/community/${community!.id}/server/${this.instance.server.id}/instance/${this.instance.id}/container/${this.id}`)
+    }
+
+    public async update(image: string, mount: string, memory: number | null, cpus: number | null, ports: IPort[], envs: Record<string, string>, repository: Repository | null, branch: string | null): Promise<Container> {
+        const user = await User.get()
+        const community = await Community.get()
+        const d = await user!.patch(`/community/${community!.id}/server/${this.instance.server.id}/instance/${this.instance.id}/container/${this.id}`, {
+            'image': image,
+            'mount': mount,
+            'envs': envs,
+            'ports': ports,
+            'cpus?': cpus,
+            'memory?': memory,
+            'repository?': repository ? repository.id : null,
+            'branch?': branch
+        })
+        const container = Container.fromObj(d, this.instance)
+        return container
     }
 
     public async password(cb: (password: string) => void, close: () => void) {

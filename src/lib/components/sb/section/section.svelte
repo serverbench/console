@@ -58,7 +58,7 @@
                 <slot />
             </List>
         {:else}
-            <Card.Root>
+            <Card.Root class="overflow-hidden">
                 {#if loading}
                     <div class="flex flex-col gap-2 p-5">
                         {#each Array(4) as _}

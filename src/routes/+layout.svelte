@@ -197,7 +197,7 @@
 <!-- Main content -->
 <main class="relative flex flex-row gap-5 min-h-screen lg:py-3 lg:px-4 p-2">
     {#if mainContent}
-        <div class="w-3/4 md:w-full md:max-w-72 lg:block hidden"></div>
+        <div class="w-72 lg:block hidden"></div>
         <div class="grow flex flex-col gap-5 mt-16 pt-2 z-20 px-1 overflow-x-hidden">
             {#key community}
                 {#if $page.url.pathname.startsWith("/me")}

@@ -10,7 +10,7 @@ export default class Port implements IPort {
     public readonly policy: Policy
     public readonly remotes: string[]
 
-    constructor(container: Container, name:string, port: number, policy: Policy, remotes: string[]) {
+    constructor(container: Container, name: string, port: number, policy: Policy, remotes: string[]) {
         this.name = name
         this.container = container
         this.port = port
@@ -26,6 +26,15 @@ export default class Port implements IPort {
             obj.policy,
             obj.remotes
         )
+    }
+
+    public asObject(): IPort {
+        return {
+            name: this.name,
+            port: this.port,
+            policy: this.policy,
+            remotes: this.remotes
+        }
     }
 
 }

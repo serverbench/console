@@ -20,6 +20,7 @@
     import * as AlertDialog from "$lib/components/ui/alert-dialog/index.js";
     import Skeleton from "$lib/components/ui/skeleton/skeleton.svelte";
     import User from "$lib/sb/User";
+    import ContainerEdit from "./ContainerEdit.svelte";
     export let server: Server | null = null;
     let instances: Instance[] = [];
     let online = false;
@@ -143,26 +144,6 @@
         {:else}
             <Skeleton class="h-96" />
         {/if}
-        <Section name="ports">
-            <div class="grid grid-cols-8 gap-2 items-center">
-                {#each container.ports as port}
-                    <div class="col-span-1">
-                        <Badge>
-                            {port.name}
-                        </Badge>
-                        <Badge>
-                            {port.policy}
-                        </Badge>
-                    </div>
-                    <div class="col-span-6">
-                        <Input readonly value={container.address} type="text" />
-                    </div>
-                    <div class="col-span-1">
-                        <Input readonly value={port.port} type="number" />
-                    </div>
-                {/each}
-            </div>
-        </Section>
         <Section name="access">
             <div>
                 <div class="flex flex-row gap-2">
@@ -216,5 +197,6 @@
                 </a>
             </div>
         </Section>
+        <ContainerEdit {container} />
     {/if}
 {/key}
