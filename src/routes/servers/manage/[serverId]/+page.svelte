@@ -57,7 +57,7 @@
 
     let instanceId: string | null = null;
 
-    $: items = (instance?.containers.map((c) => [c.id, c.id]) ?? []) as [
+    $: items = (instance?.containers.map((c) => [c.id, c.label]) ?? []) as [
         string,
         string,
     ][];
@@ -114,7 +114,7 @@
                     {#key containers}
                         <SimplePicker
                             name="Container"
-                            items={containers.map((c) => [c.id, c.id])}
+                            {items}
                             on:change={(c) =>
                                 (container =
                                     containers.find((i) => i.id == c.detail) ??

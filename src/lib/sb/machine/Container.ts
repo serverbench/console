@@ -5,6 +5,7 @@ import User from "../User"
 import Port from "./Port"
 
 export type PowerState = "start" | "stop" | "restart" | "pause" | "unpause" | "kill"
+export type ContainerLabel = "test" | "prod" | "dev" | "staging"
 
 export default class Container {
     public readonly created: Date
@@ -19,6 +20,7 @@ export default class Container {
     public readonly memory: number | null
     public readonly locked: Date | null
     public readonly deleted: Date | null
+    public readonly label: ContainerLabel
 
     constructor(
         created: Date,
@@ -32,7 +34,8 @@ export default class Container {
         cpus: number | null,
         memory: number | null,
         locked: Date | null,
-        deleted: Date | null
+        deleted: Date | null,
+        label: ContainerLabel
     ) {
         this.created = created
         this.id = id
@@ -46,6 +49,7 @@ export default class Container {
         this.memory = memory
         this.locked = locked
         this.deleted = deleted
+        this.label = label
     }
 
     public static async get(serverId: string, instanceId: string, containerId: string) {
@@ -73,7 +77,8 @@ export default class Container {
             obj.cpus || null,
             obj.memory || null,
             obj.locked ? new Date(obj.locked) : null,
-            obj.deleted ? new Date(obj.deleted) : null
+            obj.deleted ? new Date(obj.deleted) : null,
+            obj.label
         )
         c._ports = obj.ports.map((p: any) => Port.fromObj(p, c))
         return c

@@ -32,6 +32,7 @@
     import type IPort from "$lib/sb/machine/IPort";
     import * as Card from "$lib/components/ui/card";
     import Developer from "$lib/sb/ci/Developer";
+    import type { ContainerLabel } from "$lib/sb/machine/Container";
 
     export let hosting = false;
     export let server: Server;
@@ -49,6 +50,7 @@
         value: number | null;
     };
 
+    let label: ContainerLabel = "prod";
     let managingFirewall = false;
     let firewall: Port | null = null;
     let ports: Port[] = [];
@@ -112,6 +114,7 @@
         image = null;
         firewall = null;
         managingFirewall = false;
+        label = "prod";
         addEnv();
         addPort();
     }
@@ -170,7 +173,8 @@
                         ),
                     envs.reduce((acc, e) => ({ ...acc, [e.key]: e.value }), {}),
                     repo,
-                    repo ? branch : null
+                    repo ? branch : null,
+                    label,
                 );
                 window.location.href = `/servers/manage/${server.id}?instance=${selectedInstance!.id}&container=${container.id}`;
             }
@@ -242,12 +246,18 @@
     };
 
     $: items = () =>
-        (instances
+        instances
             ? instances.map((instance): [string | null, string] => {
                   return [instance.id, instance.name ?? "default"];
               })
-            : []
-        ).concat([[null, "New Instance"]]);
+            : [];
+
+    const labels: [string, string][] = [
+        ["prod", "Production"],
+        ["dev", "Development"],
+        ["test", "Testing"],
+        ["staging", "Staging"],
+    ];
 
     $: machineItems = () =>
         machines
@@ -420,6 +430,7 @@
                             <SimplePicker
                                 bind:value={instanceId}
                                 items={items()}
+                                optional="New Instance"
                                 name="instance"
                             />
                             {#if instanceId == null}
@@ -430,7 +441,18 @@
                                         : "default (empty)"}
                                 />
                             {/if}
+                            <SimplePicker
+                                bind:value={label}
+                                items={labels}
+                                name="Container Label"
+                            />
                         </Card.Root>
+                    {:else}
+                        <SimplePicker
+                            bind:value={label}
+                            items={labels}
+                            name="Container Label"
+                        />
                     {/if}
                     <Card.Root class="flex flex-col gap-2 border p-3">
                         <Tabs.Root value="self">

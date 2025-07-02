@@ -1,6 +1,6 @@
 import type Repository from "../ci/Repository"
 import Community from "../Community"
-import Container from "../machine/Container"
+import Container, { type ContainerLabel } from "../machine/Container"
 import type IPort from "../machine/IPort"
 import type Machine from "../machine/Machine"
 import User from "../User"
@@ -39,7 +39,7 @@ export default class Instance {
         return i
     }
 
-    public async host(machine: Machine, image: string, mount: string, address: string, memory: number | null, cpus: number | null, ports: IPort[], envs: Record<string, string>, repository: Repository | null, branch: string | null): Promise<Container> {
+    public async host(machine: Machine, image: string, mount: string, address: string, memory: number | null, cpus: number | null, ports: IPort[], envs: Record<string, string>, repository: Repository | null, branch: string | null, label: ContainerLabel): Promise<Container> {
         const user = await User.get()
         const community = await Community.get()
         const sk = (await machine.getKeys()).sk
@@ -53,7 +53,8 @@ export default class Instance {
             cpus: cpus ?? undefined,
             memory: memory ?? undefined,
             repository: repository?.id ?? undefined,
-            branch: branch ?? undefined
+            branch: branch ?? undefined,
+            label: label
         })
         const container = Container.fromObj(d, this)
         this._containers.push(container)
