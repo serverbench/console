@@ -21,6 +21,7 @@
     import Skeleton from "$lib/components/ui/skeleton/skeleton.svelte";
     import User from "$lib/sb/User";
     import ContainerEdit from "./ContainerEdit.svelte";
+    import { sort } from "fast-sort";
     export let server: Server | null = null;
     let instances: Instance[] = [];
     let online = false;
@@ -31,7 +32,11 @@
             const preferedInstance = page.url.searchParams.get("instance");
             preferedContainer = page.url.searchParams.get("container");
             server = await Server.get(id);
-            instances = await server.getInstances();
+            instances = sort(await server.getInstances()).by([
+                {
+                    desc: i=>i.containers.filter(c => c.deleted == null).length,
+                }
+            ]);
             if (instances.length > 0) {
                 instanceId =
                     instances.find((i) => i.id == preferedInstance)?.id ??
