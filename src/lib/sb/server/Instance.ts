@@ -39,7 +39,7 @@ export default class Instance {
         return i
     }
 
-    public async host(machine: Machine, image: string, mount: string, address: string, memory: number | null, cpus: number | null, ports: IPort[], envs: Record<string, string>, repository: Repository | null, branch: string | null, label: ContainerLabel): Promise<Container> {
+    public async host(machine: Machine, image: string, mount: string, address: string, memory: number | null, cpus: number | null, ports: IPort[], envs: Record<string, string>, repository: Repository | null, branch: string | null, label: ContainerLabel, command: string | null): Promise<Container> {
         const user = await User.get()
         const community = await Community.get()
         const sk = (await machine.getKeys()).sk
@@ -54,7 +54,8 @@ export default class Instance {
             memory: memory ?? undefined,
             repository: repository?.id ?? undefined,
             branch: branch ?? undefined,
-            label: label
+            label: label,
+            command: command ?? undefined
         })
         const container = Container.fromObj(d, this)
         this._containers.push(container)

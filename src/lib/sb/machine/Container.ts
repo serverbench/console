@@ -23,8 +23,9 @@ export default class Container {
     public readonly locked: Date | null
     public readonly deleted: Date | null
     public readonly label: ContainerLabel
-    public readonly repository:Repository|null
+    public readonly repository: Repository | null
     public readonly branch: string | null
+    public readonly command: string | null
 
     constructor(
         created: Date,
@@ -41,7 +42,8 @@ export default class Container {
         deleted: Date | null,
         label: ContainerLabel,
         repository: Repository | null = null,
-        branch: string | null = null
+        branch: string | null = null,
+        command: string | null = null
     ) {
         this.created = created
         this.id = id
@@ -58,6 +60,7 @@ export default class Container {
         this.label = label
         this.repository = repository
         this.branch = branch
+        this.command = command
     }
 
     public static async get(serverId: string, instanceId: string, containerId: string) {
@@ -88,7 +91,8 @@ export default class Container {
             obj.deleted ? new Date(obj.deleted) : null,
             obj.label,
             obj.repository ? Repository.fromObj(obj.repository) : null,
-            obj.branch || null
+            obj.branch || null,
+            obj.command || null
         )
         c._ports = obj.ports.map((p: any) => Port.fromObj(p, c))
         return c
@@ -112,10 +116,11 @@ export default class Container {
             'mount': mount,
             'envs': envs,
             'ports': ports,
-            'cpus?': cpus,
-            'memory?': memory,
-            'repository?': repository ? repository.id : null,
-            'branch?': branch
+            'cpus': cpus,
+            'memory': memory,
+            'repository': repository ? repository.id : null,
+            'branch': branch,
+            'command': this.command
         })
         const container = Container.fromObj(d, this.instance)
         return container
