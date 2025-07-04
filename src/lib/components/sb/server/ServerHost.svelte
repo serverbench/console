@@ -69,6 +69,7 @@
     let ip: string | null = null;
     let preset: Preset | null = null;
     let cpus: null | number = null;
+    let command: string | null = null;
 
     const memoryOptions: [number, string][] = [
         [1000, "GB"],
@@ -175,6 +176,7 @@
                     repo,
                     repo ? branch : null,
                     label,
+                    (command && command.trim().length > 0) ? command : null,
                 );
                 window.location.href = `/servers/manage/${server.id}?instance=${selectedInstance!.id}&container=${container.id}`;
             }
@@ -612,6 +614,7 @@
                     placeholder="docker.io/<namespace>/<image>:<tag>"
                 />
                 <Input bind:value={mount} placeholder="/data" />
+                <Input bind:value={command} placeholder="Command" />
                 <Card.Root
                     class="flex flex-col gap-2 p-3 border overflow-y-auto h-60"
                 >
