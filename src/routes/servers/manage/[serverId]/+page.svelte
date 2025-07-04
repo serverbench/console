@@ -7,7 +7,7 @@
     import type Container from "$lib/sb/machine/Container";
     import type Instance from "$lib/sb/server/Instance";
     import Server from "$lib/sb/server/Server";
-    import { ArrowLeft, Files, Loader2 } from "lucide-svelte";
+    import { ArrowLeft, Files, Info, Loader2 } from "lucide-svelte";
     import { onMount, tick } from "svelte";
     import { fade } from "svelte/transition";
     import Console from "./Console.svelte";
@@ -23,6 +23,8 @@
     import ContainerEdit from "./ContainerEdit.svelte";
     import { sort } from "fast-sort";
     export let server: Server | null = null;
+    import * as Popover from "$lib/components/ui/popover/index.js";
+    import Empty from "$lib/components/sb/section/empty.svelte";
     let instances: Instance[] = [];
     let online = false;
     let preferedContainer: string | null = null;
@@ -34,8 +36,9 @@
             server = await Server.get(id);
             instances = sort(await server.getInstances()).by([
                 {
-                    desc: i=>i.containers.filter(c => c.deleted == null).length,
-                }
+                    desc: (i) =>
+                        i.containers.filter((c) => c.deleted == null).length,
+                },
             ]);
             if (instances.length > 0) {
                 instanceId =
@@ -105,6 +108,56 @@
             transition:fade={{ duration: 200 }}
             class="flex flex-row ml-auto gap-2 items-center"
         >
+            {#if container}
+                <Popover.Root portal={null}>
+                    <Popover.Trigger asChild let:builder>
+                        <Button
+                            builders={[builder]}
+                            variant="ghost"
+                            size="icon"
+                            class="aspect-square"
+                        >
+                            <Info />
+                        </Button>
+                    </Popover.Trigger>
+                    <Popover.Content class="w-80">
+                        <div class="grid gap-4">
+                            <div class="grid gap-2">
+                                <div
+                                    class="grid grid-cols-3 items-center gap-4"
+                                >
+                                    <Label for="width">Container</Label>
+                                    <Input
+                                        readonly
+                                        value={container?.id}
+                                        class="col-span-2 h-8"
+                                    />
+                                </div>
+                                <div
+                                    class="grid grid-cols-3 items-center gap-4"
+                                >
+                                    <Label for="width">Instance</Label>
+                                    <Input
+                                        readonly
+                                        value={instance?.id}
+                                        class="col-span-2 h-8"
+                                    />
+                                </div>
+                                <div
+                                    class="grid grid-cols-3 items-center gap-4"
+                                >
+                                    <Label for="width">Server</Label>
+                                    <Input
+                                        readonly
+                                        value={server?.id}
+                                        class="col-span-2 h-8"
+                                    />
+                                </div>
+                            </div>
+                        </div>
+                    </Popover.Content>
+                </Popover.Root>
+            {/if}
             <div class="min-w-40">
                 <SimplePicker
                     disabled={instances.length <= 0}
@@ -139,6 +192,15 @@
                     {/if}
                 {/key}
             {/if}
+        </div>
+    {:else}
+        <div class="flex flex-row ml-auto gap-2 items-center">
+            <Skeleton class="h-full ml-auto  aspect-square" />
+            <Skeleton class="h-full w-40" />
+            <Skeleton class="h-full w-40" />
+            <Skeleton class="h-full aspect-square" />
+            <Skeleton class="h-full aspect-square" />
+            <Skeleton class="h-full aspect-square" />
         </div>
     {/if}
 </div>
@@ -203,5 +265,15 @@
             </div>
         </Section>
         <ContainerEdit {container} />
+    {:else if instance}
+        <Section small name="containers">
+            <div class="px-5 py-20">
+                <Empty action={false} type="containers" />
+            </div>
+        </Section>
+    {:else}
+        {#each Array(3) as _}
+            <Skeleton class="h-96" />
+        {/each}
     {/if}
 {/key}

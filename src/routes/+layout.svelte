@@ -199,7 +199,7 @@
     {#if mainContent}
         <div class="min-w-72 lg:block hidden"></div>
         <div class="grow flex flex-col gap-5 mt-16 pt-2 z-20 px-1 overflow-x-hidden">
-            {#key community}
+            {#key community?.id}
                 {#if $page.url.pathname.startsWith("/me")}
                     <slot />
                 {:else if community}
