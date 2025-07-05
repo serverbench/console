@@ -66,7 +66,7 @@
         loading = false;
     }
 
-    const pageSize = 50;
+    const pageSize = 20;
 </script>
 
 {#if messages.length > 0}
