@@ -57,7 +57,7 @@
             if (afterLogin != null && afterLogin != "/login") {
                 goto(afterLogin);
             } else if ($page.url.pathname == "/login") {
-                goto("/me");
+                goto("/pick");
             }
             await Community.get();
         };
@@ -81,14 +81,20 @@
     let activeSidebar = false;
     let community: Community | null = null;
 
-    $: mainContent = !["/onboarding", "/login"].includes($page.url.pathname);
+    $: mainContent = !["/onboarding", "/login", "/pick"].includes(
+        $page.url.pathname,
+    );
     $: userContent = $page.url.pathname.startsWith("/me");
 </script>
 
 <Toaster />
 
 {#if mainContent}
-    <div class="fixed h-screen w-full top-0" class:z-20={!activeSidebar} class:z-50={activeSidebar}>
+    <div
+        class="fixed h-screen w-full top-0"
+        class:z-20={!activeSidebar}
+        class:z-50={activeSidebar}
+    >
         <div class="flex flex-row h-full absolute inset-0 lg:p-3 gap-5">
             <!-- Sidebar -->
             <div
@@ -97,7 +103,9 @@
                 class:-translate-x-full={!activeSidebar}
                 class:lg:translate-x-0={true}
             >
-                <Card.Root class="h-full w-full overflow-hidden rounded-l-none md:rounded-l-lg">
+                <Card.Root
+                    class="h-full w-full overflow-hidden rounded-l-none md:rounded-l-lg"
+                >
                     <div class="h-full w-full flex flex-col">
                         {#if userContent}
                             <UserNav />
@@ -198,7 +206,9 @@
 <main class="relative flex flex-row gap-5 min-h-screen lg:py-3 lg:px-4 p-2">
     {#if mainContent}
         <div class="min-w-72 lg:block hidden"></div>
-        <div class="grow flex flex-col gap-5 mt-16 pt-2 z-20 px-1 overflow-x-hidden">
+        <div
+            class="grow flex flex-col gap-5 mt-16 pt-2 z-20 px-1 overflow-x-hidden"
+        >
             {#key community?.id}
                 {#if $page.url.pathname.startsWith("/me")}
                     <slot />

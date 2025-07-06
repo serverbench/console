@@ -8,7 +8,6 @@
     import GgGoogle from "~icons/gg/google";
     import MdiMicrosoft from "~icons/mdi/microsoft";
     import MdiGithub from "~icons/mdi/github";
-    import { page } from "$app/stores";
     import { goto } from "$app/navigation";
 
     let loading = false;
@@ -17,7 +16,7 @@
         loading = true;
         try {
             await User.login(service);
-            goto("/me");
+            goto("/pick");
         } catch (error) {
             loading = false;
         }
