@@ -27,10 +27,14 @@
     let loading = false;
     let connections: Connection[] = [];
     let hasMore = true;
+    export let blockLoad = false;
 
     onMount(async () => {
+        if (blockLoad) return;
         await loadMore(true);
     });
+
+    $: blockLoad, loadMore(true);
 
     let last = Date.now();
 
@@ -92,78 +96,76 @@
     let duration: Record<string, [string, number, string]> = {};
 </script>
 
-{#if connections.length > 0}
-    <div transition:fade={{ duration: 200 }}>
-        <List>
-            {#each connections as connection}
+<div transition:fade={{ duration: 200 }}>
+    <List>
+        {#each connections as connection}
+            <Item>
+                {#if connection.session}
+                    <Badge
+                        variant="secondary"
+                        class="whitespace-nowrap mr-auto"
+                    >
+                        {connection.session?.instance.server.slug}
+                        {#if connection.session?.instance.name}
+                            {connection.session?.instance.name}
+                        {/if}
+                    </Badge>
+                {:else}
+                    <div class="w-full"></div>
+                {/if}
+                {#if connection.closed}
+                    <Badge variant="secondary" class="whitespace-nowrap">
+                        <Time relative timestamp={connection.created} />
+                    </Badge>
+                {/if}
+                {#if connection.idle}
+                    <Badge variant="outline" class="whitespace-nowrap">
+                        Idle
+                    </Badge>
+                {/if}
+                {#if connection.closed}
+                    <Badge class="whitespace-nowrap">
+                        {getFormattedDuration(
+                            connection.closed.getTime() -
+                                connection.created.getTime(),
+                        )}
+                    </Badge>
+                {:else}
+                    <div class="flex flex-row gap-2 items-center">
+                        {#if connection.id != null && duration[connection.id]}
+                            <NumberFlow
+                                prefix={duration[connection.id][0]}
+                                value={duration[connection.id][1]}
+                                suffix={duration[connection.id][2]}
+                                class="whitespace-nowrap"
+                            />
+                        {/if}
+                        <div
+                            class:bg-emerald-600={!connection.idle}
+                            class:bg-indigo-600={connection.idle}
+                            class="w-4 h-4 rounded-full animate-pulse"
+                        ></div>
+                    </div>
+                {/if}
+            </Item>
+        {/each}
+
+        {#if !loading && hasMore && !blockLoad}
+            <div
+                use:inview
+                on:inview_enter={() => {
+                    loadMore();
+                }}
+                class="mb-1"
+            />
+        {/if}
+
+        {#if hasMore || blockLoad}
+            {#each Array(pageSize) as _}
                 <Item>
-                    {#if connection.session}
-                        <Badge
-                            variant="secondary"
-                            class="whitespace-nowrap mr-auto"
-                        >
-                            {connection.session?.instance.server.slug}
-                            {#if connection.session?.instance.name}
-                                {connection.session?.instance.name}
-                            {/if}
-                        </Badge>
-                    {:else}
-                        <div class="w-full"></div>
-                    {/if}
-                    {#if connection.closed}
-                        <Badge variant="secondary" class="whitespace-nowrap">
-                            <Time relative timestamp={connection.created} />
-                        </Badge>
-                    {/if}
-                    {#if connection.idle}
-                        <Badge variant="outline" class="whitespace-nowrap">
-                            Idle
-                        </Badge>
-                    {/if}
-                    {#if connection.closed}
-                        <Badge class="whitespace-nowrap">
-                            {getFormattedDuration(
-                                connection.closed.getTime() -
-                                    connection.created.getTime(),
-                            )}
-                        </Badge>
-                    {:else}
-                        <div class="flex flex-row gap-2 items-center">
-                            {#if connection.id != null && duration[connection.id]}
-                                <NumberFlow
-                                    prefix={duration[connection.id][0]}
-                                    value={duration[connection.id][1]}
-                                    suffix={duration[connection.id][2]}
-                                    class="whitespace-nowrap"
-                                />
-                            {/if}
-                            <div
-                                class:bg-emerald-600={!connection.idle}
-                                class:bg-indigo-600={connection.idle}
-                                class="w-4 h-4 rounded-full animate-pulse"
-                            ></div>
-                        </div>
-                    {/if}
+                    <Skeleton class="h-[20px] w-full my-2" />
                 </Item>
             {/each}
-
-            {#if !loading && hasMore}
-                <div
-                    use:inview
-                    on:inview_enter={() => {
-                        loadMore();
-                    }}
-                    class="mb-1"
-                />
-            {/if}
-
-            {#if hasMore}
-                {#each Array(pageSize) as _}
-                    <Item>
-                        <Skeleton class="h-[20px] w-full my-2" />
-                    </Item>
-                {/each}
-            {/if}
-        </List>
-    </div>
-{/if}
+        {/if}
+    </List>
+</div>

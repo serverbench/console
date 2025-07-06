@@ -50,7 +50,7 @@ export const presets: Preset[] = [
             SERVERBENCH_SERVER: '${SERVERBENCH_SERVER}',
             SERVERBENCH_INSTANCE: '${SERVERBENCH_INSTANCE}',
             MOTD: 'a Minecraft Server hosted by serverbench',
-            PLUGINS: 'https://github.com/serverbench/minecraft-plugin/releases/download/pre-25-jun-1/serverbench-beta.jar'
+            PLUGINS: 'https://github.com/serverbench/minecraft-plugin/releases/download/pre-25-jul-6/serverbench-beta.jar'
         },
         ports: {
             MC: 25565,

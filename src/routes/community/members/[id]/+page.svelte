@@ -25,14 +25,17 @@
     let calendar: [Date, number][] | null = null;
     let tab: string = "messages";
     let chatFilters: ChatMessageFilter = {};
+    let blockLoad = true;
 
     onMount(async () => {
+        blockLoad = true;
         const id = $page.params.id;
         member = await Member.fromId(id);
         country = await member.getCountry();
         instances = await member.getFavoriteInstances();
         clock = await member.getActivityClock();
         calendar = await member.getActivityCalendar();
+        blockLoad = false
     });
 </script>
 
@@ -119,10 +122,10 @@
                 {/if}
             </div>
             <Tabs.Content value="messages">
-                <MemberMessages {member} filters={chatFilters} />
+                <MemberMessages bind:blockLoad {member} filters={chatFilters} />
             </Tabs.Content>
             <Tabs.Content value="sessions">
-                <MemberSessions {member} />
+                <MemberSessions bind:blockLoad {member} />
             </Tabs.Content>
         </Tabs.Root>
     </div>

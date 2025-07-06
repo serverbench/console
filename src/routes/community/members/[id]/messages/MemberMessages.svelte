@@ -21,6 +21,7 @@
     import type { ChatMessageFilter } from "$lib/sb/member/Member";
 
     export let member: Member;
+    export let blockLoad = false;
     let page = 0;
     let anchor = new Date();
 
@@ -35,14 +36,18 @@
     let profanity = false;
 
     onMount(async () => {
+        if (blockLoad) return;
         await loadMore(true);
     });
+
+    $: blockLoad, loadMore(true);
 
     let last = Date.now();
 
     $: filters, loadMore(true);
 
     async function loadMore(reset = false) {
+        if (blockLoad) return;
         if (reset) {
             last = Date.now();
             page = 0;
@@ -69,87 +74,90 @@
     const pageSize = 20;
 </script>
 
-{#if messages.length > 0}
-    <div transition:fade={{ duration: 200 }}>
-        <List>
-            {#each messages as message}
-                <Item>
-                    <Badge variant="secondary" class="whitespace-nowrap">
-                        <Time relative timestamp={message.created} />
+<div transition:fade={{ duration: 200 }}>
+    <List>
+        {#each messages as message}
+            <Item>
+                <Badge variant="secondary" class="whitespace-nowrap">
+                    <Time relative timestamp={message.created} />
+                </Badge>
+                <Badge variant="secondary" class="whitespace-nowrap">
+                    {message.session.instance.server.slug}
+                    {#if message.session.instance.name}
+                        {message.session.instance.name}
+                    {/if}
+                </Badge>
+                {#if message.to}
+                    <div class="inline-flex flex-row gap-2 items-center">
+                        <Avatar.Root class="w-4 h-4">
+                            <Avatar.Image
+                                src={`https://minotar.net/helm/${message.to.eid}`}
+                                alt={message.to.name}
+                            />
+                            <Avatar.Fallback>
+                                {message.to.name.charAt(0).toUpperCase()}
+                            </Avatar.Fallback>
+                        </Avatar.Root>
+                        <Badge class="whitespace-nowrap">
+                            {message.to.name}
+                        </Badge>
+                    </div>
+                {/if}
+                {#if message.channel}
+                    <Badge variant="secondary">
+                        {message.channel}
                     </Badge>
-                    <Badge variant="secondary" class="whitespace-nowrap">
-                        {message.session.instance.server.slug}
-                        {#if message.session.instance.name}
-                            {message.session.instance.name}
+                {/if}
+                <p>
+                    {message.message}
+                </p>
+                {#if (profanity ? message.toxicity.instantProfanity : message.toxicity.instant) > toxicityThreshold}
+                    <Badge
+                        class={"whitespace-nowrap flex flex-row gap-2" +
+                            ((profanity
+                                ? message.toxicity.averageProfanity
+                                : message.toxicity.average) >
+                            averageToxicityThreshold
+                                ? ""
+                                : " bg-yellow-300 text-black")}
+                        variant="destructive"
+                    >
+                        {#if (profanity ? message.toxicity.averageProfanity : message.toxicity.average) > averageToxicityThreshold}
+                            <MessageCircleX />
+                        {:else}
+                            <MessageCircleWarning />
                         {/if}
                     </Badge>
-                    {#if message.to}
-                        <div class="inline-flex flex-row gap-2 items-center">
-                            <Avatar.Root class="w-4 h-4">
-                                <Avatar.Image
-                                    src={`https://minotar.net/helm/${message.to.eid}`}
-                                    alt={message.to.name}
-                                />
-                                <Avatar.Fallback>
-                                    {message.to.name.charAt(0).toUpperCase()}
-                                </Avatar.Fallback>
-                            </Avatar.Root>
-                            <Badge class="whitespace-nowrap">
-                                {message.to.name}
-                            </Badge>
-                        </div>
-                    {/if}
-                    {#if message.channel}
-                        <Badge variant="secondary">
-                            {message.channel}
-                        </Badge>
-                    {/if}
-                    <p>
-                        {message.message}
-                    </p>
-                    {#if (profanity ? message.toxicity.instantProfanity : message.toxicity.instant) > toxicityThreshold}
-                        <Badge
-                            class={"whitespace-nowrap flex flex-row gap-2" +
-                                ((profanity
-                                    ? message.toxicity.averageProfanity
-                                    : message.toxicity.average) >
-                                averageToxicityThreshold
-                                    ? ""
-                                    : " bg-yellow-300 text-black")}
-                            variant="destructive"
-                        >
-                            {#if (profanity ? message.toxicity.averageProfanity : message.toxicity.average) > averageToxicityThreshold}
-                                <MessageCircleX />
-                            {:else}
-                                <MessageCircleWarning />
-                            {/if}
-                        </Badge>
-                    {/if}
-                    {#if message.tagged}
-                        <Badge variant="outline">
-                            <Sparkle />
-                        </Badge>
-                    {/if}
+                {/if}
+                {#if message.tagged}
+                    <Badge variant="outline">
+                        <Sparkle />
+                    </Badge>
+                {/if}
+            </Item>
+        {/each}
+
+        {#if !loading && hasMore}
+            <div
+                use:inview
+                on:inview_enter={() => {
+                    loadMore();
+                }}
+                class="mb-1"
+            />
+        {/if}
+
+        {#if hasMore}
+            {#each Array(pageSize) as _}
+                <Item>
+                    <Skeleton class="h-[20px] w-full my-2" />
                 </Item>
             {/each}
-
-            {#if !loading && hasMore}
-                <div
-                    use:inview
-                    on:inview_enter={() => {
-                        loadMore();
-                    }}
-                    class="mb-1"
-                />
-            {/if}
-
-            {#if hasMore}
-                {#each Array(pageSize) as _}
-                    <Item>
-                        <Skeleton class="h-[20px] w-full my-2" />
-                    </Item>
-                {/each}
-            {/if}
-        </List>
-    </div>
-{/if}
+        {/if}
+        {#if messages.length == 0 && !loading && !hasMore && !blockLoad}
+            <div class="text-center text-muted-foreground py-20">
+                No messages found.
+            </div>
+        {/if}
+    </List>
+</div>
