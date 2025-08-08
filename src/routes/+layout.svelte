@@ -26,6 +26,7 @@
     import CommunityPicker from "$lib/components/sb/nav/CommunityPicker.svelte";
     import { blur, fade, slide } from "svelte/transition";
     import { dark } from "$lib";
+    import MemberSearch from "$lib/components/sb/MemberSearch.svelte";
     let loggedIn = false;
 
     let afterLogin: string | null = null;
@@ -150,12 +151,13 @@
                     <Menu />
                 </Button>
                 {#if !userContent}
-                    <div>
+                    <div class="mr-auto">
                         <CommunityPicker bind:community />
                     </div>
+                    <MemberSearch />
                 {/if}
                 <DropdownMenu.Root>
-                    <DropdownMenu.Trigger class="ml-auto">
+                    <DropdownMenu.Trigger>
                         <Avatar.Root>
                             <Avatar.Fallback>
                                 <PersonStanding />

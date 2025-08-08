@@ -3,6 +3,7 @@ import Community from "./Community";
 import { Mutex } from "async-mutex";
 
 const product = 'serverbench.io'
+const testDomain = 'dev.serverbench.io' // locahost:8080
 
 export default class User {
 
@@ -168,6 +169,7 @@ export default class User {
         localStorage.setItem('refreshToken', this.refreshToken!)
     }
 
+    private static loggedOut = false
     public static logout() {
         localStorage.removeItem('accessToken')
         localStorage.removeItem('refreshToken')
@@ -192,7 +194,7 @@ export default class User {
                 finalBody = JSON.stringify(body)
             }
         }
-        const req = await fetch(`https://${this.test ? 'dev.serverbench.io' : 'api.beta.serverbench.io'}${path}`, {
+        const req = await fetch(`https://${this.test ? testDomain : 'api.beta.serverbench.io'}${path}`, {
             headers,
             body: finalBody,
             method: method

@@ -12,6 +12,12 @@ export type ChatMessageFilter = {
     tagged?: boolean
 }
 
+export type Relation = {
+    member: Member,
+    weight: number,
+    to?: Relation[]
+}
+
 export default class Member {
 
     public readonly created: Date
@@ -107,6 +113,26 @@ export default class Member {
             minToxicityAverageProfanity: filters?.minToxicityAverageProfanity,
             tagged: filters?.tagged
         })).map((c: any) => ChatMessage.fromObj(community!, c))
+    }
+
+    public async getChatRelations(): Promise<Relation[]> {
+        const user = await User.get()
+        const community = await Community.get()
+        const data = await user!.get(`/community/${community!.id}/chat/relations/${this.id}`)
+        const relations: Relation[] = []
+        for (const relation of data) {
+            const member = Member.fromObj(this.community, relation.member)
+            const rel: Relation = {
+                member,
+                weight: relation.weight,
+                to: relation.to ? relation.to.map((r: any) => ({
+                    member: Member.fromObj(this.community, r.member),
+                    weight: r.weight
+                })) : undefined
+            }
+            relations.push(rel)
+        }
+        return relations
     }
 
     public async getConnections(page: number = 0, anchor: Date = new Date()): Promise<Connection[]> {

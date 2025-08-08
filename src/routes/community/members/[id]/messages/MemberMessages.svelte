@@ -19,6 +19,8 @@
     import Button from "$lib/components/ui/button/button.svelte";
     import { fade } from "svelte/transition";
     import type { ChatMessageFilter } from "$lib/sb/member/Member";
+    import MemberRelations from "../relations/MemberRelations.svelte";
+    import Card from "$lib/components/ui/card/card.svelte";
 
     export let member: Member;
     export let blockLoad = false;
