@@ -94,7 +94,9 @@ export default class Container {
             obj.branch || null,
             obj.command || null
         )
-        c._ports = obj.ports.map((p: any) => Port.fromObj(p, c))
+        if (obj.ports) {
+            c._ports = obj.ports.map((p: any) => Port.fromObj(p, c))
+        }
         return c
     }
 

@@ -10,6 +10,7 @@
         Sparkle,
     } from "lucide-svelte";
     import Time from "svelte-time/Time.svelte";
+    import { blur } from "svelte/transition";
     export let message: ChatMessage,
         profanity = false,
         showFrom = false;
@@ -69,23 +70,27 @@
         {message.message}
     </p>
     {#if message.toxicity.instantProfanity == null || message.toxicity.instant == null || message.toxicity.averageProfanity == null || message.toxicity.average == null}
-        <Loader2 class="animate-spin" />
+        <span transition:blur>
+            <Loader2 class="animate-spin" />
+        </span>
     {:else if (profanity ? message.toxicity.instantProfanity : message.toxicity.instant) > toxicityThreshold}
-        <Badge
-            class={"whitespace-nowrap flex flex-row gap-2" +
-                ((profanity
-                    ? message.toxicity.averageProfanity
-                    : message.toxicity.average) > averageToxicityThreshold
-                    ? ""
-                    : " bg-yellow-300 text-black")}
-            variant="destructive"
-        >
-            {#if (profanity ? message.toxicity.averageProfanity : message.toxicity.average) > averageToxicityThreshold}
-                <MessageCircleX />
-            {:else}
-                <MessageCircleWarning />
-            {/if}
-        </Badge>
+        <span transition:blur>
+            <Badge
+                class={"whitespace-nowrap flex flex-row gap-2" +
+                    ((profanity
+                        ? message.toxicity.averageProfanity
+                        : message.toxicity.average) > averageToxicityThreshold
+                        ? ""
+                        : " bg-yellow-300 text-black")}
+                variant="destructive"
+            >
+                {#if (profanity ? message.toxicity.averageProfanity : message.toxicity.average) > averageToxicityThreshold}
+                    <MessageCircleX />
+                {:else}
+                    <MessageCircleWarning />
+                {/if}
+            </Badge>
+        </span>
     {/if}
     {#if message.tagged}
         <Badge variant="outline">
