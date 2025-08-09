@@ -21,4 +21,23 @@ export default class Toxicity {
             obj.averageProfanity,
         )
     }
+
+    public isToxic(profanity = false, toxicityThreshold = 50, averageToxicityThreshold = 50 / 1.7) {
+        if (
+            this.instantProfanity == null ||
+            this.instant == null ||
+            this.averageProfanity == null ||
+            this.average == null
+        ) {
+            return false;
+        }
+        return (
+            (profanity
+                ? this.instantProfanity
+                : this.instant) > toxicityThreshold ||
+            (profanity
+                ? this.averageProfanity
+                : this.average) > averageToxicityThreshold
+        );
+    }
 }

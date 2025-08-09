@@ -9,13 +9,15 @@
         slim = false,
         hideDropdown = false,
         hideBottom = false,
-        href: string | null = null;
+        href: string | null = null,
+        clazz: string | null = null;
+        
     const SLOTS = $$props.$$slots;
 
     const dispatch = createEventDispatcher();
 </script>
 
-<Table.Row class="flex flex-col gap-4 {hideBottom ? 'border-b-0' : ''}">
+<Table.Row class="flex flex-col gap-4 {hideBottom ? 'border-b-0' : ''} {clazz || ''}">
     <a
         {href}
         tabindex="-1"

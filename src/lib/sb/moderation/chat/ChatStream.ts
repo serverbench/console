@@ -1,5 +1,7 @@
 import Community from "$lib/sb/Community";
+import type Instance from "$lib/sb/server/Instance";
 import User from "$lib/sb/User";
+import { sort } from "fast-sort";
 import ChatMessage from "./ChatMessage";
 import Toxicity from "./Toxicity";
 
@@ -8,16 +10,23 @@ export default class ChatStream {
     private connected: Map<boolean, boolean | null> = new Map();
     private recentMessages: Map<string, ChatMessage> = new Map();
     private messages: ChatMessage[] = [];
+    private instances: Map<string, Instance> = new Map();
 
     private onConnected: (dm: boolean | null, all: boolean | null) => void = () => { };
-    private onMessages: (messages: ChatMessage[]) => void = () => { };
+    private onMessages: (messages: ChatMessage[], toxicity: boolean) => void = () => { };
+    private instancesUpdate: (instances: Instance[]) => void = () => { };
+    private onToxicity: (toxicity: ChatMessage) => void = () => { };
 
     constructor(
         onConnected: (dm: boolean | null, all: boolean | null) => void = () => { },
-        onMessages: (messages: ChatMessage[]) => void = () => { },
+        onMessages: (messages: ChatMessage[], toxicity: boolean) => void = () => { },
+        instancesUpdate: (instances: Instance[]) => void = () => { },
+        onToxicity: (toxicity: ChatMessage) => void = () => { }
     ) {
         this.onConnected = onConnected;
         this.onMessages = onMessages;
+        this.instancesUpdate = instancesUpdate;
+        this.onToxicity = onToxicity;
     }
 
     private emitOnConnected(): void {
@@ -65,14 +74,21 @@ export default class ChatStream {
                             this.recentMessages.delete(oldest.id);
                         }
                     }
+                    if (!this.instances.has(msg.session.instance.id)) {
+                        this.instances.set(msg.session.instance.id, msg.session.instance);
+                        const sortedInstances = sort(Array.from(this.instances.values())).desc((i) => `${i.server.slug}-${i.name ?? 'main'}`)
+                        this.instancesUpdate(sortedInstances);
+                    }
                 } else if (data.type == "toxicity") {
                     const parentId = data.parent;
                     const message = this.recentMessages.get(parentId);
                     if (message) {
-                        message.setToxicity(Toxicity.fromObj(data.toxicity));
+                        const tox = Toxicity.fromObj(data.toxicity)
+                        message.setToxicity(tox);
+                        this.onToxicity(message)
                     }
                 }
-                this.onMessages(this.messages);
+                this.onMessages(this.messages, data.type == "toxicity");
             },
             () => {
                 this.connected.set(dm, true);
