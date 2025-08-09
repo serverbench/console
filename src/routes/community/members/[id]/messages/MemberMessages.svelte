@@ -21,6 +21,7 @@
     import type { ChatMessageFilter } from "$lib/sb/member/Member";
     import MemberRelations from "../relations/MemberRelations.svelte";
     import Card from "$lib/components/ui/card/card.svelte";
+    import ChatMessageItem from "./ChatMessageItem.svelte";
 
     export let member: Member;
     export let blockLoad = false;
@@ -31,9 +32,6 @@
     let messages: ChatMessage[] = [];
     export let filters: ChatMessageFilter;
     let hasMore = true;
-
-    const toxicityThreshold = 50;
-    const averageToxicityThreshold = toxicityThreshold / 3;
 
     let profanity = false;
 
@@ -79,64 +77,7 @@
 <div transition:fade={{ duration: 200 }}>
     <List>
         {#each messages as message}
-            <Item>
-                <Badge variant="secondary" class="whitespace-nowrap">
-                    <Time relative timestamp={message.created} />
-                </Badge>
-                <Badge variant="secondary" class="whitespace-nowrap">
-                    {message.session.instance.server.slug}
-                    {#if message.session.instance.name}
-                        {message.session.instance.name}
-                    {/if}
-                </Badge>
-                {#if message.to}
-                    <div class="inline-flex flex-row gap-2 items-center">
-                        <Avatar.Root class="w-4 h-4">
-                            <Avatar.Image
-                                src={`https://minotar.net/helm/${message.to.eid}`}
-                                alt={message.to.name}
-                            />
-                            <Avatar.Fallback>
-                                {message.to.name.charAt(0).toUpperCase()}
-                            </Avatar.Fallback>
-                        </Avatar.Root>
-                        <Badge class="whitespace-nowrap">
-                            {message.to.name}
-                        </Badge>
-                    </div>
-                {/if}
-                {#if message.channel}
-                    <Badge variant="secondary">
-                        {message.channel}
-                    </Badge>
-                {/if}
-                <p>
-                    {message.message}
-                </p>
-                {#if (profanity ? message.toxicity.instantProfanity : message.toxicity.instant) > toxicityThreshold}
-                    <Badge
-                        class={"whitespace-nowrap flex flex-row gap-2" +
-                            ((profanity
-                                ? message.toxicity.averageProfanity
-                                : message.toxicity.average) >
-                            averageToxicityThreshold
-                                ? ""
-                                : " bg-yellow-300 text-black")}
-                        variant="destructive"
-                    >
-                        {#if (profanity ? message.toxicity.averageProfanity : message.toxicity.average) > averageToxicityThreshold}
-                            <MessageCircleX />
-                        {:else}
-                            <MessageCircleWarning />
-                        {/if}
-                    </Badge>
-                {/if}
-                {#if message.tagged}
-                    <Badge variant="outline">
-                        <Sparkle />
-                    </Badge>
-                {/if}
-            </Item>
+            <ChatMessageItem {message} {profanity} />
         {/each}
 
         {#if !loading && hasMore}

@@ -16,7 +16,15 @@ export default class ChatMessage {
     public readonly tagged: boolean
     public readonly processed: Date | null
     public readonly session: InstanceSession
-    public readonly toxicity: Toxicity
+    private _toxicity: Toxicity
+
+    get toxicity(): Toxicity {
+        return this._toxicity;
+    }
+
+    public setToxicity(toxicity: Toxicity): void {
+        this._toxicity = toxicity;
+    }
 
     constructor(
         from: Member,
@@ -41,7 +49,7 @@ export default class ChatMessage {
         this.tagged = tagged;
         this.processed = processed;
         this.session = session;
-        this.toxicity = toxicity;
+        this._toxicity = toxicity;
     }
 
     public static fromObj(community: Community, obj: any): ChatMessage {

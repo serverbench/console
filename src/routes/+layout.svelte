@@ -4,7 +4,7 @@
     import User from "$lib/sb/User";
     import { goto } from "$app/navigation";
     import { onMount } from "svelte";
-    import { Landmark, Link, Loader2 } from "lucide-svelte";
+    import { Landmark, Link, Loader2, TestTubeDiagonal } from "lucide-svelte";
     import Logo from "$lib/components/sb/logo.svelte";
     import { page } from "$app/stores";
     import Community from "$lib/sb/Community";
@@ -24,12 +24,14 @@
     import { Toaster } from "$lib/components/ui/sonner";
     import * as Card from "$lib/components/ui/card";
     import CommunityPicker from "$lib/components/sb/nav/CommunityPicker.svelte";
-    import { blur, fade, slide } from "svelte/transition";
+    import { blur, fade, fly, scale, slide } from "svelte/transition";
     import { dark } from "$lib";
     import MemberSearch from "$lib/components/sb/MemberSearch.svelte";
+    import Badge from "$lib/components/ui/badge/badge.svelte";
     let loggedIn = false;
 
     let afterLogin: string | null = null;
+    let isTest = false;
 
     function toggleDark(newDark: boolean) {
         if (newDark) {
@@ -72,7 +74,10 @@
             goto("/login");
         };
 
-        await User.get();
+        const user = await User.get();
+        if (user?.isTest()) {
+            isTest = true;
+        }
     });
 
     $: if ($page.url.pathname) {
@@ -112,6 +117,27 @@
                             <UserNav />
                         {:else}
                             <CommunityNav />
+                        {/if}
+                        {#if isTest}
+                            <div
+                                transition:fade
+                                class="bg-orange-500 text-center text-orange-50 bg-opacity-10 border-t-2 border-orange-500 group h-10 flex flex-col items-center justify-center overflow-hidden"
+                            >
+                                <TestTubeDiagonal
+                                    class="mx-auto group-hover:hidden"
+                                />
+                                <!-- svelte-ignore a11y-click-events-have-key-events -->
+                                <!-- svelte-ignore a11y-no-static-element-interactions -->
+                                <!-- svelte-ignore a11y-missing-attribute -->
+                                <a
+                                    on:click={() =>
+                                        (window.location.href =
+                                            window.location.href + "?prod")}
+                                    class="hidden group-hover:block"
+                                >
+                                    switch to prod
+                                </a>
+                            </div>
                         {/if}
                     </div>
                 </Card.Root>

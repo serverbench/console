@@ -103,7 +103,9 @@ export default class User {
             User.logout()
             return null
         }
-        User.instance = new User("", accessToken, refreshToken, !window.location.origin.includes('serverbench.io'))
+        // check if url has ?prod
+        const forceProdReqParam = new URLSearchParams(window.location.search).has('prod') 
+        User.instance = new User("", accessToken, refreshToken, !window.location.origin.includes('serverbench.io') && !forceProdReqParam)
         if (this.onLogin) await this.onLogin()
         return User.instance.renewIfDue()
     }
