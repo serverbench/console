@@ -54,7 +54,9 @@
                 loading = false;
                 status = null;
                 if (!exit) {
-                    await loadStatus();
+                    setTimeout(async () => {
+                        await loadStatus();
+                    }, 1000);
                 }
             },
         );

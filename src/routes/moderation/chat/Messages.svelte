@@ -23,6 +23,8 @@
     import type Member from "$lib/sb/member/Member";
     import MemberMessages from "../../community/members/[id]/messages/MemberMessages.svelte";
     import { Progress } from "$lib/components/ui/progress";
+    import NumberFlow from "@number-flow/svelte";
+    import { Motion } from "svelte-motion";
 
     let member: Member | null = null;
 
@@ -33,6 +35,7 @@
         "very high": 75,
         critical: 85,
     };
+
     let cs: ChatStream | null = null;
     onMount(async () => {
         cs = await new ChatStream(
@@ -54,6 +57,10 @@
     let tabView = 4;
     let hiddenInstances: Map<string, boolean> = new Map();
 
+    // Use Set for faster lookups
+    let hiddenInstancesSet = new Set<string>();
+    let transitioning: number | null = null;
+
     let instances: Instance[] = [];
     let connectedDm: boolean | null = null;
     let connectedAll: boolean | null = null;
@@ -71,14 +78,127 @@
     let toxicityLevel = Object.values(toxicityLevels)[1];
     let showToxicOnly = false;
 
+    // Cached filtered messages for each instance
+    let filteredMessagesCache = new Map<string | null, ChatMessage[]>();
+    let lastFilterParams = "";
+
+    // Pre-compute filter parameters hash to detect changes
+    $: filterHash = `${tabView}-${showDm}-${showPublic}-${showToxicOnly}-${toxicityLevel}-${Array.from(hiddenInstancesSet).sort().join(",")}`;
+
+    // Only recalculate filtered messages when filter parameters or messages change
+    $: if (filterHash !== lastFilterParams || messages.length > 0) {
+        lastFilterParams = filterHash;
+        updateFilteredMessages();
+    }
+
+    // Sync hiddenInstances Map with Set for faster lookups
+    $: {
+        hiddenInstancesSet.clear();
+        for (const [id, hidden] of hiddenInstances.entries()) {
+            if (hidden) {
+                hiddenInstancesSet.add(id);
+            }
+        }
+    }
+
+    function updateFilteredMessages() {
+        const messagesToProcess = messages.slice(0, 500);
+        filteredMessagesCache.clear();
+
+        if (tabView <= 1) {
+            // Single view - filter all messages
+            filteredMessagesCache.set(
+                null,
+                messagesToProcess.filter((item) =>
+                    shouldShowOptimized(null, item),
+                ),
+            );
+        } else {
+            // Multi-column view - filter by instance
+            const instanceGroups = new Map<string, ChatMessage[]>();
+
+            // Group messages by instance first
+            for (const message of messagesToProcess) {
+                const instanceId = message.session.instance.id;
+                if (!instanceGroups.has(instanceId)) {
+                    instanceGroups.set(instanceId, []);
+                }
+                instanceGroups.get(instanceId)!.push(message);
+            }
+
+            // Filter each group
+            for (const [
+                instanceId,
+                instanceMessages,
+            ] of instanceGroups.entries()) {
+                if (!hiddenInstancesSet.has(instanceId)) {
+                    filteredMessagesCache.set(
+                        instanceId,
+                        instanceMessages.filter((item) =>
+                            shouldShowOptimized(instanceId, item),
+                        ),
+                    );
+                }
+            }
+        }
+        filteredMessagesCache = filteredMessagesCache;
+    }
+
+    // Optimized filter function with early returns and minimal property access
+    function shouldShowOptimized(
+        instanceId: string | null,
+        message: ChatMessage,
+    ): boolean {
+        // Cache message properties
+        const msgInstanceId = message.session.instance.id;
+        const hasRecipient = message.to !== null;
+
+        // Early return for hidden instances (fastest check)
+        if (hiddenInstancesSet.has(msgInstanceId)) return false;
+
+        // Early return for tab view filtering
+        if (tabView > 1 && msgInstanceId !== instanceId) return false;
+
+        // Early return for DM/Public filtering
+        if (hasRecipient && !showDm) return false;
+        if (!hasRecipient && !showPublic) return false;
+
+        // Toxicity check last (most expensive)
+        if (showToxicOnly && !message.toxicity.isToxic(false, toxicityLevel))
+            return false;
+
+        return true;
+    }
+
+    // Keep original function for compatibility if needed elsewhere
+    function shouldShow(instance: string | null, message: ChatMessage) {
+        return shouldShowOptimized(instance, message);
+    }
+
     function onConnected(dm: boolean | null, all: boolean | null) {
         connectedDm = dm;
         connectedAll = all;
     }
 
-    function onMessages(newMessages: ChatMessage[], toxicity: boolean) {
-        messages = newMessages;
-        if (enabledSounds && !toxicity) {
+    // Debounce message updates to reduce render frequency
+    let messageUpdatePending = false;
+    function onMessages(
+        newMessages: ChatMessage[],
+        toxicity: boolean,
+        historical: boolean,
+    ) {
+        if (!messageUpdatePending) {
+            messageUpdatePending = true;
+            requestAnimationFrame(() => {
+                messages = newMessages;
+                messageUpdatePending = false;
+            });
+        } else {
+            // If update is pending, just store the latest messages
+            messages = newMessages;
+        }
+
+        if (enabledSounds && !toxicity && !historical) {
             play(false);
         }
     }
@@ -146,7 +266,7 @@
         loaded = true;
     }
 
-    function saveSettings() {
+    function saveSettings(cb: () => void) {
         if (!loaded) return;
         localStorage.setItem("chat:tabView", JSON.stringify(tabView));
         localStorage.setItem(
@@ -170,6 +290,14 @@
         );
         loaded = true;
         toast.info("Chat settings saved to local storage");
+        const now = Date.now();
+        transitioning = Date.now();
+        setTimeout(() => {
+            if (transitioning === now) {
+                cb()
+                transitioning = null;
+            }
+        }, 300);
     }
 
     function play(alert = true) {
@@ -206,15 +334,21 @@
 
 <div class="flex flex-row gap-2 items-center">
     <CategoryToggle
-        on:change={() => saveSettings()}
-        bind:show={showDm}
+        on:change={(e) =>
+            saveSettings(() => {
+                showDm = e.detail.show;
+            })}
+        show={showDm}
         connected={connectedDm}
     >
         DMs
     </CategoryToggle>
     <CategoryToggle
-        on:change={() => saveSettings()}
-        bind:show={showPublic}
+        on:change={(e) =>
+            saveSettings(() => {
+                showPublic = e.detail.show;
+            })}
+        show={showPublic}
         connected={connectedAll}
     >
         Public
@@ -233,12 +367,13 @@
                 {#each instances as instance (instance.id)}
                     <DropdownMenu.CheckboxItem
                         on:click={() => {
-                            hiddenInstances.set(
-                                instance.id,
-                                !hiddenInstances.get(instance.id),
-                            );
-                            hiddenInstances = hiddenInstances;
-                            saveSettings();
+                            saveSettings(() => {
+                                hiddenInstances.set(
+                                    instance.id,
+                                    !hiddenInstances.get(instance.id),
+                                );
+                                hiddenInstances = hiddenInstances;
+                            });
                         }}
                         checked={!hiddenInstances.get(instance.id)}
                     >
@@ -253,12 +388,17 @@
                 {#each Array(5) as _, i}
                     <DropdownMenu.RadioItem
                         on:click={() => {
-                            tabView = i + 1;
-                            saveSettings();
+                            saveSettings(() => {
+                                tabView = i + 1;
+                            });
                         }}
                         value={`${i + 1}`}
                     >
-                        {i + 1}-Column View
+                        {#if i == 0}
+                            Combined View
+                        {:else}
+                            {i + 1}-Column View
+                        {/if}
                     </DropdownMenu.RadioItem>
                 {/each}
             </DropdownMenu.RadioGroup>
@@ -269,8 +409,9 @@
                 {#each Object.entries(toxicityLevels) as [name, level]}
                     <DropdownMenu.RadioItem
                         on:click={() => {
-                            toxicityLevel = level;
-                            saveSettings();
+                            saveSettings(() => {
+                                toxicityLevel = level;
+                            });
                         }}
                         value={`${level}`}
                     >
@@ -284,8 +425,9 @@
             <DropdownMenu.RadioGroup value={`${showToxicOnly}`}>
                 <DropdownMenu.RadioItem
                     on:click={() => {
-                        showToxicOnly = false;
-                        saveSettings();
+                        saveSettings(() => {
+                            showToxicOnly = false;
+                        });
                     }}
                     value={`${false}`}
                 >
@@ -293,7 +435,9 @@
                 </DropdownMenu.RadioItem>
                 <DropdownMenu.RadioItem
                     on:click={() => {
-                        showToxicOnly = true;
+                        saveSettings(() => {
+                            showToxicOnly = true;
+                        });
                     }}
                     value={`${true}`}
                 >
@@ -302,7 +446,7 @@
             </DropdownMenu.RadioGroup>
         </DropdownMenu.Content>
     </DropdownMenu.Root>
-    <div class="flex flex-row items-center">
+    <div class="flex flex-row items-center mr-auto">
         <Button
             class="rounded-r-none"
             on:click={() => {
@@ -341,9 +485,10 @@
                         <DropdownMenu.RadioItem
                             value={sound ?? ""}
                             on:click={() => {
-                                alertSound = sound;
                                 play(true);
-                                saveSettings();
+                                saveSettings(() => {
+                                    alertSound = sound;
+                                });
                             }}
                         >
                             {sound ? sound : "None"}
@@ -358,9 +503,10 @@
                         <DropdownMenu.RadioItem
                             value={sound ?? ""}
                             on:click={() => {
-                                newMessageSound = sound;
                                 play(false);
-                                saveSettings();
+                                saveSettings(() => {
+                                    newMessageSound = sound;
+                                });
                             }}
                         >
                             {sound ? sound : "None"}
@@ -371,11 +517,15 @@
         </DropdownMenu.Root>
     </div>
     {#if left != null && left > 0 && oldGoal != null}
-        <div transition:fade class="ml-auto flex flex-row gap-2 items-center">
-            <Progress class="w-20" value={((oldGoal - left) / oldGoal) * 100} />
-            <p class="whitespace-nowrap">
-                {oldGoal-left}/{oldGoal} old messages loaded
+        <div transition:fade class="flex flex-row gap-2 items-center">
+            <p class="whitespace-nowrap mt-1">
+                <NumberFlow
+                    value={oldGoal - left}
+                    trend={50}
+                    plugins={[]}
+                />/{oldGoal}
             </p>
+            <Progress class="w-20" value={((oldGoal - left) / oldGoal) * 100} />
         </div>
     {/if}
 </div>
@@ -389,39 +539,43 @@
     class="grid-cols-1 gap-4"
 >
     {#each tabView > 1 ? instances : [{ id: null, server: { slug: "" }, name: null }] as instance (instance.id)}
-        {#if tabView <= 1 || (tabView > 1 && !hiddenInstances.get(instance.id ?? ""))}
-            <div transition:blur>
-                <Section
-                    name={tabView > 1
-                        ? `${instance.server.slug}-${instance.name ?? "main"}`
-                        : "Chat Messages"}
-                    small
+        {#if !transitioning && (tabView <= 1 || (tabView > 1 && !hiddenInstances.get(instance.id ?? "") && filteredMessagesCache.has(instance.id ?? null) && (filteredMessagesCache.get(instance.id ?? null)?.length ?? 0) > 0))}
+            <div transition:blur={{ duration: 300 }}>
+                <div
+                    transition:scale={{
+                        duration: 200,
+                        start: 0.95,
+                        opacity: 1,
+                    }}
                 >
-                    <div
-                        class="overflow-auto"
-                        class:h-[800px]={tabView <= 1}
-                        class:aspect-square={tabView > 1}
+                    <Section
+                        name={tabView > 1
+                            ? `${instance.server.slug}-${instance.name ?? "main"}`
+                            : "Chat Messages"}
+                        small
                     >
-                        <List hideBorder hideTopBorder>
-                            {#each messages as message (message.id)}
-                                {#if tabView <= 1 || (tabView > 1 && message.session.instance.id == instance.id)}
-                                    {#if !hiddenInstances.get(message.session.instance.id) && ((message.to && showDm) || (message.to == null && showPublic)) && (!showToxicOnly || message.toxicity.isToxic(false, toxicityLevel))}
-                                        <ChatMessageItem
-                                            on:click={() => {
-                                                member = message.from;
-                                            }}
-                                            {toxicityLevel}
-                                            condensed={tabView > 1}
-                                            entireHighlight
-                                            showFrom
-                                            {message}
-                                        />
-                                    {/if}
-                                {/if}
-                            {/each}
-                        </List>
-                    </div>
-                </Section>
+                        <div
+                            class="overflow-auto"
+                            class:h-[800px]={tabView <= 1}
+                            class:aspect-square={tabView > 1}
+                        >
+                            <List hideBorder hideTopBorder>
+                                {#each filteredMessagesCache.get(instance.id) || [] as item (item.id)}
+                                    <ChatMessageItem
+                                        on:click={() => {
+                                            member = item.from;
+                                        }}
+                                        {toxicityLevel}
+                                        condensed={tabView > 1}
+                                        entireHighlight
+                                        showFrom
+                                        message={item}
+                                    />
+                                {/each}
+                            </List>
+                        </div>
+                    </Section>
+                </div>
             </div>
         {/if}
     {/each}

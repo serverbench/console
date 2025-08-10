@@ -16,16 +16,15 @@
     import Section from "$lib/components/sb/section/section.svelte";
     import Input from "$lib/components/ui/input/input.svelte";
     import Label from "$lib/components/ui/label/label.svelte";
-    import Badge from "$lib/components/ui/badge/badge.svelte";
     import * as AlertDialog from "$lib/components/ui/alert-dialog/index.js";
     import Skeleton from "$lib/components/ui/skeleton/skeleton.svelte";
-    import User from "$lib/sb/User";
     import ContainerEdit from "./ContainerEdit.svelte";
     import { sort } from "fast-sort";
     export let server: Server | null = null;
     import * as Popover from "$lib/components/ui/popover/index.js";
     import Empty from "$lib/components/sb/section/empty.svelte";
     let instances: Instance[] = [];
+    let instanceContainers = new Map<string, Container[]>();
     let online = false;
     let preferedContainer: string | null = null;
     onMount(async () => {
@@ -34,10 +33,17 @@
             const preferedInstance = page.url.searchParams.get("instance");
             preferedContainer = page.url.searchParams.get("container");
             server = await Server.get(id);
-            instances = sort(await server.getInstances()).by([
+            let allInstances = await server.getInstances();
+            for (const instance of allInstances) {
+                const containers = await instance.getContainers();
+                instanceContainers.set(instance.id, containers);
+            }
+            instances = sort(allInstances).by([
                 {
                     desc: (i) =>
-                        i.containers.filter((c) => c.deleted == null).length,
+                        (instanceContainers.get(i.id) ?? []).filter(
+                            (c) => c.deleted == null,
+                        ).length,
                 },
             ]);
             if (instances.length > 0) {
@@ -53,11 +59,16 @@
     let containers: Container[] = [];
     let container: Container | null = null;
 
+    function icontainers(instance: Instance | null): Container[] | null {
+        if (!instance) return null;
+        return instanceContainers.get(instance.id) ?? [];
+    }
+
     $: instanceId,
         (() => {
             instance = instances.find((i) => i.id == instanceId) ?? null;
             containers =
-                instance?.containers.filter((c) => c.deleted == null) ?? [];
+                icontainers(instance)?.filter((c) => c.deleted == null) ?? [];
             container =
                 containers.find((c) => c.id == preferedContainer) ??
                 containers[0] ??
@@ -66,7 +77,7 @@
 
     let instanceId: string | null = null;
 
-    $: items = (instance?.containers.map((c) => [c.id, c.label]) ?? []) as [
+    $: items = (icontainers(instance)?.map((c) => [c.id, c.label]) ?? []) as [
         string,
         string,
     ][];
@@ -167,7 +178,7 @@
                 />
             </div>
             {#if instance}
-                {#if !instance.containers || instance.containers.filter((c) => c.deleted == null).length <= 0}
+                {#if (icontainers(instance) ?? []).filter((c) => c.deleted == null).length <= 0}
                     <Button on:click={() => (hosting = true)}>Host Now</Button>
                 {:else}
                     {#key containers}
