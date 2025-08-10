@@ -13,8 +13,10 @@
     import * as Dialog from "$lib/components/ui/dialog/index.js";
     import {
         ArrowRight,
+        BetweenHorizontalStart,
         EllipsisVertical,
         Loader2,
+        MessageCircleWarning,
         Volume2,
         VolumeX,
         Wrench,
@@ -25,15 +27,17 @@
     import { Progress } from "$lib/components/ui/progress";
     import NumberFlow from "@number-flow/svelte";
     import { Motion } from "svelte-motion";
+    import Skeleton from "$lib/components/ui/skeleton/skeleton.svelte";
+    import BarChart from "$lib/components/sb/chart/BarChart.svelte";
 
     let member: Member | null = null;
 
     const toxicityLevels = {
-        low: 30,
-        medium: 45,
-        high: 60,
-        "very high": 75,
-        critical: 85,
+        "very sensitive": 30,
+        regular: 45,
+        "slightly unsensitive": 60,
+        "very unsensitive": 80,
+        "extremely unsensitive": 87,
     };
 
     let cs: ChatStream | null = null;
@@ -71,12 +75,26 @@
     let left: number | null = null;
     let oldGoal: number | null = null;
 
-    let sounds = ["a", "b", "c", "d", "e", "f", "g", "h", "i", "j", null];
+    let sounds = {
+        a: "possitive ding",
+        b: "ping!",
+        c: "downstairs",
+        d: "what happened?!",
+        e: "( ͡° ͜ʖ ͡°)",
+        f: "du-du-du-din!",
+        g: "positive ding-ding",
+        h: "aw :(",
+        i: "nice!",
+        j: "neutral",
+        null: null,
+    };
     let alertSound: string | null = "f";
     let newMessageSound: string | null = null;
     let enabledSounds = false;
     let toxicityLevel = Object.values(toxicityLevels)[1];
     let showToxicOnly = false;
+    let shouldEnableSounds = false;
+    let considerProfanity = false;
 
     // Cached filtered messages for each instance
     let filteredMessagesCache = new Map<string | null, ChatMessage[]>();
@@ -164,15 +182,13 @@
         if (!hasRecipient && !showPublic) return false;
 
         // Toxicity check last (most expensive)
-        if (showToxicOnly && !message.toxicity.isToxic(false, toxicityLevel))
+        if (
+            showToxicOnly &&
+            !message.toxicity.isToxic(considerProfanity, toxicityLevel)
+        )
             return false;
 
         return true;
-    }
-
-    // Keep original function for compatibility if needed elsewhere
-    function shouldShow(instance: string | null, message: ChatMessage) {
-        return shouldShowOptimized(instance, message);
     }
 
     function onConnected(dm: boolean | null, all: boolean | null) {
@@ -186,6 +202,7 @@
         newMessages: ChatMessage[],
         toxicity: boolean,
         historical: boolean,
+        trigger?: ChatMessage,
     ) {
         if (!messageUpdatePending) {
             messageUpdatePending = true;
@@ -199,7 +216,12 @@
         }
 
         if (enabledSounds && !toxicity && !historical) {
-            play(false);
+            if (
+                trigger &&
+                shouldShowOptimized(trigger.session.instance.id, trigger)
+            ) {
+                play(false);
+            }
         }
     }
 
@@ -218,8 +240,13 @@
     }
 
     function onToxicity(msg: ChatMessage) {
-        if (msg.toxicity.isToxic(false, toxicityLevel) && enabledSounds) {
-            play(true);
+        if (
+            msg.toxicity.isToxic(considerProfanity, toxicityLevel) &&
+            enabledSounds
+        ) {
+            if (shouldShowOptimized(msg.session.instance.id, msg)) {
+                play(true);
+            }
         }
     }
 
@@ -263,33 +290,58 @@
         if (savedTabView) {
             toast.success("Chat settings loaded from local storage");
         }
+        const savedEnabledSounds = localStorage.getItem("chat:enabledSounds");
+        if (savedEnabledSounds) {
+            shouldEnableSounds = JSON.parse(savedEnabledSounds);
+        }
+        const savedConsiderProfanity = localStorage.getItem(
+            "chat:considerProfanity",
+        );
+        if (savedConsiderProfanity) {
+            considerProfanity = JSON.parse(savedConsiderProfanity);
+        }
         loaded = true;
     }
 
     function saveSettings(cb: () => void) {
         if (!loaded) return;
-        localStorage.setItem("chat:tabView", JSON.stringify(tabView));
-        localStorage.setItem(
-            "chat:hiddenInstances",
-            JSON.stringify(Array.from(hiddenInstances.entries())),
-        );
-        localStorage.setItem("chat:showPublic", JSON.stringify(showPublic));
-        localStorage.setItem("chat:showDm", JSON.stringify(showDm));
-        localStorage.setItem("chat:alertSound", JSON.stringify(alertSound));
-        localStorage.setItem(
-            "chat:newMessageSound",
-            JSON.stringify(newMessageSound),
-        );
-        localStorage.setItem(
-            "chat:toxicityLevel",
-            JSON.stringify(toxicityLevel),
-        );
-        localStorage.setItem(
-            "chat:showToxicOnly",
-            JSON.stringify(showToxicOnly),
-        );
-        loaded = true;
-        toast.info("Chat settings saved to local storage");
+        transition(() => {
+            cb();
+            localStorage.setItem("chat:tabView", JSON.stringify(tabView));
+            localStorage.setItem(
+                "chat:hiddenInstances",
+                JSON.stringify(Array.from(hiddenInstances.entries())),
+            );
+            localStorage.setItem("chat:showPublic", JSON.stringify(showPublic));
+            localStorage.setItem("chat:showDm", JSON.stringify(showDm));
+            localStorage.setItem("chat:alertSound", JSON.stringify(alertSound));
+            localStorage.setItem(
+                "chat:newMessageSound",
+                JSON.stringify(newMessageSound),
+            );
+            localStorage.setItem(
+                "chat:toxicityLevel",
+                JSON.stringify(toxicityLevel),
+            );
+            localStorage.setItem(
+                "chat:showToxicOnly",
+                JSON.stringify(showToxicOnly),
+            );
+            localStorage.setItem(
+                "chat:enabledSounds",
+                JSON.stringify(enabledSounds),
+            );
+            localStorage.setItem(
+                "chat:considerProfanity",
+                JSON.stringify(considerProfanity),
+            );
+            updateFilteredMessages();
+            loaded = true;
+            toast.info("Chat settings saved to local storage");
+        });
+    }
+
+    function transition(cb: () => void) {
         const now = Date.now();
         transitioning = Date.now();
         setTimeout(() => {
@@ -302,17 +354,70 @@
 
     function play(alert = true) {
         let url: string | null = null;
+
         if (alert && alertSound) {
             url = `https://cdn.serverbench.io/${alertSound}.mp3`;
         } else if (newMessageSound) {
             url = `https://cdn.serverbench.io/${newMessageSound}.mp3`;
         }
+
         if (url) {
             const audio = new Audio(url);
-            audio.play();
+
+            // Prevent any external pause attempt
+            audio.addEventListener("pause", () => {
+                if (!audio.ended) {
+                    audio.play().catch(() => {
+                        /* ignore errors */
+                    });
+                }
+            });
+
+            // Optional: block keyboard media keys from affecting it
+            if ("mediaSession" in navigator) {
+                navigator.mediaSession.setActionHandler("play", () => {});
+                navigator.mediaSession.setActionHandler("pause", () => {});
+            }
+
+            audio.play().catch(() => {
+                /* ignore autoplay errors */
+            });
         }
     }
 </script>
+
+<Dialog.Root bind:open={shouldEnableSounds}>
+    <Dialog.Content>
+        <Dialog.Header>
+            <Dialog.Title>Re-enable notification sounds</Dialog.Title>
+            <Dialog.Description>
+                Due to browser restrictions, you must manually re-enable
+                notification sounds after the first load.
+            </Dialog.Description>
+        </Dialog.Header>
+        <Dialog.Footer>
+            <Button
+                variant="secondary"
+                on:click={() => {
+                    saveSettings(() => {
+                        enabledSounds = false;
+                    });
+                    shouldEnableSounds = false;
+                }}
+            >
+                Cancel
+            </Button>
+            <Button
+                on:click={() => {
+                    play(true);
+                    enabledSounds = true;
+                    shouldEnableSounds = false;
+                }}
+                type="submit">Re-enable</Button
+            >
+        </Dialog.Footer>
+    </Dialog.Content>
+</Dialog.Root>
 
 <Dialog.Root open={member != null}>
     {#if member != null}
@@ -357,7 +462,7 @@
         <DropdownMenu.Trigger asChild let:builder>
             <Button builders={[builder]} variant="secondary">
                 Display Settings
-                <Wrench />
+                <BetweenHorizontalStart />
             </Button>
         </DropdownMenu.Trigger>
         <DropdownMenu.Content class="w-56">
@@ -402,24 +507,16 @@
                     </DropdownMenu.RadioItem>
                 {/each}
             </DropdownMenu.RadioGroup>
-            <DropdownMenu.Separator />
-            <DropdownMenu.Label>Toxicity Flagging</DropdownMenu.Label>
-            <DropdownMenu.Separator />
-            <DropdownMenu.RadioGroup value={`${toxicityLevel}`}>
-                {#each Object.entries(toxicityLevels) as [name, level]}
-                    <DropdownMenu.RadioItem
-                        on:click={() => {
-                            saveSettings(() => {
-                                toxicityLevel = level;
-                            });
-                        }}
-                        value={`${level}`}
-                    >
-                        {name}
-                    </DropdownMenu.RadioItem>
-                {/each}
-            </DropdownMenu.RadioGroup>
-            <DropdownMenu.Separator />
+        </DropdownMenu.Content>
+    </DropdownMenu.Root>
+    <DropdownMenu.Root>
+        <DropdownMenu.Trigger asChild let:builder>
+            <Button builders={[builder]} variant="secondary">
+                Toxicity Filtering
+                <MessageCircleWarning />
+            </Button>
+        </DropdownMenu.Trigger>
+        <DropdownMenu.Content class="w-56">
             <DropdownMenu.Label>Toxicity Filtering</DropdownMenu.Label>
             <DropdownMenu.Separator />
             <DropdownMenu.RadioGroup value={`${showToxicOnly}`}>
@@ -444,6 +541,48 @@
                     Show Only Toxic Messages
                 </DropdownMenu.RadioItem>
             </DropdownMenu.RadioGroup>
+            <DropdownMenu.Separator />
+            <DropdownMenu.Label>Toxicity Flagging</DropdownMenu.Label>
+            <DropdownMenu.Separator />
+            <DropdownMenu.RadioGroup value={`${toxicityLevel}`}>
+                {#each Object.entries(toxicityLevels) as [name, level]}
+                    <DropdownMenu.RadioItem
+                        on:click={() => {
+                            saveSettings(() => {
+                                toxicityLevel = level;
+                            });
+                        }}
+                        value={`${level}`}
+                    >
+                        {name}
+                    </DropdownMenu.RadioItem>
+                {/each}
+            </DropdownMenu.RadioGroup>
+            <DropdownMenu.Separator />
+            <DropdownMenu.Label>Consider Profanity</DropdownMenu.Label>
+            <DropdownMenu.Separator />
+            <DropdownMenu.RadioGroup value={`${considerProfanity}`}>
+                <DropdownMenu.RadioItem
+                    on:click={() => {
+                        saveSettings(() => {
+                            considerProfanity = false;
+                        });
+                    }}
+                    value={`${false}`}
+                >
+                    Ignore Profanity
+                </DropdownMenu.RadioItem>
+                <DropdownMenu.RadioItem
+                    on:click={() => {
+                        saveSettings(() => {
+                            considerProfanity = true;
+                        });
+                    }}
+                    value={`${true}`}
+                >
+                    Consider Profanity
+                </DropdownMenu.RadioItem>
+            </DropdownMenu.RadioGroup>
         </DropdownMenu.Content>
     </DropdownMenu.Root>
     <div class="flex flex-row items-center mr-auto">
@@ -453,7 +592,9 @@
                 if (!enabledSounds) {
                     play();
                 }
-                enabledSounds = !enabledSounds;
+                saveSettings(() => {
+                    enabledSounds = !enabledSounds;
+                });
             }}
             variant="secondary"
         >
@@ -481,17 +622,16 @@
                 <DropdownMenu.Label>Alert Sound</DropdownMenu.Label>
                 <DropdownMenu.Separator />
                 <DropdownMenu.RadioGroup value={alertSound ?? ""}>
-                    {#each sounds.filter((s) => s != null) as sound}
+                    {#each Object.entries(sounds).filter((s) => s[1] != null) as [id, name]}
                         <DropdownMenu.RadioItem
-                            value={sound ?? ""}
+                            value={name ? id : ""}
                             on:click={() => {
+                                alertSound = name ? id : null;
                                 play(true);
-                                saveSettings(() => {
-                                    alertSound = sound;
-                                });
+                                saveSettings(() => {});
                             }}
                         >
-                            {sound ? sound : "None"}
+                            {name ? name : "None"}
                         </DropdownMenu.RadioItem>
                     {/each}
                 </DropdownMenu.RadioGroup>
@@ -499,17 +639,16 @@
                 <DropdownMenu.Label>New Message</DropdownMenu.Label>
                 <DropdownMenu.Separator />
                 <DropdownMenu.RadioGroup value={newMessageSound ?? ""}>
-                    {#each sounds as sound}
+                    {#each Object.entries(sounds) as [id, name]}
                         <DropdownMenu.RadioItem
-                            value={sound ?? ""}
+                            value={name ? id : ""}
                             on:click={() => {
+                                newMessageSound = name ? id : null;
                                 play(false);
-                                saveSettings(() => {
-                                    newMessageSound = sound;
-                                });
+                                saveSettings(() => {});
                             }}
                         >
-                            {sound ? sound : "None"}
+                            {name ? name : "None"}
                         </DropdownMenu.RadioItem>
                     {/each}
                 </DropdownMenu.RadioGroup>
@@ -538,6 +677,33 @@
     class:lg:grid-cols-5={tabView == 5}
     class="grid-cols-1 gap-4"
 >
+    {#each tabView > 1 && instances.length <= 0 ? Array(tabView * 2) : [] as _, i}
+        {#if !transitioning}
+            <div transition:blur={{ duration: 300 }}>
+                <div
+                    transition:scale={{
+                        duration: 200,
+                        start: 0.95,
+                        opacity: 1,
+                    }}
+                >
+                    <Section name="" small>
+                        <div
+                            class="overflow-hidden p-2"
+                            class:h-[800px]={tabView <= 1}
+                            class:aspect-square={tabView > 1}
+                        >
+                            <List hideBorder hideTopBorder>
+                                {#each Array(5) as _, j}
+                                    <Skeleton class="h-24 w-full mb-2" />
+                                {/each}
+                            </List>
+                        </div>
+                    </Section>
+                </div>
+            </div>
+        {/if}
+    {/each}
     {#each tabView > 1 ? instances : [{ id: null, server: { slug: "" }, name: null }] as instance (instance.id)}
         {#if !transitioning && (tabView <= 1 || (tabView > 1 && !hiddenInstances.get(instance.id ?? "") && filteredMessagesCache.has(instance.id ?? null) && (filteredMessagesCache.get(instance.id ?? null)?.length ?? 0) > 0))}
             <div transition:blur={{ duration: 300 }}>
@@ -567,8 +733,9 @@
                                             member = item.from;
                                         }}
                                         {toxicityLevel}
+                                        profanity={considerProfanity}
                                         condensed={tabView > 1}
-                                        entireHighlight
+                                        entireHighlight={!showToxicOnly}
                                         showFrom
                                         message={item}
                                     />
@@ -581,3 +748,10 @@
         {/if}
     {/each}
 </div>
+
+<BarChart
+    name="Messages Sent"
+    minutes={2}
+    filterable={false}
+    provider={() => ChatMessage.getMessageCounts()}
+/>

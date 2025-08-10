@@ -17,7 +17,7 @@
     import { Loader2 } from "lucide-svelte";
     import Badge from "$lib/components/ui/badge/badge.svelte";
     import SimplePicker from "../picker/SimplePicker.svelte";
-    import * as Card from "$lib/components/ui/card"
+    import * as Card from "$lib/components/ui/card";
 
     use([
         BarChart,
@@ -29,6 +29,8 @@
         AriaComponent,
     ]);
 
+    export let filterable = true;
+    export let minutes = 60;
     let range: [Date, Date] | null = null;
     let selectableRange: [any, string][] = [];
 
@@ -36,9 +38,11 @@
     let options: EChartsOption | null = null;
     export let provider: (from: Date, to: Date) => Promise<EChartsOption>;
 
-    async function reload() {
+    async function reload(reset = true) {
         if (!range) return;
-        options = null;
+        if (reset) {
+            options = null;
+        }
         const newOptions = await provider(
             new Date(range[0]),
             new Date(range[1]),
@@ -69,6 +73,21 @@
         ];
         range = selectableRange[0][0];
         await reload();
+        // compute how many minutes left (for example, if minutes its 30 and we are at :25, then we have 5 minutes left, and then we will execute every 30 minutes)
+        const now = new Date();
+        const minutesLeft = minutes - (now.getMinutes() % minutes);
+        setTimeout(
+            async () => {
+                setInterval(
+                    async () => {
+                        await reload(false);
+                    },
+                    minutes * 60 * 1000,
+                );
+                await reload(false);
+            },
+            minutesLeft * 60 * 1000,
+        );
     });
 
     $: range, reload();
@@ -90,14 +109,16 @@
         >
             {name}
         </Card.Root>
-        <div class="grow max-w-44">
-            {#key selectableRange}
-                <SimplePicker
-                    bind:value={range}
-                    name="Range"
-                    items={selectableRange}
-                />
-            {/key}
-        </div>
+        {#if filterable}
+            <div class="grow max-w-44">
+                {#key selectableRange}
+                    <SimplePicker
+                        bind:value={range}
+                        name="Range"
+                        items={selectableRange}
+                    />
+                {/key}
+            </div>
+        {/if}
     </div>
 </Card.Root>

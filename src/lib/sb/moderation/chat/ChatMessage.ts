@@ -4,6 +4,7 @@ import InstanceSession from "$lib/sb/server/InstanceSession";
 import Member from "$lib/sb/member/Member";
 import Community from "$lib/sb/Community";
 import User from "$lib/sb/User";
+import type { EChartsOption } from "echarts";
 
 export default class ChatMessage {
 
@@ -82,6 +83,12 @@ export default class ChatMessage {
             until: until.getTime()
         })
         return data.map((msg: any) => ChatMessage.fromObj(community!, msg));
+    }
+
+    public static async getMessageCounts(): Promise<EChartsOption> {
+        const user = await User.get()
+        const community = await Community.get();
+        return await user!.get(`/community/${community!.id}/chat/count`)
     }
 
 }

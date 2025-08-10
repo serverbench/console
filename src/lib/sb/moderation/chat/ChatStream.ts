@@ -20,7 +20,7 @@ export default class ChatStream {
     private seenMsgs = new Set<string>();
 
     private onConnected: (dm: boolean | null, all: boolean | null) => void;
-    private onMessages: (messages: ChatMessage[], toxicity: boolean, historical: boolean) => void;
+    private onMessages: (messages: ChatMessage[], toxicity: boolean, historical: boolean, trigger?: ChatMessage) => void;
     private instancesUpdate: (instances: Instance[]) => void;
     private onToxicity: (toxicity: ChatMessage) => void;
     private onHistoric: (left: number, og: number) => void;
@@ -33,7 +33,7 @@ export default class ChatStream {
 
     constructor(
         onConnected: (dm: boolean | null, all: boolean | null) => void = () => { },
-        onMessages: (messages: ChatMessage[], toxicity: boolean, historical: boolean) => void = () => { },
+        onMessages: (messages: ChatMessage[], toxicity: boolean, historical: boolean, trigger?: ChatMessage) => void = () => { },
         instancesUpdate: (instances: Instance[]) => void = () => { },
         onToxicity: (toxicity: ChatMessage) => void = () => { },
         onHistoric: (left: number, og: number) => void = () => { }
@@ -253,14 +253,14 @@ export default class ChatStream {
                 if (data.type === "msg") {
                     const msg = ChatMessage.fromObj(community!, data.message);
                     this.processMessage(msg);
-                    this.onMessages(this.messages, false, false);
+                    this.onMessages(this.messages, false, false, msg);
                 } else if (data.type === "toxicity") {
                     const message = this.findRecentMessage(data.parent);
                     if (message) {
                         const tox = Toxicity.fromObj(data.toxicity);
                         message.setToxicity(tox);
                         this.onToxicity(message);
-                        this.onMessages(this.messages, true, false);
+                        this.onMessages(this.messages, true, false, message);
                     }
                 }
             },
