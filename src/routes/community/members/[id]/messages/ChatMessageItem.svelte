@@ -9,7 +9,7 @@
         MessageCircleX,
         Sparkle,
     } from "lucide-svelte";
-    import { createEventDispatcher } from "svelte";
+    import { createEventDispatcher, onMount } from "svelte";
     import Time from "svelte-time/Time.svelte";
     import { blur } from "svelte/transition";
     export let message: ChatMessage,
@@ -17,15 +17,27 @@
         entireHighlight = false,
         condensed = false,
         toxicityLevel: number | undefined = undefined,
+        animateFlash = false,
         showFrom = false;
     const emitter = createEventDispatcher();
+    let flashing = true;
+    onMount(() => {
+        if (animateFlash) {
+            setTimeout(() => {
+                flashing = false;
+            }, 100);
+        }
+    });
 </script>
 
 <Item
     on:click={() => emitter("click")}
-    clazz={message.toxicity.isToxic(profanity, toxicityLevel) && entireHighlight
+    clazz={(message.toxicity.isToxic(profanity, toxicityLevel) &&
+    entireHighlight
         ? "bg-primary bg-opacity-20"
-        : ""}
+        : animateFlash && flashing
+          ? "bg-black dark:bg-white bg-opacity-10 dark:bg-opacity-10"
+          : "") + " duration-1000"}
 >
     <div
         class:flex-col={condensed}

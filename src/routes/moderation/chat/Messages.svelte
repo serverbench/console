@@ -294,7 +294,7 @@
         transitioning = Date.now();
         setTimeout(() => {
             if (transitioning === now) {
-                cb()
+                cb();
                 transitioning = null;
             }
         }, 300);
@@ -562,6 +562,7 @@
                             <List hideBorder hideTopBorder>
                                 {#each filteredMessagesCache.get(instance.id) || [] as item (item.id)}
                                     <ChatMessageItem
+                                        animateFlash
                                         on:click={() => {
                                             member = item.from;
                                         }}
