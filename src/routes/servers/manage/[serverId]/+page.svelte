@@ -34,10 +34,12 @@
             preferedContainer = page.url.searchParams.get("container");
             server = await Server.get(id);
             let allInstances = await server.getInstances();
-            for (const instance of allInstances) {
-                const containers = await instance.getContainers();
-                instanceContainers.set(instance.id, containers);
-            }
+            await Promise.all(
+                allInstances.map(async (instance) => {
+                    const containers = await instance.getContainers();
+                    instanceContainers.set(instance.id, containers);
+                }),
+            );
             instances = sort(allInstances).by([
                 {
                     desc: (i) =>
