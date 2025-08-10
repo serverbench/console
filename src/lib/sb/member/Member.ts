@@ -26,20 +26,27 @@ export default class Member {
     public readonly name: string
     public readonly game: Game
     public readonly community: Community
-    private _firstConnection: Connection | null
 
-    constructor(id: string, created: Date, eid: string, name: string, game: Game, community: Community, firstConnection: Connection | null = null) {
+    constructor(id: string, created: Date, eid: string, name: string, game: Game, community: Community) {
         this.id = id
         this.created = created
         this.eid = eid
         this.name = name
         this.game = game
         this.community = community
-        this._firstConnection = firstConnection
     }
 
-    public get firstConnection() {
-        return this._firstConnection
+    public toObj() {
+        return {
+            id: this.id,
+            created: this.created.getTime(),
+            eid: this.eid,
+            name: this.name,
+            game: {
+                slug: this.game.slug
+            },
+            community: this.community.toObj(),
+        }
     }
 
     public static async import(file: File) {
@@ -57,9 +64,6 @@ export default class Member {
             Game.fromObj(obj.game),
             community
         )
-        if (obj.firstConnection) {
-            member._firstConnection = Connection.fromObj(obj.firstConnection, member)
-        }
         return member
     }
 

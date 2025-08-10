@@ -14,6 +14,14 @@ export default class Server {
         this.instanceCount = instanceCount
     }
 
+    public toObj() {
+        return {
+            id: this.id,
+            slug: this.slug,
+            instanceCount: this.instanceCount
+        }
+    }
+
     public static fromObj(obj: any) {
         return new Server(
             obj.id,

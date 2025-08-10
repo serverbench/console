@@ -2,7 +2,7 @@
     import { Chart } from "svelte-echarts";
     import { init, use } from "echarts/core";
     import type { EChartsOption } from "echarts";
-    import { BarChart } from "echarts/charts";
+    import { BarChart, LineChart } from "echarts/charts";
     import wonderland from "./wonderland.project.json"; // Ensure this is a valid JSON theme
     import {
         GridComponent,
@@ -21,6 +21,7 @@
 
     use([
         BarChart,
+        LineChart,
         GridComponent,
         CanvasRenderer,
         TitleComponent,
@@ -32,7 +33,7 @@
     export let filterable = true;
     export let minutes = 60;
     let range: [Date, Date] | null = null;
-    let selectableRange: [any, string][] = [];
+    export let selectableRange: [any, string][] = [];
 
     export let name: string;
     let options: EChartsOption | null = null;
@@ -50,27 +51,40 @@
         newOptions.animationDuration = 400;
         newOptions.animationEasing = "circularOut";
         options = newOptions;
+        // remove x padding
+        options.grid = {
+            left: 0,
+            right: 0,
+            bottom: 0,
+            containLabel: true, // makes sure labels still show
+        };
     }
 
     onMount(async () => {
-        selectableRange = [
-            [[moment().startOf("month").toDate(), new Date()], "This Month"],
-            [[moment().startOf("year").toDate(), new Date()], "This Year"],
-            [
+        if (selectableRange.length <= 0) {
+            selectableRange = [
                 [
-                    moment().subtract(1, "month").startOf("month").toDate(),
-                    moment().subtract(1, "month").endOf("month").toDate(),
+                    [moment().startOf("month").toDate(), new Date()],
+                    "This Month",
                 ],
-                "Last Month",
-            ],
-            [
+                [[moment().startOf("year").toDate(), new Date()], "This Year"],
                 [
-                    moment().subtract(1, "year").startOf("year").toDate(),
-                    moment().subtract(1, "year").endOf("year").toDate(),
+                    [
+                        moment().subtract(1, "month").startOf("month").toDate(),
+                        moment().subtract(1, "month").endOf("month").toDate(),
+                    ],
+                    "Last Month",
                 ],
-                "Last Year",
-            ],
-        ];
+                [
+                    [
+                        moment().subtract(1, "year").startOf("year").toDate(),
+                        moment().subtract(1, "year").endOf("year").toDate(),
+                    ],
+                    "Last Year",
+                ],
+            ];
+        }
+        selectableRange = selectableRange
         range = selectableRange[0][0];
         await reload();
         // compute how many minutes left (for example, if minutes its 30 and we are at :25, then we have 5 minutes left, and then we will execute every 30 minutes)
@@ -95,7 +109,7 @@
 
 <Card.Root class="border h-96 relative">
     {#if options}
-        <div class="pt-7 h-full">
+        <div class="pt-4 pb-4 h-full px-7">
             <Chart {init} {options} />
         </div>
     {:else}

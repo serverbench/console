@@ -12,6 +12,14 @@ export default class Community {
     private static listed: Community[] = []
     public static onSelected: (community: Community | null, communities: Community[]) => void = () => { }
 
+    public toObj() {
+        return {
+            id: this.id,
+            name: this.name,
+            slug: this.slug
+        }
+    }
+
     public static async get(): Promise<Community | null> {
         if (Community.selected) return Community.selected
         const saved = localStorage.getItem('community')
@@ -104,7 +112,7 @@ export default class Community {
         return (await User.get())!.get(`/community/${this.id}/keys`)
     }
 
-    public async getActivityClock(member:Member|null=null): Promise<number[][]> {
+    public async getActivityClock(member: Member | null = null): Promise<number[][]> {
         return (await User.get())!.post(`/community/${this.id}/activity/clock`, {
             memberId: member ? member.id : null
         })

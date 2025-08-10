@@ -27,4 +27,13 @@ export default class InstanceSession {
             obj.closed ? new Date(obj.closed) : null
         )
     }
+
+    public toObj() {
+        return {
+            id: this.id,
+            created: this.created.getTime(),
+            closed: this.closed ? this.closed.getTime() : null,
+            instance: this.instance.toObj()
+        }
+    }
 }

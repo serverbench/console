@@ -17,6 +17,14 @@ export default class Instance {
         this.name = name
     }
 
+    public toObj() {
+        return {
+            id: this.id,
+            name: this.name,
+            server: this.server.toObj()
+        }
+    }
+
     public async getContainers(): Promise<Container[]> {
         const user = await User.get()
         const community = await Community.get()

@@ -3,7 +3,7 @@
     import Section from "$lib/components/sb/section/section.svelte";
     import ChatMessage from "$lib/sb/moderation/chat/ChatMessage";
     import ChatStream from "$lib/sb/moderation/chat/ChatStream";
-    import { onDestroy, onMount } from "svelte";
+    import { onDestroy, onMount, tick } from "svelte";
     import { blur, fade, scale } from "svelte/transition";
     import ChatMessageItem from "../../community/members/[id]/messages/ChatMessageItem.svelte";
     import type Instance from "$lib/sb/server/Instance";
@@ -29,6 +29,8 @@
     import { Motion } from "svelte-motion";
     import Skeleton from "$lib/components/ui/skeleton/skeleton.svelte";
     import BarChart from "$lib/components/sb/chart/BarChart.svelte";
+    import { CheckboxItem } from "$lib/components/ui/context-menu";
+    import Community from "$lib/sb/Community";
 
     let member: Member | null = null;
 
@@ -42,12 +44,14 @@
 
     let cs: ChatStream | null = null;
     onMount(async () => {
+        const community = await Community.get();
         cs = await new ChatStream(
             onConnected,
             onMessages,
             onInstances,
             onToxicity,
             onHistoric,
+            community!,
         ).stream();
         setTimeout(() => {
             loadSettings();
@@ -74,6 +78,7 @@
     let showDm = true;
     let left: number | null = null;
     let oldGoal: number | null = null;
+    let showChart = true;
 
     let sounds = {
         a: "possitive ding",
@@ -300,54 +305,83 @@
         if (savedConsiderProfanity) {
             considerProfanity = JSON.parse(savedConsiderProfanity);
         }
+        const savedShowChart = localStorage.getItem("chat:showChart");
+        if (savedShowChart) {
+            showChart = JSON.parse(savedShowChart);
+        }
         loaded = true;
     }
 
-    function saveSettings(cb: () => void) {
+    function saveSettings(cb: () => void, options = false) {
         if (!loaded) return;
-        transition(() => {
-            cb();
-            localStorage.setItem("chat:tabView", JSON.stringify(tabView));
-            localStorage.setItem(
-                "chat:hiddenInstances",
-                JSON.stringify(Array.from(hiddenInstances.entries())),
-            );
-            localStorage.setItem("chat:showPublic", JSON.stringify(showPublic));
-            localStorage.setItem("chat:showDm", JSON.stringify(showDm));
-            localStorage.setItem("chat:alertSound", JSON.stringify(alertSound));
-            localStorage.setItem(
-                "chat:newMessageSound",
-                JSON.stringify(newMessageSound),
-            );
-            localStorage.setItem(
-                "chat:toxicityLevel",
-                JSON.stringify(toxicityLevel),
-            );
-            localStorage.setItem(
-                "chat:showToxicOnly",
-                JSON.stringify(showToxicOnly),
-            );
-            localStorage.setItem(
-                "chat:enabledSounds",
-                JSON.stringify(enabledSounds),
-            );
-            localStorage.setItem(
-                "chat:considerProfanity",
-                JSON.stringify(considerProfanity),
-            );
-            updateFilteredMessages();
-            loaded = true;
-            toast.info("Chat settings saved to local storage");
-        });
+        setTimeout(() => {
+            tick().then(() => {
+                transition(() => {
+                    cb();
+                    localStorage.setItem(
+                        "chat:tabView",
+                        JSON.stringify(tabView),
+                    );
+                    localStorage.setItem(
+                        "chat:hiddenInstances",
+                        JSON.stringify(Array.from(hiddenInstances.entries())),
+                    );
+                    localStorage.setItem(
+                        "chat:showPublic",
+                        JSON.stringify(showPublic),
+                    );
+                    localStorage.setItem("chat:showDm", JSON.stringify(showDm));
+                    localStorage.setItem(
+                        "chat:alertSound",
+                        JSON.stringify(alertSound),
+                    );
+                    localStorage.setItem(
+                        "chat:newMessageSound",
+                        JSON.stringify(newMessageSound),
+                    );
+                    localStorage.setItem(
+                        "chat:toxicityLevel",
+                        JSON.stringify(toxicityLevel),
+                    );
+                    localStorage.setItem(
+                        "chat:showToxicOnly",
+                        JSON.stringify(showToxicOnly),
+                    );
+                    localStorage.setItem(
+                        "chat:enabledSounds",
+                        JSON.stringify(enabledSounds),
+                    );
+                    localStorage.setItem(
+                        "chat:considerProfanity",
+                        JSON.stringify(considerProfanity),
+                    );
+                    localStorage.setItem(
+                        "chat:showChart",
+                        JSON.stringify(showChart),
+                    );
+                    updateFilteredMessages();
+                    loaded = true;
+                    toast.info("Chat settings saved to local storage");
+                }, options);
+            });
+        }, 10);
     }
 
-    function transition(cb: () => void) {
+    let transitioningOptions: number | null = null;
+
+    function transition(cb: () => void, options = false) {
         const now = Date.now();
         transitioning = Date.now();
+        if (options) {
+            transitioningOptions = now;
+        }
         setTimeout(() => {
             if (transitioning === now) {
                 cb();
                 transitioning = null;
+                if (options && transitioningOptions === now) {
+                    transitioningOptions = null;
+                }
             }
         }, 300);
     }
@@ -383,6 +417,36 @@
                 /* ignore autoplay errors */
             });
         }
+    }
+
+    async function customProvider(from: Date, _: Date) {
+        const counts = await ChatMessage.getMessageCounts();
+        const seriesArray = Array.isArray(counts.series)
+            ? counts.series
+            : counts.series
+              ? [counts.series]
+              : [];
+        for (const serie of seriesArray) {
+            // Filter serie.data by timestamp range
+            if (Array.isArray(serie.data)) {
+                serie.data = (serie.data as [number, ...unknown[]][]).filter(
+                    (item) => item[0] >= from.getTime(),
+                );
+            }
+            serie.type = "line";
+            if (serie.type === "line") {
+                // Only line series support showSymbol
+                (serie as any).showSymbol = false;
+            }
+            // smooth
+            (serie as any).smooth = true;
+            // fill (area chart) (gradient opacity)
+            (serie as any).areaStyle = {
+                opacity: 0.9,
+            };
+        }
+        // Example EChartsOption, adjust as needed for your data
+        return counts;
     }
 </script>
 
@@ -437,237 +501,284 @@
     {/if}
 </Dialog.Root>
 
-<div class="flex flex-row gap-2 items-center">
-    <CategoryToggle
-        on:change={(e) =>
-            saveSettings(() => {
-                showDm = e.detail.show;
-            })}
-        show={showDm}
-        connected={connectedDm}
+{#if showChart && !transitioningOptions}
+    <div transition:blur>
+        <BarChart
+            name="Messages Sent"
+            minutes={15}
+            selectableRange={[
+                [
+                    [new Date(Date.now() - 24 * 60 * 60 * 1000), new Date()],
+                    "Last Day",
+                ],
+                [
+                    [new Date(Date.now() - 60 * 60 * 1000 * 12), new Date()],
+                    "Last 6 Hours",
+                ],
+                [
+                    [new Date(Date.now() - 60 * 60 * 1000), new Date()],
+                    "Last Hour",
+                ],
+            ]}
+            provider={customProvider}
+        />
+    </div>
+{/if}
+
+{#if !transitioningOptions}
+    <div
+        transition:blur={{ duration: 300 }}
+        class="flex flex-row gap-2 items-center"
     >
-        DMs
-    </CategoryToggle>
-    <CategoryToggle
-        on:change={(e) =>
-            saveSettings(() => {
-                showPublic = e.detail.show;
-            })}
-        show={showPublic}
-        connected={connectedAll}
-    >
-        Public
-    </CategoryToggle>
-    <DropdownMenu.Root>
-        <DropdownMenu.Trigger asChild let:builder>
-            <Button builders={[builder]} variant="secondary">
-                Display Settings
-                <BetweenHorizontalStart />
-            </Button>
-        </DropdownMenu.Trigger>
-        <DropdownMenu.Content class="w-56">
-            <DropdownMenu.Label>Instances</DropdownMenu.Label>
-            <DropdownMenu.Separator />
-            <DropdownMenu.Group>
-                {#each instances as instance (instance.id)}
-                    <DropdownMenu.CheckboxItem
-                        on:click={() => {
-                            saveSettings(() => {
-                                hiddenInstances.set(
-                                    instance.id,
-                                    !hiddenInstances.get(instance.id),
-                                );
-                                hiddenInstances = hiddenInstances;
-                            });
-                        }}
-                        checked={!hiddenInstances.get(instance.id)}
-                    >
-                        {instance.server.slug}-{instance.name ?? "main"}
-                    </DropdownMenu.CheckboxItem>
-                {/each}
-            </DropdownMenu.Group>
-            <DropdownMenu.Separator />
-            <DropdownMenu.Label>Display</DropdownMenu.Label>
-            <DropdownMenu.Separator />
-            <DropdownMenu.RadioGroup value={`${tabView}`}>
-                {#each Array(5) as _, i}
-                    <DropdownMenu.RadioItem
-                        on:click={() => {
-                            saveSettings(() => {
-                                tabView = i + 1;
-                            });
-                        }}
-                        value={`${i + 1}`}
-                    >
-                        {#if i == 0}
-                            Combined View
-                        {:else}
-                            {i + 1}-Column View
-                        {/if}
-                    </DropdownMenu.RadioItem>
-                {/each}
-            </DropdownMenu.RadioGroup>
-        </DropdownMenu.Content>
-    </DropdownMenu.Root>
-    <DropdownMenu.Root>
-        <DropdownMenu.Trigger asChild let:builder>
-            <Button builders={[builder]} variant="secondary">
-                Toxicity Filtering
-                <MessageCircleWarning />
-            </Button>
-        </DropdownMenu.Trigger>
-        <DropdownMenu.Content class="w-56">
-            <DropdownMenu.Label>Toxicity Filtering</DropdownMenu.Label>
-            <DropdownMenu.Separator />
-            <DropdownMenu.RadioGroup value={`${showToxicOnly}`}>
-                <DropdownMenu.RadioItem
-                    on:click={() => {
-                        saveSettings(() => {
-                            showToxicOnly = false;
-                        });
-                    }}
-                    value={`${false}`}
-                >
-                    Show All Messages
-                </DropdownMenu.RadioItem>
-                <DropdownMenu.RadioItem
-                    on:click={() => {
-                        saveSettings(() => {
-                            showToxicOnly = true;
-                        });
-                    }}
-                    value={`${true}`}
-                >
-                    Show Only Toxic Messages
-                </DropdownMenu.RadioItem>
-            </DropdownMenu.RadioGroup>
-            <DropdownMenu.Separator />
-            <DropdownMenu.Label>Toxicity Flagging</DropdownMenu.Label>
-            <DropdownMenu.Separator />
-            <DropdownMenu.RadioGroup value={`${toxicityLevel}`}>
-                {#each Object.entries(toxicityLevels) as [name, level]}
-                    <DropdownMenu.RadioItem
-                        on:click={() => {
-                            saveSettings(() => {
-                                toxicityLevel = level;
-                            });
-                        }}
-                        value={`${level}`}
-                    >
-                        {name}
-                    </DropdownMenu.RadioItem>
-                {/each}
-            </DropdownMenu.RadioGroup>
-            <DropdownMenu.Separator />
-            <DropdownMenu.Label>Consider Profanity</DropdownMenu.Label>
-            <DropdownMenu.Separator />
-            <DropdownMenu.RadioGroup value={`${considerProfanity}`}>
-                <DropdownMenu.RadioItem
-                    on:click={() => {
-                        saveSettings(() => {
-                            considerProfanity = false;
-                        });
-                    }}
-                    value={`${false}`}
-                >
-                    Ignore Profanity
-                </DropdownMenu.RadioItem>
-                <DropdownMenu.RadioItem
-                    on:click={() => {
-                        saveSettings(() => {
-                            considerProfanity = true;
-                        });
-                    }}
-                    value={`${true}`}
-                >
-                    Consider Profanity
-                </DropdownMenu.RadioItem>
-            </DropdownMenu.RadioGroup>
-        </DropdownMenu.Content>
-    </DropdownMenu.Root>
-    <div class="flex flex-row items-center mr-auto">
-        <Button
-            class="rounded-r-none"
-            on:click={() => {
-                if (!enabledSounds) {
-                    play();
-                }
+        <CategoryToggle
+            on:change={(e) =>
                 saveSettings(() => {
-                    enabledSounds = !enabledSounds;
-                });
-            }}
-            variant="secondary"
+                    showDm = e.detail.show;
+                })}
+            show={showDm}
+            connected={connectedDm}
         >
-            {#if !enabledSounds}
-                Enable Notification Sounds
-                <Volume2 />
-            {:else}
-                Disable Notification Sounds
-                <VolumeX />
-            {/if}
-        </Button>
+            DMs
+        </CategoryToggle>
+        <CategoryToggle
+            on:change={(e) =>
+                saveSettings(() => {
+                    showPublic = e.detail.show;
+                })}
+            show={showPublic}
+            connected={connectedAll}
+        >
+            Public
+        </CategoryToggle>
         <DropdownMenu.Root>
             <DropdownMenu.Trigger asChild let:builder>
-                <Button
-                    disabled={!enabledSounds}
-                    size="icon"
-                    class="rounded-l-none"
-                    builders={[builder]}
-                    variant="outline"
-                >
-                    <EllipsisVertical />
+                <Button builders={[builder]} variant="secondary">
+                    Display Settings
+                    <BetweenHorizontalStart />
                 </Button>
             </DropdownMenu.Trigger>
             <DropdownMenu.Content class="w-56">
-                <DropdownMenu.Label>Alert Sound</DropdownMenu.Label>
+                <DropdownMenu.Label>Instances</DropdownMenu.Label>
                 <DropdownMenu.Separator />
-                <DropdownMenu.RadioGroup value={alertSound ?? ""}>
-                    {#each Object.entries(sounds).filter((s) => s[1] != null) as [id, name]}
-                        <DropdownMenu.RadioItem
-                            value={name ? id : ""}
+                <DropdownMenu.Group>
+                    {#each instances as instance (instance.id)}
+                        <DropdownMenu.CheckboxItem
                             on:click={() => {
-                                alertSound = name ? id : null;
-                                play(true);
-                                saveSettings(() => {});
+                                saveSettings(() => {
+                                    hiddenInstances.set(
+                                        instance.id,
+                                        !hiddenInstances.get(instance.id),
+                                    );
+                                    hiddenInstances = hiddenInstances;
+                                });
                             }}
+                            checked={!hiddenInstances.get(instance.id)}
                         >
-                            {name ? name : "None"}
+                            {instance.server.slug}-{instance.name ?? "main"}
+                        </DropdownMenu.CheckboxItem>
+                    {/each}
+                </DropdownMenu.Group>
+                <DropdownMenu.Separator />
+                <DropdownMenu.Label>Display</DropdownMenu.Label>
+                <DropdownMenu.Separator />
+                <DropdownMenu.RadioGroup value={`${tabView}`}>
+                    {#each Array(5) as _, i}
+                        <DropdownMenu.RadioItem
+                            on:click={() => {
+                                saveSettings(() => {
+                                    tabView = i + 1;
+                                });
+                            }}
+                            value={`${i + 1}`}
+                        >
+                            {#if i == 0}
+                                Combined View
+                            {:else}
+                                {i + 1}-Column View
+                            {/if}
                         </DropdownMenu.RadioItem>
                     {/each}
                 </DropdownMenu.RadioGroup>
                 <DropdownMenu.Separator />
-                <DropdownMenu.Label>New Message</DropdownMenu.Label>
+                <DropdownMenu.Label>Show Chart</DropdownMenu.Label>
                 <DropdownMenu.Separator />
-                <DropdownMenu.RadioGroup value={newMessageSound ?? ""}>
-                    {#each Object.entries(sounds) as [id, name]}
-                        <DropdownMenu.RadioItem
-                            value={name ? id : ""}
-                            on:click={() => {
-                                newMessageSound = name ? id : null;
-                                play(false);
-                                saveSettings(() => {});
-                            }}
-                        >
-                            {name ? name : "None"}
-                        </DropdownMenu.RadioItem>
-                    {/each}
+                <DropdownMenu.RadioGroup>
+                    <DropdownMenu.CheckboxItem
+                        on:click={() => {
+                            saveSettings(() => {
+                                showChart = !showChart;
+                            }, true);
+                        }}
+                        checked={showChart}
+                    >
+                        Show Chart
+                    </DropdownMenu.CheckboxItem>
                 </DropdownMenu.RadioGroup>
             </DropdownMenu.Content>
         </DropdownMenu.Root>
-    </div>
-    {#if left != null && left > 0 && oldGoal != null}
-        <div transition:fade class="flex flex-row gap-2 items-center">
-            <p class="whitespace-nowrap mt-1">
-                <NumberFlow
-                    value={oldGoal - left}
-                    trend={50}
-                    plugins={[]}
-                />/{oldGoal}
-            </p>
-            <Progress class="w-20" value={((oldGoal - left) / oldGoal) * 100} />
+        <DropdownMenu.Root>
+            <DropdownMenu.Trigger asChild let:builder>
+                <Button builders={[builder]} variant="secondary">
+                    Toxicity Filtering
+                    <MessageCircleWarning />
+                </Button>
+            </DropdownMenu.Trigger>
+            <DropdownMenu.Content class="w-56">
+                <DropdownMenu.Label>Toxicity Filtering</DropdownMenu.Label>
+                <DropdownMenu.Separator />
+                <DropdownMenu.RadioGroup value={`${showToxicOnly}`}>
+                    <DropdownMenu.RadioItem
+                        on:click={() => {
+                            saveSettings(() => {
+                                showToxicOnly = false;
+                            });
+                        }}
+                        value={`${false}`}
+                    >
+                        Show All Messages
+                    </DropdownMenu.RadioItem>
+                    <DropdownMenu.RadioItem
+                        on:click={() => {
+                            saveSettings(() => {
+                                showToxicOnly = true;
+                            });
+                        }}
+                        value={`${true}`}
+                    >
+                        Show Only Toxic Messages
+                    </DropdownMenu.RadioItem>
+                </DropdownMenu.RadioGroup>
+                <DropdownMenu.Separator />
+                <DropdownMenu.Label>Toxicity Flagging</DropdownMenu.Label>
+                <DropdownMenu.Separator />
+                <DropdownMenu.RadioGroup value={`${toxicityLevel}`}>
+                    {#each Object.entries(toxicityLevels) as [name, level]}
+                        <DropdownMenu.RadioItem
+                            on:click={() => {
+                                saveSettings(() => {
+                                    toxicityLevel = level;
+                                });
+                            }}
+                            value={`${level}`}
+                        >
+                            {name}
+                        </DropdownMenu.RadioItem>
+                    {/each}
+                </DropdownMenu.RadioGroup>
+                <DropdownMenu.Separator />
+                <DropdownMenu.Label>Consider Profanity</DropdownMenu.Label>
+                <DropdownMenu.Separator />
+                <DropdownMenu.RadioGroup value={`${considerProfanity}`}>
+                    <DropdownMenu.RadioItem
+                        on:click={() => {
+                            saveSettings(() => {
+                                considerProfanity = false;
+                            });
+                        }}
+                        value={`${false}`}
+                    >
+                        Ignore Profanity
+                    </DropdownMenu.RadioItem>
+                    <DropdownMenu.RadioItem
+                        on:click={() => {
+                            saveSettings(() => {
+                                considerProfanity = true;
+                            });
+                        }}
+                        value={`${true}`}
+                    >
+                        Consider Profanity
+                    </DropdownMenu.RadioItem>
+                </DropdownMenu.RadioGroup>
+            </DropdownMenu.Content>
+        </DropdownMenu.Root>
+        <div class="flex flex-row items-center mr-auto">
+            <Button
+                class="rounded-r-none"
+                on:click={() => {
+                    if (!enabledSounds) {
+                        play();
+                    }
+                    saveSettings(() => {
+                        enabledSounds = !enabledSounds;
+                    });
+                }}
+                variant="secondary"
+            >
+                {#if !enabledSounds}
+                    Enable Notification Sounds
+                    <Volume2 />
+                {:else}
+                    Disable Notification Sounds
+                    <VolumeX />
+                {/if}
+            </Button>
+            <DropdownMenu.Root>
+                <DropdownMenu.Trigger asChild let:builder>
+                    <Button
+                        disabled={!enabledSounds}
+                        size="icon"
+                        class="rounded-l-none"
+                        builders={[builder]}
+                        variant="outline"
+                    >
+                        <EllipsisVertical />
+                    </Button>
+                </DropdownMenu.Trigger>
+                <DropdownMenu.Content class="w-56">
+                    <DropdownMenu.Label>Alert Sound</DropdownMenu.Label>
+                    <DropdownMenu.Separator />
+                    <DropdownMenu.RadioGroup value={alertSound ?? ""}>
+                        {#each Object.entries(sounds).filter((s) => s[1] != null) as [id, name]}
+                            <DropdownMenu.RadioItem
+                                value={name ? id : ""}
+                                on:click={() => {
+                                    alertSound = name ? id : null;
+                                    play(true);
+                                    saveSettings(() => {});
+                                }}
+                            >
+                                {name ? name : "None"}
+                            </DropdownMenu.RadioItem>
+                        {/each}
+                    </DropdownMenu.RadioGroup>
+                    <DropdownMenu.Separator />
+                    <DropdownMenu.Label>New Message</DropdownMenu.Label>
+                    <DropdownMenu.Separator />
+                    <DropdownMenu.RadioGroup value={newMessageSound ?? ""}>
+                        {#each Object.entries(sounds) as [id, name]}
+                            <DropdownMenu.RadioItem
+                                value={name ? id : ""}
+                                on:click={() => {
+                                    newMessageSound = name ? id : null;
+                                    play(false);
+                                    saveSettings(() => {});
+                                }}
+                            >
+                                {name ? name : "None"}
+                            </DropdownMenu.RadioItem>
+                        {/each}
+                    </DropdownMenu.RadioGroup>
+                </DropdownMenu.Content>
+            </DropdownMenu.Root>
         </div>
-    {/if}
-</div>
+        {#if left != null && left > 0 && oldGoal != null}
+            <div transition:fade class="flex flex-row gap-2 items-center">
+                <p class="whitespace-nowrap mt-1">
+                    <NumberFlow
+                        value={oldGoal - left}
+                        trend={50}
+                        plugins={[]}
+                    />/{oldGoal}
+                </p>
+                <Progress
+                    class="w-20"
+                    value={((oldGoal - left) / oldGoal) * 100}
+                />
+            </div>
+        {/if}
+    </div>
+{/if}
 
 <div
     class:grid={tabView > 1}
@@ -748,10 +859,3 @@
         {/if}
     {/each}
 </div>
-
-<BarChart
-    name="Messages Sent"
-    minutes={2}
-    filterable={false}
-    provider={() => ChatMessage.getMessageCounts()}
-/>

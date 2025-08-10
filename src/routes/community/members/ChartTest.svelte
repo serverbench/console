@@ -281,10 +281,17 @@
 
     function computeOptions() {
         if (!compare) {
-            return getRegularOptions();
+            getRegularOptions();
         } else {
-            return getComparedOptions();
+            getComparedOptions();
         }
+        options.grid = {
+            left: 10,
+            right: 10,
+            bottom: 10,
+            containLabel: true,
+        };
+        return options;
     }
 
     let chart: EChartsType;
@@ -413,7 +420,7 @@
                 <Loader2 class="animate-spin" />
             </div>
         {/if}
-        <div class="h-full w-full transition" class:opacity-0={firstLoad}>
+        <div class="h-full w-full transition px-5 pb-5 pt-3" class:opacity-0={firstLoad}>
             <Chart
                 bind:chart
                 {init}

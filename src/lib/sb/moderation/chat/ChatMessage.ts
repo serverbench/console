@@ -76,6 +76,22 @@ export default class ChatMessage {
         )
     }
 
+    public toObj(): any {
+        return {
+            from: this.from.toObj(),
+            message: this.message,
+            created: this.created.getTime(),
+            id: this.id,
+            channel: this.channel,
+            to: this.to ? this.to.toObj() : null,
+            languages: this.languages,
+            tagged: this.tagged,
+            processed: this.processed ? this.processed.getTime() : null,
+            session: this.session.toObj(),
+            toxicity: this.toxicity
+        }
+    }
+
     public static async list(dm: boolean, until: Date = new Date()): Promise<ChatMessage[]> {
         const user = await User.get();
         const community = await Community.get();
