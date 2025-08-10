@@ -1,6 +1,6 @@
 <script lang="ts">
     import Button from "$lib/components/ui/button/button.svelte";
-    import { Check, Cross, Loader2, Pause } from "lucide-svelte";
+    import { Check, Cross, Loader2, Pause, X } from "lucide-svelte";
     import { createEventDispatcher } from "svelte";
     export let show: boolean, connected: boolean | null;
     const dispatch = createEventDispatcher();
@@ -29,6 +29,6 @@
             <Pause />
         {/if}
     {:else}
-        <Cross />
+        <X />
     {/if}
 </Button>

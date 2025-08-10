@@ -4,7 +4,7 @@
     import ChatMessage from "$lib/sb/moderation/chat/ChatMessage";
     import ChatStream from "$lib/sb/moderation/chat/ChatStream";
     import { onDestroy, onMount } from "svelte";
-    import { blur, scale } from "svelte/transition";
+    import { blur, fade, scale } from "svelte/transition";
     import ChatMessageItem from "../../community/members/[id]/messages/ChatMessageItem.svelte";
     import type Instance from "$lib/sb/server/Instance";
     import Button from "$lib/components/ui/button/button.svelte";
@@ -14,15 +14,15 @@
     import {
         ArrowRight,
         EllipsisVertical,
+        Loader2,
         Volume2,
         VolumeX,
         Wrench,
     } from "lucide-svelte";
     import { toast } from "svelte-sonner";
     import type Member from "$lib/sb/member/Member";
-    import MemberDetails from "../../community/members/[id]/MemberDetails.svelte";
     import MemberMessages from "../../community/members/[id]/messages/MemberMessages.svelte";
-    import { navigating } from "$app/state";
+    import { Progress } from "$lib/components/ui/progress";
 
     let member: Member | null = null;
 
@@ -40,6 +40,7 @@
             onMessages,
             onInstances,
             onToxicity,
+            onHistoric,
         ).stream();
         setTimeout(() => {
             loadSettings();
@@ -60,6 +61,8 @@
     let loaded = false;
     let showPublic = true;
     let showDm = true;
+    let left: number | null = null;
+    let oldGoal: number | null = null;
 
     let sounds = ["a", "b", "c", "d", "e", "f", "g", "h", "i", "j", null];
     let alertSound: string | null = "f";
@@ -78,6 +81,11 @@
         if (enabledSounds && !toxicity) {
             play(false);
         }
+    }
+
+    function onHistoric(newLeft: number, og: number) {
+        left = newLeft;
+        oldGoal = og;
     }
 
     function onInstances(newInstances: Instance[]) {
@@ -362,6 +370,14 @@
             </DropdownMenu.Content>
         </DropdownMenu.Root>
     </div>
+    {#if left != null && left > 0 && oldGoal != null}
+        <div transition:fade class="ml-auto flex flex-row gap-2 items-center">
+            <Progress class="w-20" value={((oldGoal - left) / oldGoal) * 100} />
+            <p class="whitespace-nowrap">
+                {oldGoal-left}/{oldGoal} old messages loaded
+            </p>
+        </div>
+    {/if}
 </div>
 
 <div

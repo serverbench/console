@@ -2,7 +2,8 @@ import Toxicity from "./Toxicity";
 import type Instance from "$lib/sb/server/Instance";
 import InstanceSession from "$lib/sb/server/InstanceSession";
 import Member from "$lib/sb/member/Member";
-import type Community from "$lib/sb/Community";
+import Community from "$lib/sb/Community";
+import User from "$lib/sb/User";
 
 export default class ChatMessage {
 
@@ -72,6 +73,15 @@ export default class ChatMessage {
             ),
             Toxicity.fromObj(obj.toxicity)
         )
+    }
+
+    public static async list(dm: boolean, until: Date = new Date()): Promise<ChatMessage[]> {
+        const user = await User.get();
+        const community = await Community.get();
+        const data = await user!.post(`/community/${community!.id}/chat` + (!dm ? '/public' : ''), {
+            until: until.getTime()
+        })
+        return data.map((msg: any) => ChatMessage.fromObj(community!, msg));
     }
 
 }
