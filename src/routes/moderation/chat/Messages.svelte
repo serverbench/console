@@ -26,11 +26,8 @@
     import MemberMessages from "../../community/members/[id]/messages/MemberMessages.svelte";
     import { Progress } from "$lib/components/ui/progress";
     import NumberFlow from "@number-flow/svelte";
-    import { Motion } from "svelte-motion";
     import Skeleton from "$lib/components/ui/skeleton/skeleton.svelte";
     import BarChart from "$lib/components/sb/chart/BarChart.svelte";
-    import { CheckboxItem } from "$lib/components/ui/context-menu";
-    import Community from "$lib/sb/Community";
 
     let member: Member | null = null;
 
@@ -44,14 +41,12 @@
 
     let cs: ChatStream | null = null;
     onMount(async () => {
-        const community = await Community.get();
         cs = await new ChatStream(
             onConnected,
             onMessages,
             onInstances,
             onToxicity,
             onHistoric,
-            community!,
         ).stream();
         setTimeout(() => {
             loadSettings();

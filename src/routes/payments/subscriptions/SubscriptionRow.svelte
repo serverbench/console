@@ -4,10 +4,13 @@
     import Badge from "$lib/components/ui/badge/badge.svelte";
     import {
         Check,
+        ClockAlert,
         EllipsisVertical,
         Gift,
         Loader2,
         Package,
+        PauseCircle,
+        SmilePlus,
         Square,
         SquareX,
         StopCircle,
@@ -21,6 +24,7 @@
     import { Switch } from "$lib/components/ui/switch";
     import Label from "$lib/components/ui/label/label.svelte";
     import Card from "$lib/components/ui/card/card.svelte";
+    import moment from "moment";
 
     export let subscription: Subscription;
     let loading = false;
@@ -112,13 +116,44 @@
     </Table.Cell>
     <Table.Cell>
         <div class="flex flex-row gap-4 items-center justify-end">
-            {#if subscription.finished}
+            {#if (subscription.finished && subscription.finished > new Date()) || (subscription.endBy && subscription.endBy > new Date())}
                 <Badge
                     class="flex flex-row gap-1 items-center capitalize dark:text-yellow-500 dark:bg-yellow-500 dark:bg-opacity-10 text-yellow-700 bg-yellow-50"
                     variant="secondary"
                 >
+                    {(
+                        (subscription.finished
+                            ? subscription.finished
+                            : subscription.endBy) ?? new Date(0)
+                    ).toLocaleString()}
+                    <PauseCircle />
+                </Badge>
+            {:else if subscription.finished}
+                <Badge
+                    class="flex flex-row gap-1 items-center capitalize dark:text-red-500 dark:bg-red-500 dark:bg-opacity-10 text-red-700 bg-red-50"
+                    variant="secondary"
+                >
                     {subscription.finished.toLocaleString()}
-                    <StopCircle />
+                    <SquareX />
+                </Badge>
+            {:else if subscription.failed}
+                <Badge
+                    class="flex flex-row gap-1 items-center capitalize dark:text-red-500 dark:bg-red-500 dark:bg-opacity-10 text-red-700 bg-red-50"
+                    variant="secondary"
+                >
+                    {subscription.failed.toLocaleString()}
+                    <ClockAlert />
+                </Badge>
+            {:else if subscription.cycle != null && subscription.cycle <= 1 && subscription.checkout.trialDays}
+                <Badge
+                    class="flex flex-row gap-1 items-center capitalize dark:text-blue-500 dark:bg-blue-500 dark:bg-opacity-10 text-blue-700 bg-blue-50"
+                    variant="secondary"
+                >
+                    {moment(subscription.created)
+                        .add(subscription.checkout.trialDays, "days")
+                        .diff(moment(), 'day')}
+                    days left
+                    <SmilePlus />
                 </Badge>
             {:else}
                 <Badge
@@ -135,6 +170,9 @@
             >
                 {subscription.frequency}
                 {subscription.cycle}
+                {#if subscription.cycles}
+                    / {subscription.cycles}
+                {/if}
             </Badge>
             <Amount
                 amount={subscription.amount}

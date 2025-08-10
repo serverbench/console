@@ -8,15 +8,6 @@ const GOAL = 1500;
 const MAX_RECENT_MESSAGES = 10;
 const BATCH_SIZE = 50;
 const RECONNECT_DELAY = 1000;
-const CACHE_KEY_PREFIX = "chat:historic:";
-const CACHE_VERSION = "v1";
-
-interface HistoricCache {
-    version: string;
-    dm: boolean;
-    messages: any[]; // Full message objects from toObj()
-    lastUpdated: string;
-}
 
 export default class ChatStream {
     private connected: Map<boolean, boolean | null> = new Map();
@@ -36,7 +27,6 @@ export default class ChatStream {
 
     private ws: WebSocket[] = [];
     private closed = false;
-    private community: Community
 
     // Cache for sorted instances to avoid re-sorting on every update
     private sortedInstancesCache: Instance[] | null = null;
@@ -46,79 +36,13 @@ export default class ChatStream {
         onMessages: (messages: ChatMessage[], toxicity: boolean, historical: boolean, trigger?: ChatMessage) => void = () => { },
         instancesUpdate: (instances: Instance[]) => void = () => { },
         onToxicity: (toxicity: ChatMessage) => void = () => { },
-        onHistoric: (left: number, og: number) => void = () => { },
-        community: Community
+        onHistoric: (left: number, og: number) => void = () => { }
     ) {
         this.onConnected = onConnected;
         this.onMessages = onMessages;
         this.instancesUpdate = instancesUpdate;
         this.onToxicity = onToxicity;
         this.onHistoric = onHistoric;
-        this.community = community;
-    }
-
-    private getCacheKey(dm: boolean): string {
-        return `${CACHE_KEY_PREFIX}${this.community.id}:${dm ? 'dm' : 'public'}`;
-    }
-
-    private loadCachedMessages(dm: boolean): HistoricCache | null {
-        try {
-            const cached = localStorage.getItem(this.getCacheKey(dm));
-            if (!cached) return null;
-
-            const cache: HistoricCache = JSON.parse(cached);
-
-            // Validate cache version and dm flag
-            if (cache.version !== CACHE_VERSION || cache.dm !== dm) {
-                this.clearCache(dm);
-                return null;
-            }
-
-            return cache;
-        } catch (error) {
-            console.warn("Error loading cached messages:", error);
-            this.clearCache(dm);
-            return null;
-        }
-    }
-
-    private saveCachedMessages(dm: boolean, messages: ChatMessage[]): void {
-        try {
-            const messageObjects = messages.map(msg => msg.toObj());
-
-            const cache: HistoricCache = {
-                version: CACHE_VERSION,
-                dm,
-                messages: messageObjects,
-                lastUpdated: new Date().toISOString()
-            };
-
-            localStorage.setItem(this.getCacheKey(dm), JSON.stringify(cache));
-        } catch (error) {
-            console.warn("Error saving cached messages:", error);
-        }
-    }
-
-    private clearCache(dm: boolean): void {
-        try {
-            localStorage.removeItem(this.getCacheKey(dm));
-        } catch (error) {
-            console.warn("Error clearing cache:", error);
-        }
-    }
-
-    private isCachedMessage(messageId: string, cachedMessages: any[]): boolean {
-        return cachedMessages.some(cached => cached.id === messageId);
-    }
-
-    private findCacheStopPoint(messages: ChatMessage[], cachedMessages: any[]): number {
-        // Find the first message that exists in cache
-        for (let i = 0; i < messages.length; i++) {
-            if (this.isCachedMessage(messages[i].id, cachedMessages)) {
-                return i; // Stop before this message (don't include cached ones)
-            }
-        }
-        return messages.length; // No cached messages found, process all
     }
 
     private emitOnConnected(): void {
@@ -130,120 +54,27 @@ export default class ChatStream {
         const dmConnection = this.connected.get(true);
         if (dmConnection != null) {
             this.onHistoric(this.goal, this.goal);
-            this.loadHistoricWithCache(dmConnection).catch((err) => {
+            this.loadHistoric(dmConnection).catch((err) => {
                 console.error("Error loading historic messages:", err);
             });
         }
     }
 
-    private async loadHistoricWithCache(dm: boolean): Promise<void> {
-        // First, load cached messages from localStorage
-        const cache = this.loadCachedMessages(dm);
-
-        if (cache && cache.messages.length > 0) {
-            console.log(`Loading ${cache.messages.length} cached messages from localStorage`);
-
-            // Get community for fromObj
-            const community = await Community.get();
-            if (!community) {
-                console.warn("No community found, clearing cache and loading normally");
-                this.clearCache(dm);
-                return this.loadHistoric(dm);
-            }
-
-            // Convert cached objects back to ChatMessage instances
-            const cachedChatMessages: ChatMessage[] = [];
-            for (const msgObj of cache.messages) {
-                try {
-                    const chatMessage = ChatMessage.fromObj(community, msgObj);
-                    if (!this.seenMsgs.has(chatMessage.id)) {
-                        cachedChatMessages.push(chatMessage);
-                        this.seenMsgs.add(chatMessage.id);
-                    }
-                } catch (error) {
-                    console.warn("Error converting cached message:", error);
-                }
-            }
-
-            // Add cached messages to our messages array
-            if (cachedChatMessages.length > 0) {
-                this.batchInsertMessages(cachedChatMessages);
-
-                // Update instances from cached messages
-                for (const msg of cachedChatMessages) {
-                    if (!this.instances.has(msg.session.instance.id)) {
-                        this.instances.set(msg.session.instance.id, msg.session.instance);
-                        this.sortedInstancesCache = null;
-                        this.updateInstancesCallback();
-                    }
-                }
-
-                // Update UI with cached messages
-                this.onMessages(this.messages, true, false);
-            }
-
-            // Reduce the goal by the number of cached messages to prevent over-loading
-            this.goal = Math.max(0, this.goal - cachedChatMessages.length);
-            this.onHistoric(this.goal, this.originalGoal);
-
-            // Only load new messages if we still have goal remaining
-            if (this.goal > 0) {
-                // Find the newest cached message to know where to start loading new ones
-                if (cachedChatMessages.length > 0) {
-                    const newestCachedTime = Math.max(...cachedChatMessages.map(m => m.created.getTime()));
-                    const newestCached = new Date(newestCachedTime);
-
-                    // Load newer messages from API
-                    await this.loadHistoric(dm, newestCached);
-                } else {
-                    // No valid cached messages, load normally
-                    await this.loadHistoric(dm);
-                }
-            } else {
-                // Goal satisfied by cache, we're done
-                this.onMessages(this.messages, true, false);
-                this.onHistoric(0, this.originalGoal);
-            }
-        } else {
-            // No cache, load normally
-            await this.loadHistoric(dm);
-        }
-    }
-
     private async loadHistoric(dm: boolean, until: Date = new Date()): Promise<void> {
-        // Safety check to prevent infinite recursion
-        if (this.goal <= 0) {
-            console.log("Goal reached, stopping historic load");
-            this.onMessages(this.messages, true, false);
-            this.onHistoric(0, this.originalGoal);
-            return;
-        }
-
         const messages = await ChatMessage.list(dm, until);
 
         if (messages.length === 0) {
-            console.log("No more messages available");
             this.goal = 0;
             this.onHistoric(this.goal, this.originalGoal);
             this.onMessages(this.messages, true, false);
             return;
         }
 
-        // Load cached messages for comparison
-        const cache = this.loadCachedMessages(dm);
-        const cachedMessages = cache?.messages || [];
-
-        // Find where to stop based on cached data
-        const stopIndex = this.findCacheStopPoint(messages, cachedMessages);
-        const messagesToProcess = messages.slice(0, stopIndex);
-
-        console.log(`Processing ${messagesToProcess.length} new messages, found ${messages.length - stopIndex} cached messages`);
-
         // Process messages in batch
         let oldest: Date | null = null;
         const newMessages: ChatMessage[] = [];
 
-        for (const message of messagesToProcess) {
+        for (const message of messages) {
             if (!this.seenMsgs.has(message.id)) {
                 if (oldest == null || message.created.getTime() < oldest.getTime()) {
                     oldest = message.created;
@@ -258,39 +89,20 @@ export default class ChatStream {
             this.batchInsertMessages(newMessages);
         }
 
-        // Update goal based on processed messages and cache hit
-        const hitCache = stopIndex < messages.length;
-
-        if (hitCache) {
-            // We hit cached data, stop loading
-            console.log("Hit cached data, stopping historic load");
-            this.goal = 0;
-        } else if (messages.length < BATCH_SIZE) {
-            // No more messages available
-            console.log("Reached end of available messages");
+        // Update goal
+        if (messages.length < BATCH_SIZE) {
             this.goal = 0;
         } else {
-            // Continue loading
-            this.goal -= newMessages.length; // Only subtract messages we actually processed
+            this.goal -= messages.length;
         }
 
         this.onHistoric(this.goal, this.originalGoal);
 
-        // Continue loading if we haven't hit cache and still have goal remaining AND we have an oldest date
-        if (this.goal > 0 && oldest && !hitCache && newMessages.length > 0) {
-            // Add a small safety delay to prevent runaway loops
-            await new Promise(resolve => setTimeout(resolve, 10));
+        if (this.goal > 0 && oldest) {
             return this.loadHistoric(dm, oldest);
         } else {
-            // Finished loading - save cache and update UI
-            console.log("Historic loading complete");
-            if (this.messages.length > 0) {
-                this.saveCachedMessages(dm, this.messages);
-            }
-
             this.onMessages(this.messages, true, false);
-            this.onHistoric(0, this.originalGoal);
-
+            this.onHistoric(this.goal, this.originalGoal);
             for (const msg of this.messages) {
                 // Update instances if new
                 if (!this.instances.has(msg.session.instance.id)) {
@@ -362,9 +174,6 @@ export default class ChatStream {
         }
 
         this.seenMsgs.add(msg.id);
-
-        // Update cache with new message (you might want to debounce this for performance)
-        // For now, we'll only update cache during the initial historic load
     }
 
     private binarySearchInsertIndex(timestamp: number): number {
@@ -393,12 +202,6 @@ export default class ChatStream {
 
     private findRecentMessage(id: string): ChatMessage | undefined {
         return this.recentMessages.find(msg => msg.id === id);
-    }
-
-    // Method to manually clear cache (useful for debugging or forced refresh)
-    public clearAllCache(): void {
-        this.clearCache(true);  // DM cache
-        this.clearCache(false); // Public cache
     }
 
     async stream() {

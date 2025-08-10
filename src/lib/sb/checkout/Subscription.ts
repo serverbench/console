@@ -11,12 +11,18 @@ export default class Subscription extends Authorization {
     frequency: Frequency
     finished: Date | null
     cycle: number | null
+    endBy: Date | null
+    failed: Date | null
+    cycles: number | null
 
-    constructor(service: string, amount: number, currency: Currency, checkout: any, eid: string, id: string, created: Date, frequency: Frequency, finished: Date | null, cycle: number | null) {
+    constructor(service: string, amount: number, currency: Currency, checkout: any, eid: string, id: string, created: Date, frequency: Frequency, finished: Date | null, cycle: number | null, endBy: Date | null, failed: Date | null, cycles: number | null = null) {
         super(service, amount, currency, checkout, eid, id, created);
         this.frequency = frequency;
         this.finished = finished;
         this.cycle = cycle;
+        this.endBy = endBy
+        this.failed = failed
+        this.cycles = cycles;
     }
 
     public static fromObject(obj: any, checkout: Checkout) {
@@ -30,7 +36,9 @@ export default class Subscription extends Authorization {
             new Date(obj.created),
             obj.frequency,
             obj.finished ? new Date(obj.finished) : null,
-            obj.cycle
+            obj.cycle,
+            obj.endBy ? new Date(obj.endBy) : null,
+            obj.failed ? new Date(obj.failed) : null
         )
     }
 
