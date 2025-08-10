@@ -25,6 +25,7 @@
 
     export let member: Member;
     export let blockLoad = false;
+    export let condensed = false;
     let page = 0;
     let anchor = new Date();
 
@@ -77,7 +78,7 @@
 <div transition:fade={{ duration: 200 }}>
     <List>
         {#each messages as message}
-            <ChatMessageItem {message} {profanity} />
+            <ChatMessageItem {condensed} {message} {profanity} />
         {/each}
 
         {#if !loading && hasMore}

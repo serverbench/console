@@ -22,7 +22,10 @@ export default class Toxicity {
         )
     }
 
-    public isToxic(profanity = false, toxicityThreshold = 50, averageToxicityThreshold = 50 / 1.7) {
+    public isToxic(profanity = false, toxicityThreshold = 50, averageToxicityThreshold?: number) {
+        if (averageToxicityThreshold == undefined) {
+            averageToxicityThreshold = toxicityThreshold / 1.7
+        }
         if (
             this.instantProfanity == null ||
             this.instant == null ||

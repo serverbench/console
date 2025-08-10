@@ -3,28 +3,39 @@
     import Section from "$lib/components/sb/section/section.svelte";
     import ChatMessage from "$lib/sb/moderation/chat/ChatMessage";
     import ChatStream from "$lib/sb/moderation/chat/ChatStream";
-    import { onMount } from "svelte";
+    import { onDestroy, onMount } from "svelte";
     import { blur, scale } from "svelte/transition";
     import ChatMessageItem from "../../community/members/[id]/messages/ChatMessageItem.svelte";
     import type Instance from "$lib/sb/server/Instance";
     import Button from "$lib/components/ui/button/button.svelte";
     import CategoryToggle from "./CategoryToggle.svelte";
     import * as DropdownMenu from "$lib/components/ui/dropdown-menu/index.js";
+    import * as Dialog from "$lib/components/ui/dialog/index.js";
     import {
-        Check,
+        ArrowRight,
         EllipsisVertical,
-        Pause,
-        Speaker,
-        Volume,
         Volume2,
         VolumeX,
         Wrench,
     } from "lucide-svelte";
     import { toast } from "svelte-sonner";
-    import type Toxicity from "$lib/sb/moderation/chat/Toxicity";
+    import type Member from "$lib/sb/member/Member";
+    import MemberDetails from "../../community/members/[id]/MemberDetails.svelte";
+    import MemberMessages from "../../community/members/[id]/messages/MemberMessages.svelte";
+    import { navigating } from "$app/state";
 
+    let member: Member | null = null;
+
+    const toxicityLevels = {
+        low: 30,
+        medium: 45,
+        high: 60,
+        "very high": 75,
+        critical: 85,
+    };
+    let cs: ChatStream | null = null;
     onMount(async () => {
-        await new ChatStream(
+        cs = await new ChatStream(
             onConnected,
             onMessages,
             onInstances,
@@ -33,6 +44,10 @@
         setTimeout(() => {
             loadSettings();
         }, 1);
+    });
+
+    onDestroy(() => {
+        cs?.close();
     });
 
     let tabView = 4;
@@ -46,10 +61,12 @@
     let showPublic = true;
     let showDm = true;
 
-    let sounds = ["a", "b", "c", "d", "e", "f", null];
+    let sounds = ["a", "b", "c", "d", "e", "f", "g", "h", "i", "j", null];
     let alertSound: string | null = "f";
     let newMessageSound: string | null = null;
     let enabledSounds = false;
+    let toxicityLevel = Object.values(toxicityLevels)[1];
+    let showToxicOnly = false;
 
     function onConnected(dm: boolean | null, all: boolean | null) {
         connectedDm = dm;
@@ -73,7 +90,7 @@
     }
 
     function onToxicity(msg: ChatMessage) {
-        if (msg.toxicity.isToxic() && enabledSounds) {
+        if (msg.toxicity.isToxic(false, toxicityLevel) && enabledSounds) {
             play(true);
         }
     }
@@ -97,9 +114,6 @@
         if (savedShowDm) {
             showDm = JSON.parse(savedShowDm);
         }
-        if (savedHiddenInstances || savedTabView) {
-            toast.info("Chat settings loaded from local storage");
-        }
         const savedAlertSound = localStorage.getItem("chat:alertSound");
         if (savedAlertSound) {
             alertSound = JSON.parse(savedAlertSound);
@@ -109,6 +123,17 @@
         );
         if (savedNewMessageSound) {
             newMessageSound = JSON.parse(savedNewMessageSound);
+        }
+        const savedToxicityLevel = localStorage.getItem("chat:toxicityLevel");
+        if (savedToxicityLevel) {
+            toxicityLevel = JSON.parse(savedToxicityLevel);
+        }
+        const savedShowToxicOnly = localStorage.getItem("chat:showToxicOnly");
+        if (savedShowToxicOnly) {
+            showToxicOnly = JSON.parse(savedShowToxicOnly);
+        }
+        if (savedTabView) {
+            toast.success("Chat settings loaded from local storage");
         }
         loaded = true;
     }
@@ -127,10 +152,17 @@
             "chat:newMessageSound",
             JSON.stringify(newMessageSound),
         );
+        localStorage.setItem(
+            "chat:toxicityLevel",
+            JSON.stringify(toxicityLevel),
+        );
+        localStorage.setItem(
+            "chat:showToxicOnly",
+            JSON.stringify(showToxicOnly),
+        );
+        loaded = true;
         toast.info("Chat settings saved to local storage");
     }
-
-    $: showDm, showPublic, newMessageSound, alertSound, saveSettings();
 
     function play(alert = true) {
         let url: string | null = null;
@@ -146,59 +178,43 @@
     }
 </script>
 
-<div
-    class:grid={tabView > 1}
-    class:lg:grid-cols-2={tabView == 2}
-    class:lg:grid-cols-3={tabView == 3}
-    class:lg:grid-cols-4={tabView == 4}
-    class:lg:grid-cols-5={tabView == 5}
-    class="grid-cols-1 gap-4"
->
-    {#each tabView > 1 ? instances : [{ id: null, server: { slug: "" }, name: null }] as instance (instance.id)}
-        {#if tabView <= 1 || (tabView > 1 && !hiddenInstances.get(instance.id ?? ""))}
-            <div transition:blur>
-                <Section
-                    name={tabView > 1
-                        ? `${instance.server.slug}-${instance.name ?? "main"}`
-                        : "Chat Messages"}
-                    small
-                >
-                    <div
-                        class="overflow-auto"
-                        class:h-[600px]={tabView <= 1}
-                        class:aspect-square={tabView > 1}
-                    >
-                        <List hideBorder hideTopBorder>
-                            {#each messages as message (message.id)}
-                                {#if tabView <= 1 || (tabView > 1 && message.session.instance.id == instance.id)}
-                                    {#if !hiddenInstances.get(message.session.instance.id) && ((message.to && showDm) || (message.to == null && showPublic))}
-                                        <ChatMessageItem
-                                            condensed={tabView > 1}
-                                            entireHighlight
-                                            showFrom
-                                            {message}
-                                        />
-                                    {/if}
-                                {/if}
-                            {/each}
-                        </List>
-                    </div>
-                </Section>
+<Dialog.Root open={member != null}>
+    {#if member != null}
+        <Dialog.Content class="sm:max-w-[700px]">
+            <Dialog.Header>
+                <Dialog.Title>{member.name}</Dialog.Title>
+            </Dialog.Header>
+            <div class="max-h-96 overflow-auto">
+                <MemberMessages condensed {member} filters={{}} />
             </div>
-        {/if}
-    {/each}
-</div>
-<div class="flex flex-row gap-2 items-center justify-center">
-    <CategoryToggle bind:show={showDm} connected={connectedDm}>
+            <Dialog.Footer>
+                <Button href="/community/members/{member.id}">
+                    See Full Profile <ArrowRight />
+                </Button>
+            </Dialog.Footer>
+        </Dialog.Content>
+    {/if}
+</Dialog.Root>
+
+<div class="flex flex-row gap-2 items-center">
+    <CategoryToggle
+        on:change={() => saveSettings()}
+        bind:show={showDm}
+        connected={connectedDm}
+    >
         DMs
     </CategoryToggle>
-    <CategoryToggle bind:show={showPublic} connected={connectedAll}>
+    <CategoryToggle
+        on:change={() => saveSettings()}
+        bind:show={showPublic}
+        connected={connectedAll}
+    >
         Public
     </CategoryToggle>
     <DropdownMenu.Root>
         <DropdownMenu.Trigger asChild let:builder>
             <Button builders={[builder]} variant="secondary">
-                Settings
+                Display Settings
                 <Wrench />
             </Button>
         </DropdownMenu.Trigger>
@@ -225,19 +241,57 @@
             <DropdownMenu.Separator />
             <DropdownMenu.Label>Display</DropdownMenu.Label>
             <DropdownMenu.Separator />
-            <DropdownMenu.Group>
+            <DropdownMenu.RadioGroup value={`${tabView}`}>
                 {#each Array(5) as _, i}
-                    <DropdownMenu.CheckboxItem
+                    <DropdownMenu.RadioItem
                         on:click={() => {
                             tabView = i + 1;
                             saveSettings();
                         }}
-                        checked={tabView == i + 1}
+                        value={`${i + 1}`}
                     >
                         {i + 1}-Column View
-                    </DropdownMenu.CheckboxItem>
+                    </DropdownMenu.RadioItem>
                 {/each}
-            </DropdownMenu.Group>
+            </DropdownMenu.RadioGroup>
+            <DropdownMenu.Separator />
+            <DropdownMenu.Label>Toxicity Flagging</DropdownMenu.Label>
+            <DropdownMenu.Separator />
+            <DropdownMenu.RadioGroup value={`${toxicityLevel}`}>
+                {#each Object.entries(toxicityLevels) as [name, level]}
+                    <DropdownMenu.RadioItem
+                        on:click={() => {
+                            toxicityLevel = level;
+                            saveSettings();
+                        }}
+                        value={`${level}`}
+                    >
+                        {name}
+                    </DropdownMenu.RadioItem>
+                {/each}
+            </DropdownMenu.RadioGroup>
+            <DropdownMenu.Separator />
+            <DropdownMenu.Label>Toxicity Filtering</DropdownMenu.Label>
+            <DropdownMenu.Separator />
+            <DropdownMenu.RadioGroup value={`${showToxicOnly}`}>
+                <DropdownMenu.RadioItem
+                    on:click={() => {
+                        showToxicOnly = false;
+                        saveSettings();
+                    }}
+                    value={`${false}`}
+                >
+                    Show All Messages
+                </DropdownMenu.RadioItem>
+                <DropdownMenu.RadioItem
+                    on:click={() => {
+                        showToxicOnly = true;
+                    }}
+                    value={`${true}`}
+                >
+                    Show Only Toxic Messages
+                </DropdownMenu.RadioItem>
+            </DropdownMenu.RadioGroup>
         </DropdownMenu.Content>
     </DropdownMenu.Root>
     <div class="flex flex-row items-center">
@@ -274,36 +328,85 @@
             <DropdownMenu.Content class="w-56">
                 <DropdownMenu.Label>Alert Sound</DropdownMenu.Label>
                 <DropdownMenu.Separator />
-                <DropdownMenu.Group>
+                <DropdownMenu.RadioGroup value={alertSound ?? ""}>
                     {#each sounds.filter((s) => s != null) as sound}
-                        <DropdownMenu.CheckboxItem
+                        <DropdownMenu.RadioItem
+                            value={sound ?? ""}
                             on:click={() => {
                                 alertSound = sound;
                                 play(true);
+                                saveSettings();
                             }}
-                            checked={alertSound == sound}
                         >
                             {sound ? sound : "None"}
-                        </DropdownMenu.CheckboxItem>
+                        </DropdownMenu.RadioItem>
                     {/each}
-                </DropdownMenu.Group>
+                </DropdownMenu.RadioGroup>
                 <DropdownMenu.Separator />
                 <DropdownMenu.Label>New Message</DropdownMenu.Label>
                 <DropdownMenu.Separator />
-                <DropdownMenu.Group>
+                <DropdownMenu.RadioGroup value={newMessageSound ?? ""}>
                     {#each sounds as sound}
-                        <DropdownMenu.CheckboxItem
+                        <DropdownMenu.RadioItem
+                            value={sound ?? ""}
                             on:click={() => {
                                 newMessageSound = sound;
                                 play(false);
+                                saveSettings();
                             }}
-                            checked={newMessageSound == sound}
                         >
                             {sound ? sound : "None"}
-                        </DropdownMenu.CheckboxItem>
+                        </DropdownMenu.RadioItem>
                     {/each}
-                </DropdownMenu.Group>
+                </DropdownMenu.RadioGroup>
             </DropdownMenu.Content>
         </DropdownMenu.Root>
     </div>
+</div>
+
+<div
+    class:grid={tabView > 1}
+    class:lg:grid-cols-2={tabView == 2}
+    class:lg:grid-cols-3={tabView == 3}
+    class:lg:grid-cols-4={tabView == 4}
+    class:lg:grid-cols-5={tabView == 5}
+    class="grid-cols-1 gap-4"
+>
+    {#each tabView > 1 ? instances : [{ id: null, server: { slug: "" }, name: null }] as instance (instance.id)}
+        {#if tabView <= 1 || (tabView > 1 && !hiddenInstances.get(instance.id ?? ""))}
+            <div transition:blur>
+                <Section
+                    name={tabView > 1
+                        ? `${instance.server.slug}-${instance.name ?? "main"}`
+                        : "Chat Messages"}
+                    small
+                >
+                    <div
+                        class="overflow-auto"
+                        class:h-[800px]={tabView <= 1}
+                        class:aspect-square={tabView > 1}
+                    >
+                        <List hideBorder hideTopBorder>
+                            {#each messages as message (message.id)}
+                                {#if tabView <= 1 || (tabView > 1 && message.session.instance.id == instance.id)}
+                                    {#if !hiddenInstances.get(message.session.instance.id) && ((message.to && showDm) || (message.to == null && showPublic)) && (!showToxicOnly || message.toxicity.isToxic(false, toxicityLevel))}
+                                        <ChatMessageItem
+                                            on:click={() => {
+                                                member = message.from;
+                                            }}
+                                            {toxicityLevel}
+                                            condensed={tabView > 1}
+                                            entireHighlight
+                                            showFrom
+                                            {message}
+                                        />
+                                    {/if}
+                                {/if}
+                            {/each}
+                        </List>
+                    </div>
+                </Section>
+            </div>
+        {/if}
+    {/each}
 </div>

@@ -9,16 +9,24 @@
         MessageCircleX,
         Sparkle,
     } from "lucide-svelte";
+    import { createEventDispatcher } from "svelte";
     import Time from "svelte-time/Time.svelte";
     import { blur } from "svelte/transition";
     export let message: ChatMessage,
         profanity = false,
         entireHighlight = false,
         condensed = false,
+        toxicityLevel: number | undefined = undefined,
         showFrom = false;
+    const emitter = createEventDispatcher();
 </script>
 
-<Item clazz={message.toxicity.isToxic() && entireHighlight ? "bg-primary bg-opacity-20" : ""}>
+<Item
+    on:click={() => emitter("click")}
+    clazz={message.toxicity.isToxic(profanity, toxicityLevel) && entireHighlight
+        ? "bg-primary bg-opacity-20"
+        : ""}
+>
     <div
         class:flex-col={condensed}
         class:flex-row={!condensed}
@@ -95,19 +103,18 @@
                 <span transition:blur={{ duration: 199 }}>
                     <Loader2 class="animate-spin" />
                 </span>
-            {:else if message.toxicity.isToxic()}
+            {:else if message.toxicity.isToxic(profanity, toxicityLevel)}
                 <span transition:blur={{ delay: 200 }}>
                     <Badge
                         class={"whitespace-nowrap flex flex-row gap-2" +
                             ((profanity
                                 ? message.toxicity.averageProfanity
-                                : message.toxicity.average) >
-                            25
+                                : message.toxicity.average) > 25
                                 ? ""
                                 : " bg-yellow-300 text-black")}
                         variant="destructive"
                     >
-                        {#if (profanity ? message.toxicity.averageProfanity : message.toxicity.average) > 25}
+                        {#if message.toxicity.isToxic(profanity, (toxicityLevel ?? 80) + 10)}
                             <MessageCircleX />
                         {:else}
                             <MessageCircleWarning />

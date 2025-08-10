@@ -36,6 +36,8 @@ export default class ChatStream {
         );
     }
 
+    private ws: WebSocket[] = []
+
     async stream() {
         const connections = [
             false,
@@ -45,6 +47,19 @@ export default class ChatStream {
             this.connect(connection).then(() => { }).catch((err) => {
                 console.error("Error connecting to chat stream:", err);
             })
+        }
+        return this
+    }
+
+    private closed = false;
+    close() {
+        this.closed = true
+        for (const s of this.ws) {
+            try {
+                s.close()
+            } catch (error) {
+
+            }
         }
     }
 
@@ -57,10 +72,11 @@ export default class ChatStream {
         this.emitOnConnected();
         const action = dm ? `community.${community!.id}.chat` : `community.${community!.id}.chat.public`
         console.log('piping', action)
-        user!.pipe(
+        this.ws.push(user!.pipe(
             action,
             {},
             (data) => {
+                if (this.closed) return
                 if (data.type == "msg") {
                     const msg = ChatMessage.fromObj(community!, data.message);
                     this.messages.unshift(msg);
@@ -103,6 +119,6 @@ export default class ChatStream {
                 }
                 this.emitOnConnected();
             },
-        );
+        ))
     }
 }
