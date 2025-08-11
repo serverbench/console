@@ -4,14 +4,18 @@
     import Badge from "$lib/components/ui/badge/badge.svelte";
     import {
         Check,
+        CircleOff,
+        CirclePlay,
         ClockAlert,
         EllipsisVertical,
         Gift,
         Loader2,
         Package,
         PauseCircle,
+        RefreshCw,
         SmilePlus,
         Square,
+        SquareDashed,
         SquareX,
         StopCircle,
     } from "lucide-svelte";
@@ -30,6 +34,13 @@
     let loading = false;
     let open = false;
     let instantly = false;
+
+    const endedClass =
+        "text-white bg-black dark:bg-neutral-900 dark:border border-neutral-750";
+    const trialClass =
+        "dark:text-cyan-500 dark:bg-cyan-500 dark:bg-opacity-10 text-cyan-700";
+    const trialEndedClass =
+        "dark:text-yellow-100 text-yellow-900 dark:bg-yellow-950 dark:bg-opacity-20 bg-opacity-10 bg-yellow-500";
 
     async function cancel() {
         try {
@@ -116,64 +127,105 @@
     </Table.Cell>
     <Table.Cell>
         <div class="flex flex-row gap-4 items-center justify-end">
-            {#if (subscription.finished && subscription.finished > new Date()) || (subscription.endBy && subscription.endBy > new Date())}
-                <Badge
-                    class="flex flex-row gap-1 items-center capitalize dark:text-yellow-500 dark:bg-yellow-500 dark:bg-opacity-10 text-yellow-700 bg-yellow-50"
-                    variant="secondary"
-                >
-                    {(
-                        (subscription.finished
-                            ? subscription.finished
-                            : subscription.endBy) ?? new Date(0)
-                    ).toLocaleString()}
-                    <PauseCircle />
+            {#if subscription.failed}
+                <Badge variant="destructive">
+                    {#if subscription.finished}
+                        Failed
+                    {:else}
+                        Retrying
+                    {/if}
                 </Badge>
-            {:else if subscription.finished}
+            {/if}
+            <Badge
+                class="flex flex-row gap-1 items-center capitalize"
+                variant={subscription.checkout.trialDays &&
+                (subscription.cycle ?? 0) <= 1
+                    ? "outline"
+                    : "secondary"}
+            >
+                {#if subscription.checkout.trialDays && (subscription.cycle ?? 0) <= 1}
+                    {#if subscription.finished || subscription.endBy}
+                        Cancelled Trial
+                    {:else}
+                        Trialing
+                    {/if}
+                {:else}
+                    {subscription.frequency}
+                    {(subscription.cycle ?? 0) - (subscription.cycles ? 1 : 0)}
+                    {#if subscription.cycles}
+                        / {subscription.cycles}
+                    {/if}
+                {/if}
+            </Badge>
+            {#if (subscription.finished || subscription.endBy) && (!subscription.cycles || (subscription.cycle && subscription.cycles >= subscription.cycle))}
                 <Badge
-                    class="flex flex-row gap-1 items-center capitalize dark:text-red-500 dark:bg-red-500 dark:bg-opacity-10 text-red-700 bg-red-50"
+                    class={subscription.checkout.trialDays &&
+                    (subscription.cycle ?? 0) <= 1
+                        ? trialEndedClass
+                        : endedClass}
                     variant="secondary"
                 >
-                    {subscription.finished.toLocaleString()}
-                    <SquareX />
+                    <div class="flex flex-row gap-1 items-center capitalize">
+                        {#if subscription.checkout.trialDays && (subscription.cycle ?? 0) <= 1}
+                            <CircleOff />
+                        {:else}
+                            <Square />
+                        {/if}
+                        <Time
+                            relative
+                            timestamp={subscription.endBy ||
+                                subscription.finished}
+                        />
+                    </div>
+                </Badge>
+            {:else if subscription.finished && subscription.cycles && subscription.cycle && subscription.cycles < subscription.cycle}
+                <Badge
+                    class="flex flex-row gap-1 items-center capitalize  text-white bg-black dark:bg-neutral-900 dark:border border-neutral-750"
+                    variant="secondary"
+                >
+                    <Square />
+                    Completed
+                    <Time relative timestamp={subscription.finished} />
                 </Badge>
             {:else if subscription.failed}
                 <Badge
-                    class="flex flex-row gap-1 items-center capitalize dark:text-red-500 dark:bg-red-500 dark:bg-opacity-10 text-red-700 bg-red-50"
+                    class="flex flex-row gap-1 items-center capitalize dark:text-red-200 dark:bg-red-500 dark:bg-opacity-10 text-red-700 bg-red-50"
                     variant="secondary"
                 >
-                    {subscription.failed.toLocaleString()}
                     <ClockAlert />
+                    <Time relative timestamp={subscription.failed} />
                 </Badge>
             {:else if subscription.cycle != null && subscription.cycle <= 1 && subscription.checkout.trialDays}
                 <Badge
-                    class="flex flex-row gap-1 items-center capitalize dark:text-blue-500 dark:bg-blue-500 dark:bg-opacity-10 text-blue-700 bg-blue-50"
+                    class="flex flex-row gap-1 items-center capitalize {trialClass}"
                     variant="secondary"
                 >
-                    {moment(subscription.created)
-                        .add(subscription.checkout.trialDays, "days")
-                        .diff(moment(), 'day')}
-                    days left
-                    <SmilePlus />
+                    <CirclePlay />
+                    <Time
+                        relative
+                        timestamp={moment(subscription.created)
+                            .add(subscription.checkout.trialDays, "days")
+                            .toDate()}
+                    />
                 </Badge>
             {:else}
                 <Badge
                     class="flex flex-row gap-1 items-center capitalize dark:text-green-500 dark:bg-green-500 dark:bg-opacity-10 text-green-700 bg-green-50"
                     variant="secondary"
                 >
-                    Active
-                    <Check />
+                    <RefreshCw />
+                    <Time
+                        relative
+                        timestamp={moment(subscription.created)
+                            .add(
+                                (subscription.cycle ?? 1) -
+                                    (subscription.checkout.trialDays ? 1 : 0),
+                                subscription.frequency,
+                            )
+                            .toDate()}
+                    />
                 </Badge>
             {/if}
-            <Badge
-                class="flex flex-row gap-1 items-center capitalize"
-                variant="secondary"
-            >
-                {subscription.frequency}
-                {subscription.cycle}
-                {#if subscription.cycles}
-                    / {subscription.cycles}
-                {/if}
-            </Badge>
             <Amount
                 amount={subscription.amount}
                 currency={subscription.currency}

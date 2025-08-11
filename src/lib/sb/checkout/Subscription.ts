@@ -38,7 +38,8 @@ export default class Subscription extends Authorization {
             obj.finished ? new Date(obj.finished) : null,
             obj.cycle,
             obj.endBy ? new Date(obj.endBy) : null,
-            obj.failed ? new Date(obj.failed) : null
+            obj.failed ? new Date(obj.failed) : null,
+            obj.cycles ? obj.cycles : null
         )
     }
 
