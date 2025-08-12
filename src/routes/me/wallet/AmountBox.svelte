@@ -37,7 +37,7 @@
                         )!;
                     }
                 }
-                total += Math.trunc(w.amount * realExchangeRate);
+                total += Math.trunc(w.amount / realExchangeRate);
             }
         } else {
             total = currency
