@@ -5,6 +5,7 @@ import User from "../User";
 import Authorization from "./Authorization";
 import Checkout from "./Checkout";
 import StoreCheckout from "./StoreCheckout";
+import type { SubscriptionAnalyticsGroup, SubscriptionAnalyticsGroups } from "./SubscriptionAnalytics";
 
 export default class Subscription extends Authorization {
 
@@ -41,6 +42,17 @@ export default class Subscription extends Authorization {
             obj.failed ? new Date(obj.failed) : null,
             obj.cycles ? obj.cycles : null
         )
+    }
+
+    public static async getAnalytics(): Promise<SubscriptionAnalyticsGroups> {
+        const user = await User.get()
+        const community = await Community.get()
+        const data = await user!.post(`/community/${community?.id}/subscription/analytics`)
+        return {
+            mrr: data.mrr as SubscriptionAnalyticsGroup,
+            failed: data.failed as SubscriptionAnalyticsGroup,
+            trial: data.trial as SubscriptionAnalyticsGroup
+        }
     }
 
     public static async list(page: number = 0) {

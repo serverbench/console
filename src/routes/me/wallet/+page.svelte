@@ -156,19 +156,21 @@
 </div>
 <div class="grid grid-cols-1 lg:grid-cols-3 gap-5">
     <AmountBox
-        amount="withdrawable"
-        wallet={selectedWallet}
+        currency={selectedWallet?.currency ?? null}
+        amounts={wallets.map((w) => {
+            return { currency: w.currency, amount: w.withdrawable };
+        })}
         {exchangeRate}
-        {wallets}
     >
         Withdrawable
         <div slot="note">Withdrawable using the gateways below</div>
     </AmountBox>
     <AmountBox
-        amount="settling"
-        wallet={selectedWallet}
+        currency={selectedWallet?.currency ?? null}
+        amounts={wallets.map((w) => {
+            return { currency: w.currency, amount: w.settling };
+        })}
         {exchangeRate}
-        {wallets}
     >
         Settling Balance
         <div slot="note">
@@ -188,7 +190,13 @@
             </Tooltip.Root>
         </div>
     </AmountBox>
-    <AmountBox amount="credit" wallet={selectedWallet} {exchangeRate} {wallets}>
+    <AmountBox
+        currency={selectedWallet?.currency ?? null}
+        amounts={wallets.map((w) => {
+            return { currency: w.currency, amount: w.credit };
+        })}
+        {exchangeRate}
+    >
         Internal Credit
         <span slot="note">
             <Badge class="scale-90" variant="secondary">1% APR</Badge> on your withdrawable

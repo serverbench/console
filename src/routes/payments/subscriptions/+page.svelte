@@ -24,15 +24,38 @@
     import Button from "$lib/components/ui/button/button.svelte";
     import DropdownItem from "$lib/components/sb/section/list/DropdownItem.svelte";
     import SubscriptionRow from "./SubscriptionRow.svelte";
+    import type { SubscriptionAnalyticsGroups } from "$lib/sb/checkout/SubscriptionAnalytics";
+    import AmountBox from "../../me/wallet/AmountBox.svelte";
+    import ExchangeRate from "$lib/sb/wallet/ExchangeRate";
+    import type Currency from "$lib/sb/store/Currency";
+    import { fade } from "svelte/transition";
 
+    let exchangeRate: ExchangeRate | null = null;
+    let analytics: SubscriptionAnalyticsGroups | null = null;
     let transactions: Subscription[] = [];
     let hasMore = true;
     let page = 0;
     let loading = false;
 
     onMount(async () => {
-        await loadMore();
+        await Promise.all([loadAnalytics(), loadMore(), loadExchangeRate()]);
     });
+
+    async function loadExchangeRate() {
+        try {
+            exchangeRate = await ExchangeRate.get();
+        } catch (error) {
+            console.error("Error loading exchange rate:", error);
+        }
+    }
+
+    async function loadAnalytics() {
+        try {
+            analytics = await Subscription.getAnalytics();
+        } catch (error) {
+            console.error("Error loading analytics:", error);
+        }
+    }
 
     async function loadMore() {
         if (loading || !hasMore) return;
@@ -50,7 +73,64 @@
             loading = false;
         }
     }
+
+    let currency: Currency = {
+        code: "EUR",
+        digits: 2,
+    };
 </script>
+
+{#key analytics}
+    <div class="grid grid-cols-3 gap-4">
+        <AmountBox
+            {currency}
+            amounts={analytics?.mrr.amounts.map((a) => {
+                return { currency: a.currency, amount: a.monthly };
+            })}
+            {exchangeRate}
+        >
+            MRR
+            {#if analytics}
+                <Badge class="mb-1">
+                    {analytics.mrr.count}
+                </Badge>
+            {/if}
+            <span slot="note"> Monthly Recurring Revenue </span>
+        </AmountBox>
+
+        <AmountBox
+            {currency}
+            amounts={analytics?.trial.amounts.map((a) => {
+                return { currency: a.currency, amount: a.total };
+            })}
+            {exchangeRate}
+        >
+            Trials
+            {#if analytics}
+                <Badge class="mb-1">
+                    {analytics.trial.count}
+                </Badge>
+            {/if}
+            <span slot="note"> Active Trials </span>
+        </AmountBox>
+
+        <AmountBox
+            {currency}
+            amounts={analytics?.failed.amounts.map((a) => {
+                return { currency: a.currency, amount: a.total };
+            })}
+            {exchangeRate}
+        >
+            Failed
+            {#if analytics}
+                <Badge class="mb-1">
+                    {analytics.failed.count}
+                </Badge>
+            {/if}
+            <span slot="note"> Failed Payments </span>
+        </AmountBox>
+    </div>
+{/key}
 
 <Section
     name="Subscriptions"

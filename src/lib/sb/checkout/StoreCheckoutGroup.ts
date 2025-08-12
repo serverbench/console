@@ -18,7 +18,6 @@ export default class StoreCheckoutGroup {
     }
 
     public static fromObject(checkout: StoreCheckout, obj: any, fallback: Member | null) {
-        console.log(obj)
         const group = new StoreCheckoutGroup(
             checkout,
             obj.owner ? Member.fromObj(checkout.community, obj.owner) : fallback!,

@@ -5,35 +5,24 @@
     import type Wallet from "$lib/sb/wallet/Wallet";
     import NumberFlow from "@number-flow/svelte";
     import Amount from "./Amount.svelte";
-    export let amount: "withdrawable" | "settling" | "credit";
-    export let wallet: Wallet | null;
-    export let wallets: Wallet[] = [];
+    import type Currency from "$lib/sb/store/Currency";
+    export let currency: Currency | null;
+    export let amounts: {
+        currency: Currency;
+        amount: number;
+    }[] = [];
     export let exchangeRate: ExchangeRate | null;
-
-    function getAmount(
-        wallet: Wallet,
-        amount: "withdrawable" | "settling" | "credit",
-    ) {
-        switch (amount) {
-            case "withdrawable":
-                return wallet.withdrawable;
-            case "settling":
-                return wallet.settling;
-            case "credit":
-                return wallet.credit;
-        }
-    }
 
     let total: number | null = null;
     let usedExchange = false;
     computeTotal();
     function computeTotal() {
         usedExchange = false;
-        if (!wallet) {
+        if (!currency) {
             total = null;
         } else if (exchangeRate) {
             total = 0;
-            for (const w of wallets) {
+            for (const w of amounts) {
                 let realExchangeRate = 0;
                 if (exchangeRate.base == w.currency.code) {
                     realExchangeRate = 1;
@@ -42,37 +31,40 @@
                     // 1. origin to 'base'
                     realExchangeRate = exchangeRate.rates.get(w.currency.code)!;
                     // 2. base to 'target'
-                    if (wallet.currency.code != exchangeRate.base) {
+                    if (currency.code != exchangeRate.base) {
                         realExchangeRate *= exchangeRate.rates.get(
-                            wallet.currency.code,
+                            currency.code,
                         )!;
                     }
                 }
-                total += Math.trunc(getAmount(w, amount) * realExchangeRate);
+                total += Math.trunc(w.amount * realExchangeRate);
             }
         } else {
-            total = wallet ? getAmount(wallet, amount) : null;
+            total = currency
+                ? (amounts.find((c) => c.currency.code == currency.code)
+                      ?.amount ?? null)
+                : null;
         }
     }
 
-    $: wallet, computeTotal();
+    $: currency, computeTotal();
     $: exchangeRate, computeTotal();
 </script>
 
 <Card.Root class="p-5 relative flex flex-col gap-5">
-    <p class="font-semibold">
+    <div class="font-semibold flex flex-row gap-2 items-center">
         <slot />
-    </p>
+    </div>
     <div class="w-full grow">
-        {#if amount == null || wallet == null || total == null}
+        {#if currency == null || total == null}
             <Skeleton class="w-full h-24" />
         {:else}
             <div class="h-24 flex flex-col justify-center text-5xl">
                 <NumberFlow
-                    value={total / 10 ** wallet.currency.digits}
+                    value={total / 10 ** currency.digits}
                     format={{
                         style: "currency",
-                        currency: wallet.currency.code,
+                        currency: currency.code,
                     }}
                 />
             </div>
@@ -84,12 +76,9 @@
             <div class="text-opacity-80 hover:text-opacity-100 transition">
                 Exchange rate last updated at {exchangeRate?.created.toLocaleTimeString()}.
                 Includes:
-                {#each wallets as w, i}
-                    <Amount
-                        amount={getAmount(w, amount)}
-                        currency={w.currency}
-                    />
-                    {i == wallets.length - 1 ? "" : ", "}
+                {#each amounts as w, i}
+                    <Amount amount={w.amount} currency={w.currency} />
+                    {i == amounts.length - 1 ? "" : ", "}
                 {/each}
             </div>
         {/if}

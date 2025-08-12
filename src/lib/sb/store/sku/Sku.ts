@@ -29,7 +29,6 @@ export default class Sku {
     }
 
     public static fromObj(category: StoreCategory | null, obj: any) {
-        console.log(obj)
         const item = new Sku(
             obj.id,
             category,

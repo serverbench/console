@@ -17,7 +17,6 @@ export default class StoreCheckoutLine {
     }
 
     public static fromObject(group: StoreCheckoutGroup, obj: any) {
-        console.log(obj)
         return new StoreCheckoutLine(
             SkuPrice.fromObj(
                 Sku.fromObj(
