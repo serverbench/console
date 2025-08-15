@@ -1,10 +1,13 @@
 import type Currency from "../store/Currency"
 import ExchangeRate from "../wallet/ExchangeRate"
 import Authorization from "./Authorization"
+import type { ChargeAnalyticsGroup } from "./ChargeAnalytics"
 import type Checkout from "./Checkout"
 import Dispute from "./Dispute"
 import Refund from "./Refund"
 import Subscription from "./Subscription"
+import Community from "../Community"
+import User from "../User"
 
 export type ChargeType = 'charge' | 'refund' | 'dispute'
 
@@ -27,6 +30,16 @@ export default class Charge extends Authorization {
         this.refunds = refunds
         this.type = type
         this.exchangeRate = exchangeRate
+    }
+
+    public static async getAnalytics(since?: Date, until?: Date): Promise<ChargeAnalyticsGroup> {
+        const user = await User.get()
+        const community = await Community.get()
+        const data = await user!.post(`/community/${community?.id}/charge/analytics`, {
+            since: since ? since.getTime() : undefined,
+            until: until ? until.getTime() : undefined
+        })
+        return data as ChargeAnalyticsGroup
     }
 
     public static fromObject(obj: any, checkout: Checkout) {

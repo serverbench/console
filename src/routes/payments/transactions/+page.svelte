@@ -10,14 +10,34 @@
     import * as Table from "$lib/components/ui/table";
     import { inview } from "svelte-inview";
     import { Skeleton } from "$lib/components/ui/skeleton";
+    import type { ChargeAnalyticsGroup } from "$lib/sb/checkout/ChargeAnalytics";
+    import Charge from "$lib/sb/checkout/Charge";
+    import AmountBox from "../../me/wallet/AmountBox.svelte";
+    import type Currency from "$lib/sb/store/Currency";
+    import ExchangeRate from "$lib/sb/wallet/ExchangeRate";
+    import moment from "moment";
 
     let transactions: Transaction[] = [];
+    let analytics: ChargeAnalyticsGroup | null = null;
+    let previousAnalytics: ChargeAnalyticsGroup | null = null;
+    let exchangeRate: ExchangeRate | null = null;
     let hasMore = true;
     let page = 0;
     let loading = false;
 
     onMount(async () => {
-        await loadMore();
+        const now = moment();
+        const minus30 = now.clone().subtract(30, "days");
+        const minus60 = now.clone().subtract(60, "days");
+        const [_, analyticsUpdate, prev, exchangeUpdate] = await Promise.all([
+            loadMore(),
+            Charge.getAnalytics(minus30.toDate(), now.toDate()),
+            Charge.getAnalytics(minus60.toDate(), minus30.toDate()),
+            ExchangeRate.get(),
+        ]);
+        analytics = analyticsUpdate;
+        previousAnalytics = prev;
+        exchangeRate = exchangeUpdate;
     });
 
     async function loadMore() {
@@ -36,7 +56,47 @@
             loading = false;
         }
     }
+
+    let currency: Currency = {
+        code: "EUR",
+        digits: 2,
+    };
 </script>
+
+{#key analytics}
+    <div class="grid grid-cols-3 gap-4">
+        <AmountBox
+            {currency}
+            amounts={analytics?.amounts.map((a) => {
+                return { currency: a.currency, amount: a.gross };
+            })}
+            previousAmounts={previousAnalytics?.amounts.map((a) => {
+                return { currency: a.currency, amount: a.gross };
+            })}
+            {exchangeRate}
+        >
+            Gross
+            <span slot="note"> Gross Income </span>
+        </AmountBox>
+        <AmountBox
+            {currency}
+            amounts={analytics?.amounts.map((a) => {
+                return { currency: a.currency, amount: a.net };
+            })}
+            previousAmounts={previousAnalytics?.amounts.map((a) => {
+                return { currency: a.currency, amount: a.net };
+            })}
+            {exchangeRate}
+        >
+            Net
+            <span slot="note"> Net Income </span>
+        </AmountBox>
+        <AmountBox {currency} amounts={analytics?.count} previousAmounts={previousAnalytics?.count} {exchangeRate}>
+            Count
+            <span slot="note"> Payments </span>
+        </AmountBox>
+    </div>
+{/key}
 
 <Section
     name="Transactions"
