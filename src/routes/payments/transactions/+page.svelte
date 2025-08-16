@@ -16,6 +16,7 @@
     import type Currency from "$lib/sb/store/Currency";
     import ExchangeRate from "$lib/sb/wallet/ExchangeRate";
     import moment from "moment";
+    import SimplePicker from "$lib/components/sb/picker/SimplePicker.svelte";
 
     let transactions: Transaction[] = [];
     let analytics: ChargeAnalyticsGroup | null = null;
@@ -27,18 +28,36 @@
 
     onMount(async () => {
         const now = moment();
-        const minus30 = now.clone().subtract(30, "days");
-        const minus60 = now.clone().subtract(60, "days");
-        const [_, analyticsUpdate, prev, exchangeUpdate] = await Promise.all([
-            loadMore(),
-            Charge.getAnalytics(minus30.toDate(), now.toDate()),
-            Charge.getAnalytics(minus60.toDate(), minus30.toDate()),
+        await loadMore();
+    });
+
+    async function loadAnalytics() {
+        exchangeRate = null;
+        previousAnalytics = null;
+        analytics = null;
+        const start = moment(period[0]);
+        const end = moment();
+        const previousStart = start.clone().subtract(period[1], period[2]);
+        const previousEnd = end.clone().subtract(period[1], period[2]);
+        console.log(
+            "Loading analytics from",
+            start.toISOString(),
+            "to",
+            end.toISOString(),
+            "and previous from",
+            previousStart.toISOString(),
+            "to",
+            previousEnd.toISOString(),
+        );
+        const [analyticsUpdate, prev, exchangeUpdate] = await Promise.all([
+            Charge.getAnalytics(start.toDate(), end.toDate()),
+            Charge.getAnalytics(previousStart.toDate(), previousEnd.toDate()),
             ExchangeRate.get(),
         ]);
-        analytics = analyticsUpdate;
-        previousAnalytics = prev;
         exchangeRate = exchangeUpdate;
-    });
+        previousAnalytics = prev;
+        analytics = analyticsUpdate;
+    }
 
     async function loadMore() {
         if (loading || !hasMore) return;
@@ -61,10 +80,26 @@
         code: "EUR",
         digits: 2,
     };
+
+    const options: [any, string][] = [
+        [[moment().startOf("month"), 1, "month"], "MTD (Month to Date)"],
+        [[moment().startOf("quarter"), 1, "quarter"], "QTD (Quarter to Date)"],
+        [[moment().startOf("year"), , 1, "year"], "YTD (Year to Date)"],
+        [[moment().subtract(7, "days"), 7, "days"], "Last 7 Days"],
+        [[moment().subtract(30, "days"), 30, "days"], "Last 30 Days"],
+    ];
+
+    let period = options[0][0];
+
+    $: period, loadAnalytics();
 </script>
 
+<div class="w-64 ml-auto">
+    <SimplePicker name="Period" bind:value={period} items={options} />
+</div>
+
 {#key analytics}
-    <div class="grid grid-cols-3 gap-4">
+    <div class="grid md:grid-cols-3 grid-cols-1 gap-4">
         <AmountBox
             {currency}
             amounts={analytics?.amounts.map((a) => {
@@ -91,7 +126,12 @@
             Net
             <span slot="note"> Net Income </span>
         </AmountBox>
-        <AmountBox {currency} amounts={analytics?.count} previousAmounts={previousAnalytics?.count} {exchangeRate}>
+        <AmountBox
+            {currency}
+            amounts={analytics?.count}
+            previousAmounts={previousAnalytics?.count}
+            {exchangeRate}
+        >
             Count
             <span slot="note"> Payments </span>
         </AmountBox>
