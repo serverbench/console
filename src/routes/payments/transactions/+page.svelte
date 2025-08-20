@@ -243,7 +243,15 @@
                     </Table.Cell>
                 </Table.Row>
             {/each}
-            {#if loading}
+            {#if hasMore}
+                {#if !loading}
+                    <div
+                        use:inview
+                        on:inview_enter={() => {
+                            loadMore();
+                        }}
+                    ></div>
+                {/if}
                 {#each Array(20) as _}
                     <Table.Row>
                         {#each Array(4) as _}
@@ -253,13 +261,6 @@
                         {/each}
                     </Table.Row>
                 {/each}
-            {:else}
-                <div
-                    use:inview
-                    on:inview_enter={() => {
-                        loadMore();
-                    }}
-                ></div>
             {/if}
         </Table.Body>
     </Table.Root>
