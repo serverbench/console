@@ -164,4 +164,12 @@ export default class Container {
         })
     }
 
+    public async exec(cmd: string) {
+        const user = await User.get()
+        const community = await Community.get()
+        await user!.post(`/community/${community!.id}/server/${this.instance.server.id}/instance/${this.instance.id}/cmd`, {
+            cmd
+        })
+    }
+
 }

@@ -8,7 +8,8 @@
     import { onDestroy, onMount } from "svelte";
     import { inview } from "svelte-inview";
     import Time from "svelte-time/Time.svelte";
-    import { slide } from "svelte/transition";
+    import { fade, slide } from "svelte/transition";
+    import { Input } from "$lib/components/ui/input";
 
     export let container: Container;
     export let online = false;
@@ -28,6 +29,8 @@
     let hasMore = true;
     let loading = false;
     let attached = false;
+    let loadingCmd = false;
+    let cmd: string | null = null;
 
     async function requestAbsoluteOldest(): Promise<Date> {
         if (absoluteOldest) return absoluteOldest;
@@ -74,7 +77,7 @@
                 }
                 if (batchCount <= 0 && hasMore) {
                     oldestLoaded = since;
-                    requestOlder()
+                    requestOlder();
                 }
             },
             since,
@@ -102,7 +105,7 @@
         messages = messages;
     }
 
-    let attaching = false
+    let attaching = false;
     async function attachLogs() {
         if (attached) return;
         if (!online) return;
@@ -129,6 +132,19 @@
         );
     }
 
+    async function handleCmd(event: KeyboardEvent) {
+        if (event.key !== "Enter") return;
+        if (!online || !attached || loadingCmd || !cmd) return;
+        loadingCmd = true;
+        try {
+            container.exec(cmd);
+            cmd = null;
+        } catch (error) {
+        } finally {
+            loadingCmd = false;
+        }
+    }
+
     $: online, attachLogs();
 
     onDestroy(() => {
@@ -150,7 +166,7 @@
                             {moment(message[0]).format("HH:mm:ss")}
                         </Badge>
                     </div>
-                    <p>
+                    <p class="mono text-sm">
                         {message[1]}
                     </p>
                 </div>
@@ -206,6 +222,23 @@
                         </Badge>
                     {/if}
                 {/if}
+            </div>
+        {/if}
+    </div>
+    <div class="border-t relative">
+        <Input
+            bind:value={cmd}
+            disabled={!online || !attached || loadingCmd}
+            on:keydown={handleCmd}
+            class="border-0 rounded-none mt-0 px-5 py-6 bg-neutral-300 dark:bg-neutral-400 bg-opacity-5 dark:bg-opacity-20 mono"
+            placeholder="command"
+        />
+        {#if loadingCmd}
+            <div
+                transition:fade
+                class="absolute right-3 top-1/2 -translate-y-1/2"
+            >
+                <Loader2 class="animate-spin" />
             </div>
         {/if}
     </div>
