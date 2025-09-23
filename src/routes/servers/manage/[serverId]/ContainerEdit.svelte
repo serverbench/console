@@ -15,9 +15,11 @@
         Heart,
         Loader2,
         Lock,
+        MemoryStick,
         Plus,
         Save,
         Trash2,
+        X,
     } from "lucide-svelte";
     import * as Card from "$lib/components/ui/card/index.js";
     import { onMount } from "svelte";
@@ -69,18 +71,22 @@
     let firewall: IPort | null = null;
     let loading = false;
 
-    async function save(updatePorts:boolean, updateEnvs:boolean) {
+    async function save(updatePorts: boolean, updateEnvs: boolean) {
         loading = true;
+        if (memory != null && memory <= 0) memory = null;
+        if (cpus != null && cpus <= 0) cpus = null;
         try {
             await container.update(
                 image,
                 mount,
                 memory,
                 cpus,
-                updatePorts ? ports.map((p) => {
-                    p.port = Number(p.port);
-                    return p;
-                }) : container.ports.map((p) => p.asObject()),
+                updatePorts
+                    ? ports.map((p) => {
+                          p.port = Number(p.port);
+                          return p;
+                      })
+                    : container.ports.map((p) => p.asObject()),
                 updateEnvs ? Object.fromEntries(envs) : container.envs,
                 repository,
                 branch,
@@ -277,5 +283,43 @@
                 />
             </Item>
         {/each}
+    </List>
+</Section>
+
+<Section name="Resources" small>
+    <div
+        class:pb-3={!envs || Object.keys(envs).length <= 0}
+        class="pt-3 px-4 flex flex-row gap-2 justify-end items-center w-full content-between"
+    >
+        <Button disabled={loading} on:click={() => save(false, false)}>
+            {#if loading}
+                <Loader2 class="animate-spin" />
+            {:else}
+                Save
+            {/if}
+            <Save />
+        </Button>
+    </div>
+    <List hideBorder>
+        <Item>
+            <MemoryStick />
+            <Input
+                bind:value={memory}
+                disabled={loading}
+                type="number"
+                min="0"
+                step="1"
+                class="grow"
+                placeholder="Memory (Bytes)"
+            />
+            <Button
+                disabled={loading}
+                size="icon"
+                on:click={() => (memory = null)}
+                variant="secondary"
+            >
+                <X />
+            </Button>
+        </Item>
     </List>
 </Section>
